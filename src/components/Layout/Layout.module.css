@@ -1,0 +1,19 @@
+.layout {
+    min-height: 100vh;
+    display: flex;
+}
+  
+.main {
+    flex: 1;
+    transition: margin-left 0.3s ease;
+    background-color: #f3f4f6;
+    min-height: 100vh;
+}
+
+.expanded {
+    margin-left: 170px;
+}
+
+.collapsed {
+    margin-left: 80px;
+}

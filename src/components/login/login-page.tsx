@@ -1,5 +1,7 @@
+"use client";
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEye,
@@ -16,7 +18,8 @@ const LoginPage: React.FC = () => {
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const url = `${process.env.NEXT_PUBLIC_SERVER_URL}/api/login`;
+  const url = `http://localhost:3001/api/login`;
+  const router = useRouter(); 
 
   const usernameRegex = /^[a-zA-Z0-9]+$/;
   const passwordRegex = /^(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&*]).{8,}$/;
@@ -64,6 +67,7 @@ const LoginPage: React.FC = () => {
         const result = await response.json();
         console.log(result);
         localStorage.setItem("loginResponse", JSON.stringify(result));
+        window.location.replace('http://localhost:3000/home-page');
       } else if (response.status === 401) {
         setErrorMessage("Invalid credentials. Please try again.");
       } else {
@@ -103,9 +107,6 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="container">
-      {/* <div className="drop drop-1"></div>
-      <div className="drop drop-2"></div>
-      <div className="drop drop-3"></div> */}
       <div className="drop drop-4"></div>
       <form onSubmit={handleSubmit}>
         <h2 className="text-white text-2xl font-bold text-center font-serif mb-2">
@@ -198,7 +199,7 @@ const LoginPage: React.FC = () => {
           </ul>
         </div>
         <br />
-        <button type="submit">Sign In</button>
+        <button type="submit" onClick={handleSubmit}>Sign In</button>
         <div className="text-center">
           <Link
             href="/forgot-password"
