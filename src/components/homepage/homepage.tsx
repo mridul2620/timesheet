@@ -211,8 +211,8 @@ type TimeEntry = {
                 {entries.map((entry) => (
                   <tr key={entry.id}>
                     <td>
-                    <select>
-        <option value="">Select project</option>
+                    <select className={styles.select}>
+        <option value="">Select</option>
         {projects.length > 0 ? (
           projects.map((project) => (
             <option key={project._id} value={project.name}>
@@ -225,8 +225,8 @@ type TimeEntry = {
       </select>
                     </td>
                     <td>
-                    <select>
-        <option value="">Select subject</option>
+                    <select className={styles.select}>
+        <option value="">Select</option>
         {subjects.length > 0 ? (
           subjects.map((subject) => (
             <option key={subject._id} value={subject.name}>
@@ -289,7 +289,7 @@ type TimeEntry = {
                     <select
                       value={dayStatus[dayStr] || defaultStatus}
                       onChange={(e) => handleStatusChange(dayStr, e.target.value)}
-                      className={styles.statusSelect}
+                      className={styles.select}
                     >
                       <option value="working">Working</option>
                       <option value="holiday">Holiday</option>
@@ -311,7 +311,7 @@ type TimeEntry = {
             value={workDescription}
             onChange={handleDescriptionChange}
             placeholder="Please provide a description of the work you've done this week..."
-            rows={4}
+            rows={2}
           />
         </div>
         <div className={styles.submitWrapper}>

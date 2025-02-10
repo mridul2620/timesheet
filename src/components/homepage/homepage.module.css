@@ -101,6 +101,45 @@
   text-align: left;
 }
 
+.select {
+  width: 100%;
+  padding: 4px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: white;
+  font-size: 12px;
+  transition: all 0.3s ease-in-out; 
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.select:hover,
+.select:focus {
+  border-color: #007aff;
+  box-shadow: 0 4px 8px rgba(0, 122, 255, 0.2);
+}
+
+.select option {
+  padding: 4px;
+  background: white;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.select option {
+  animation: dropdownFade 0.3s ease-in-out;
+}
+
+
 .hourInput {
   width: 4rem;
   padding: 0.375rem;
@@ -151,21 +190,6 @@
 .buttonIcon {
   width: 1rem;
   height: 1rem;
-}
-
-.statusSelect {
-  width: 100%;
-  padding: 0.375rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  background-color: white;
-  margin-top: 0.25rem;
-}
-
-.statusSelect:focus {
-  outline: none;
-  border-color: #2563eb;
 }
 
 .statusRow {
