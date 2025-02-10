@@ -9,12 +9,14 @@ import styles from "./homepage.module.css"
 import DatePicker from "react-datepicker";
 import Calendar from "../Calender"
 import "react-datepicker/dist/react-datepicker.css";
+import Loader from "../Loader";
 
 type TimeEntry = {
   id: string
   project: string
   subject: string
   hours: { [key: string]: string }
+  
 }
   
   const HomepageContent: React.FC = () => {
@@ -27,7 +29,32 @@ type TimeEntry = {
         },
       ])
 
+
+      const [user, setUser] = useState<{
+        name: string;
+        username: string;
+        email: string;
+        role: string;
+        designation: string;
+      } | null>(null);
+
+      useEffect(() => {
+        // Retrieve user data from localStorage
+        const storedData = localStorage.getItem("loginResponse");
+    
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          if (parsedData.success) {
+            setUser(parsedData.user); // Set user details
+          }
+        }
+      }, []);
+
       const [selectedDate, setSelectedDate] = useState(new Date());
+
+      const [workDescription, setWorkDescription] = useState("")
+
+      const [dayStatus, setDayStatus] = useState<{ [key: string]: string }>({})
 
   const getWeekDates = (date: Date) => {
     const startDate = new Date(date);
@@ -42,7 +69,6 @@ type TimeEntry = {
 
     const weekDates = getWeekDates(selectedDate);
     
-      // Get current week's dates
       const getCurrentWeekDates = () => {
         const now = new Date()
         const currentDay = now.getDay()
@@ -57,8 +83,6 @@ type TimeEntry = {
         }
         return weekDates
       }
-    
-      //const weekDates = getCurrentWeekDates()
     
       const formatDate = (date: Date) => {
         const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -81,19 +105,32 @@ type TimeEntry = {
           ),
         )
       }
-    
-      const handleProjectChange = (entryId: string, field: "project" | "subject", value: string) => {
-        setEntries((prev) =>
-          prev.map((entry) =>
-            entry.id === entryId
-              ? {
-                  ...entry,
-                  [field]: value,
-                }
-              : entry,
-          ),
-        )
+
+      const [projects, setProjects] = useState<{ _id: string; name: string }[]>([]);
+  const [subjects, setSubjects] = useState<{ _id: string; name: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const projectsResponse = await axios.get(process.env.NEXT_PUBLIC_PROJECTS_API as string);
+        const subjectsResponse = await axios.get(process.env.NEXT_PUBLIC_SUBJECTS_API as string);
+
+        setProjects(projectsResponse.data?.projects || []);
+        setSubjects(subjectsResponse.data?.subjects || []);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
       }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <Loader />;
+    
+     
     
       const addNewRow = () => {
         setEntries((prev) => [
@@ -130,16 +167,27 @@ type TimeEntry = {
       const deleteRow = (entryId: string) => {
         setEntries((prev) => prev.filter((entry) => entry.id !== entryId))
       }
+
+      const handleStatusChange = (day: string, value: string) => {
+        setDayStatus((prev) => ({
+          ...prev,
+          [day]: value,
+        }))
+      }
+
+      const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setWorkDescription(e.target.value)
+  }
     
     
       return (
         <div className={styles.container}>
           <header className={styles.header}>
           <div className={styles.headerContent}>
-          <h1 className={styles.logo}>TimeTrack</h1>
+          <h1 className={styles.logo}>Timesheet</h1>
           <div className={styles.userInfo}>
-            <span className={styles.userName}>John Doe</span>
-            <span className={styles.userRole}>Manager</span>
+            <span className={styles.userName}>{user?.name}</span>
+            <span className={styles.userRole}>{user?.designation}</span>
           </div>
         </div>
           </header>
@@ -163,28 +211,32 @@ type TimeEntry = {
                 {entries.map((entry) => (
                   <tr key={entry.id}>
                     <td>
-                      <select
-                        value={entry.project}
-                        onChange={(e) => handleProjectChange(entry.id, "project", e.target.value)}
-                        className={styles.select}
-                      >
-                        <option value="">Select project</option>
-                        <option value="Project X">Project X</option>
-                        <option value="Office">Office</option>
-                        <option value="Vacation">Vacation</option>
-                      </select>
+                    <select>
+        <option value="">Select project</option>
+        {projects.length > 0 ? (
+          projects.map((project) => (
+            <option key={project._id} value={project.name}>
+              {project.name}
+            </option>
+          ))
+        ) : (
+          <option disabled>No projects available</option>
+        )}
+      </select>
                     </td>
                     <td>
-                      <select
-                        value={entry.subject}
-                        onChange={(e) => handleProjectChange(entry.id, "subject", e.target.value)}
-                        className={styles.select}
-                      >
-                        <option value="">Select subject</option>
-                        <option value="Development">Development</option>
-                        <option value="Meeting">Meeting</option>
-                        <option value="Planning">Planning</option>
-                      </select>
+                    <select>
+        <option value="">Select subject</option>
+        {subjects.length > 0 ? (
+          subjects.map((subject) => (
+            <option key={subject._id} value={subject.name}>
+              {subject.name}
+            </option>
+          ))
+        ) : (
+          <option disabled>No subjects available</option>
+        )}
+      </select>
                     </td>
                     {weekDates.map((date) => {
                       const dayStr = date.toISOString().split("T")[0]
@@ -225,8 +277,42 @@ type TimeEntry = {
                   ))}
                   <td className={styles.totalCell}>{calculateWeekTotal().toFixed(2)}</td>
                 </tr>
+                <tr className={styles.statusRow}>
+              <td colSpan={2}>Status</td>
+              {weekDates.map((date) => {
+                const dayStr = date.toISOString().split("T")[0]
+                const dayOfWeek = date.getDay()
+                const defaultStatus = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working"
+
+                return (
+                  <td key={dayStr}>
+                    <select
+                      value={dayStatus[dayStr] || defaultStatus}
+                      onChange={(e) => handleStatusChange(dayStr, e.target.value)}
+                      className={styles.statusSelect}
+                    >
+                      <option value="working">Working</option>
+                      <option value="holiday">Holiday</option>
+                      <option value="sick">Sick</option>
+                      <option value="bank-holiday">Bank Holiday</option>
+                    </select>
+                  </td>
+                )
+              })}
+              <td></td>
+            </tr>
               </tbody>
             </table>
+        </div>
+        <div className={styles.descriptionContainer}>
+          <h3 className={styles.descriptionHeading}>Work Description</h3>
+          <textarea
+            className={styles.descriptionTextarea}
+            value={workDescription}
+            onChange={handleDescriptionChange}
+            placeholder="Please provide a description of the work you've done this week..."
+            rows={4}
+          />
         </div>
         <div className={styles.submitWrapper}>
           <button className={styles.submitButton}>Submit for approval</button>

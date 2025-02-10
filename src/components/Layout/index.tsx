@@ -4,6 +4,7 @@ import { type ReactNode, useState } from "react"
 import Sidebar from "../Sidebar"
 import styles from "./Layout.module.css"
 import HomepageContent from "../homepage/homepage"
+import ProfilePageContent from "../Profile"
 
 export default function Layout({ children }: { children: ReactNode }) {
   const [currentPage, setCurrentPage] = useState("home")
@@ -17,8 +18,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     switch (currentPage) {
       case "home":
         return <HomepageContent />
-      case "timesheet":
-        return <HomepageContent />
+      case "profile":
+        return <ProfilePageContent />
       default:
         return <HomepageContent />
     }
@@ -30,6 +31,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         onNavigate={handleNavigation} 
         isExpanded={isSidebarExpanded} 
         setIsExpanded={setIsSidebarExpanded} 
+        activePage={currentPage}
       />
       <main className={`${styles.main} ${isSidebarExpanded ? styles.expanded : styles.collapsed}`}>
         {renderContent()}

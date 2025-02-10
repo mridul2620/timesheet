@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Clock, Menu } from "lucide-react"
+import { LayoutDashboard, Clock, Menu, User } from "lucide-react"
 import styles from "./Sidebar.module.css"
 
 const menuItems = [
@@ -13,15 +13,15 @@ const menuItems = [
     component: "home",
   },
   {
-    path: "/time-sheet",
-    name: "Timesheet",
-    icon: Clock,
-    component: "timesheet",
+    path: "/profile-page",
+    name: "Profile",
+    icon: User,
+    component: "profile",
   },
 ]
 
-export default function Sidebar({ onNavigate, isExpanded, setIsExpanded }: 
-    { onNavigate: (page: string) => void, isExpanded: boolean, setIsExpanded: (val: boolean) => void }) {
+export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activePage }: 
+    { onNavigate: (page: string) => void, isExpanded: boolean, setIsExpanded: (val: boolean) => void, activePage: string }) {
     
     const pathname = usePathname()
   
@@ -34,8 +34,8 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded }:
         <div className={styles.sidebarHeader}>
           {isExpanded ? (
             <div className={styles.logoWrapper}>
-              <img src="/placeholder.svg?height=40&width=40" alt="Logo" className={styles.logo} />
-              <h1 className={styles.title}>TimeTrack</h1>
+              <img src="/logo.png?height=40&width=10" alt="Logo" className={styles.logo} />
+              <h1 className={styles.title}>Chartsign</h1>
             </div>
           ) : (
             <Menu size={20} className={styles.menuIcon} />
@@ -43,19 +43,19 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded }:
         </div>
   
         <nav className={styles.navigation}>
-          {menuItems.map((item) => {
-            const Icon = item.icon
-            return (
-              <button
-                key={item.path}
-                onClick={() => onNavigate(item.component)}
-                className={`${styles.navItem} ${pathname === item.path ? styles.active : ""}`}
-              >
-                <Icon size={20} />
-                {isExpanded && <span>{item.name}</span>}
-              </button>
-            )
-          })}
+        {menuItems.map((item) => {
+  const Icon = item.icon;
+  return (
+    <button
+      key={item.path}
+      onClick={() => onNavigate(item.component)}
+      className={`${styles.navItem} ${activePage === item.component ? styles.active : ""}`}
+    >
+      <Icon size={20} />
+      {isExpanded && <span>{item.name}</span>}
+    </button>
+  );
+})}
         </nav>
       </div>
     )
