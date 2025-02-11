@@ -179,6 +179,49 @@ type TimeEntry = {
     setWorkDescription(e.target.value)
   }
     
+  const handleSubmit = async () => {
+    try {
+        // Validate required data
+        if (!user?.username) {
+            alert("User information is missing");
+            return;
+        }
+
+        // Validate that at least one entry has data
+        const hasEntries = entries.some(entry => Object.values(entry.hours).some(h => h !== ""));
+        if (!hasEntries) {
+            alert("Please add at least one time entry");
+            return;
+        }
+
+        const timesheetData = {
+            username: user.username,
+            weekStartDate: selectedDate.toISOString().split("T")[0],
+            entries: entries.filter(entry => Object.values(entry.hours).some(h => h !== "")), // Only send entries with hours
+            workDescription,
+            dayStatus
+        };
+
+        console.log("Submitting timesheet data:", timesheetData); // Debug log
+
+        const response = await axios.post(process.env.NEXT_PUBLIC_SUBMIT_API as string, timesheetData);
+        
+        if (response.data.message === "Timesheet submitted successfully") {
+            alert("Timesheet submitted successfully!");
+            // Optionally reset the form or redirect
+        } else {
+            alert("Failed to submit timesheet. Please try again.");
+        }
+    } catch (error) {
+        console.error("Error submitting timesheet:", error);
+        if (axios.isAxiosError(error)) {
+            alert(`Error: ${error.response?.data?.message || "An unknown error occurred"}`);
+        } else {
+            alert("An error occurred while submitting the timesheet.");
+        }
+    }
+};
+
     
       return (
         <div className={styles.container}>
@@ -315,7 +358,7 @@ type TimeEntry = {
           />
         </div>
         <div className={styles.submitWrapper}>
-          <button className={styles.submitButton}>Submit for approval</button>
+          <button className={styles.submitButton} onClick={handleSubmit}>Submit for approval</button>
         </div>
         </div>
         </div>
