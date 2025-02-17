@@ -7,7 +7,6 @@ import styles from "./homepage.module.css";
 import Calendar from "../Calender";
 import Loader from "../Loader";
 
-// Types
 type TimeEntry = {
   id: string;
   project: string;
@@ -31,7 +30,6 @@ type User = {
 };
 
 const HomepageContent: React.FC = () => {
-  // Initial Values
   const getInitialEntry = (): TimeEntry => ({
     id: "1",
     project: "",
@@ -39,7 +37,6 @@ const HomepageContent: React.FC = () => {
     hours: {},
   });
 
-  // State Management
   const [entries, setEntries] = useState<TimeEntry[]>([getInitialEntry()]);
   const [user, setUser] = useState<User | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -50,7 +47,6 @@ const HomepageContent: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isWeekEditable, setIsWeekEditable] = useState(true);
 
-  // Date Utilities
   const getWeekDates = (date: Date) => {
     const startDate = new Date(date);
     startDate.setDate(date.getDate() - date.getDay() + 1);
@@ -69,7 +65,6 @@ const HomepageContent: React.FC = () => {
 
   const weekDates = getWeekDates(selectedDate);
 
-  // Calculations
   const calculateDayTotal = (date: Date) => {
     const dayStr = date.toISOString().split("T")[0];
     return entries.reduce((total, entry) => {
@@ -90,7 +85,6 @@ const HomepageContent: React.FC = () => {
     }, 0);
   };
 
-  // Event Handlers
   const handleProjectChange = (entryId: string, value: string) => {
     setEntries((prev) =>
       prev.map((entry) =>
@@ -141,7 +135,6 @@ const HomepageContent: React.FC = () => {
     setEntries((prev) => prev.filter((entry) => entry.id !== entryId));
   };
 
-  // API Handlers
   const handleSubmit = async () => {
     try {
       if (!user?.username) {
@@ -188,7 +181,6 @@ const HomepageContent: React.FC = () => {
     }
   };
 
-  // Effects
   useEffect(() => {
     const storedData = localStorage.getItem("loginResponse");
     if (storedData) {
@@ -274,7 +266,6 @@ const HomepageContent: React.FC = () => {
 
   if (loading) return <Loader />;
 
-  // Render
   return (
     <div className={styles.container}>
       <header className={styles.header}>
