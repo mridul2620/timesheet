@@ -101,6 +101,17 @@
   text-align: left;
 }
 
+.select:disabled{
+  cursor: not-allowed;
+  opacity: 0.7;
+  background-color: #f5f5f5;
+  width: 100%;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
 .select {
   width: 100%;
   padding: 4px;
@@ -148,6 +159,17 @@
   text-align: center;
 }
 
+.hourInput:disabled{
+  cursor: not-allowed;
+  opacity: 0.7;
+  background-color: #f5f5f5;
+  width: 4rem;
+  padding: 0.375rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
+  text-align: center;
+}
+
 .hourInput:focus {
   outline: none;
   border-color: #2563eb;
@@ -163,6 +185,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.deleteButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .deleteButton:hover {
@@ -187,6 +214,11 @@
   background-color: #f3f4f6;
 }
 
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .buttonIcon {
   width: 1rem;
   height: 1rem;
@@ -196,6 +228,11 @@
   background-color: white;
 }
 
+
+.statusRow:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
 .statusRow td:first-child {
   font-weight: 500;
   color: #374151;
@@ -222,6 +259,12 @@
   font-size: 0.875rem;
   font-family: inherit;
   resize: vertical;
+}
+
+.descriptionTextarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  background-color: #f5f5f5;
 }
 
 .descriptionTextarea:focus {
@@ -252,6 +295,13 @@
 .submitButton:hover {
   background-color: #1d4ed8;
 }
+
+.submitButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+
 
 @media (max-width: 768px) {
   .container {

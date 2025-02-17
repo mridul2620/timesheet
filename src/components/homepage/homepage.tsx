@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useRouter } from 'next/navigation';
 import { Plus, Trash2 } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -16,6 +15,13 @@ type TimeEntry = {
   hours: { [key: string]: string };
 };
 
+type Timesheet = {
+  _id: string;
+  username: string;
+  entries: TimeEntry[];
+  workDescription: string;
+};
+
 type User = {
   name: string;
   username: string;
@@ -25,13 +31,16 @@ type User = {
 };
 
 const HomepageContent: React.FC = () => {
-  // State Management
-  const [entries, setEntries] = useState<TimeEntry[]>([{
+  // Initial Values
+  const getInitialEntry = (): TimeEntry => ({
     id: "1",
     project: "",
     subject: "",
     hours: {},
-  }]);
+  });
+
+  // State Management
+  const [entries, setEntries] = useState<TimeEntry[]>([getInitialEntry()]);
   const [user, setUser] = useState<User | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workDescription, setWorkDescription] = useState("");
@@ -39,6 +48,7 @@ const HomepageContent: React.FC = () => {
   const [projects, setProjects] = useState<{ _id: string; name: string }[]>([]);
   const [subjects, setSubjects] = useState<{ _id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isWeekEditable, setIsWeekEditable] = useState(true);
 
   // Date Utilities
   const getWeekDates = (date: Date) => {
@@ -81,16 +91,6 @@ const HomepageContent: React.FC = () => {
   };
 
   // Event Handlers
-  const handleInputChange = (entryId: string, day: string, value: string) => {
-    setEntries((prev) =>
-      prev.map((entry) =>
-        entry.id === entryId
-          ? { ...entry, hours: { ...entry.hours, [day]: value } }
-          : entry
-      )
-    );
-  };
-
   const handleProjectChange = (entryId: string, value: string) => {
     setEntries((prev) =>
       prev.map((entry) =>
@@ -107,6 +107,16 @@ const HomepageContent: React.FC = () => {
     );
   };
 
+  const handleInputChange = (entryId: string, day: string, value: string) => {
+    setEntries((prev) =>
+      prev.map((entry) =>
+        entry.id === entryId
+          ? { ...entry, hours: { ...entry.hours, [day]: value } }
+          : entry
+      )
+    );
+  };
+
   const handleStatusChange = (day: string, value: string) => {
     setDayStatus((prev) => ({ ...prev, [day]: value }));
   };
@@ -116,18 +126,22 @@ const HomepageContent: React.FC = () => {
   };
 
   const addNewRow = () => {
-    setEntries((prev) => [...prev, {
-      id: String(Date.now()),
-      project: "",
-      subject: "",
-      hours: {},
-    }]);
+    setEntries((prev) => [
+      ...prev,
+      {
+        id: String(Date.now()),
+        project: "",
+        subject: "",
+        hours: {},
+      },
+    ]);
   };
 
   const deleteRow = (entryId: string) => {
     setEntries((prev) => prev.filter((entry) => entry.id !== entryId));
   };
 
+  // API Handlers
   const handleSubmit = async () => {
     try {
       if (!user?.username) {
@@ -135,10 +149,10 @@ const HomepageContent: React.FC = () => {
         return;
       }
 
-      const hasEntries = entries.some(entry => 
-        Object.values(entry.hours).some(h => h !== "")
+      const hasEntries = entries.some((entry) =>
+        Object.values(entry.hours).some((h) => h !== "")
       );
-      
+
       if (!hasEntries) {
         alert("Please add at least one time entry");
         return;
@@ -147,11 +161,11 @@ const HomepageContent: React.FC = () => {
       const timesheetData = {
         username: user.username,
         weekStartDate: selectedDate.toISOString().split("T")[0],
-        entries: entries.filter(entry => 
-          Object.values(entry.hours).some(h => h !== "")
+        entries: entries.filter((entry) =>
+          Object.values(entry.hours).some((h) => h !== "")
         ),
         workDescription,
-        dayStatus
+        dayStatus,
       };
 
       const response = await axios.post(
@@ -190,7 +204,7 @@ const HomepageContent: React.FC = () => {
       try {
         const [projectsResponse, subjectsResponse] = await Promise.all([
           axios.get(process.env.NEXT_PUBLIC_PROJECTS_API as string),
-          axios.get(process.env.NEXT_PUBLIC_SUBJECTS_API as string)
+          axios.get(process.env.NEXT_PUBLIC_SUBJECTS_API as string),
         ]);
 
         setProjects(projectsResponse.data?.projects || []);
@@ -204,6 +218,59 @@ const HomepageContent: React.FC = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const fetchTimesheet = async () => {
+      if (!user?.username) return;
+
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_GET_TIMESHEET_API}/${user.username}`
+        );
+
+        if (response.data.success) {
+          const relevantTimesheet = response.data.timesheets.find((timesheet: Timesheet) => {
+            return timesheet.entries.some((entry) => {
+              return Object.keys(entry.hours).some((date) => {
+                const entryDate = new Date(date);
+                const weekStart = getWeekDates(selectedDate)[0];
+                const weekEnd = getWeekDates(selectedDate)[6];
+                return entryDate >= weekStart && entryDate <= weekEnd;
+              });
+            });
+          });
+
+          if (relevantTimesheet) {
+            setIsWeekEditable(false);
+            setEntries(
+              relevantTimesheet.entries.map((entry: { hours: any; }) => ({
+                ...entry,
+                hours: entry.hours || {},
+              }))
+            );
+            setWorkDescription(relevantTimesheet.workDescription || "");
+            setDayStatus(relevantTimesheet.dayStatus || {});
+          } else {
+            setIsWeekEditable(true);
+            setEntries([getInitialEntry()]);
+            setWorkDescription("");
+
+            const newDayStatus: { [key: string]: string } = {};
+            weekDates.forEach((date) => {
+              const dayStr = date.toISOString().split("T")[0];
+              const dayOfWeek = date.getDay();
+              newDayStatus[dayStr] = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
+            });
+            setDayStatus(newDayStatus);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching timesheet:", error);
+      }
+    };
+
+    fetchTimesheet();
+  }, [selectedDate, user?.username]);
 
   if (loading) return <Loader />;
 
@@ -241,10 +308,11 @@ const HomepageContent: React.FC = () => {
               {entries.map((entry) => (
                 <tr key={entry.id}>
                   <td>
-                    <select 
-                      className={styles.select} 
-                      value={entry.project} 
+                    <select
+                      className={styles.select}
+                      value={entry.project}
                       onChange={(e) => handleProjectChange(entry.id, e.target.value)}
+                      disabled={!isWeekEditable}
                     >
                       <option value="">Select</option>
                       {projects.map((project) => (
@@ -255,10 +323,11 @@ const HomepageContent: React.FC = () => {
                     </select>
                   </td>
                   <td>
-                    <select 
-                      className={styles.select} 
+                    <select
+                      className={styles.select}
                       value={entry.subject}
                       onChange={(e) => handleSubjectChange(entry.id, e.target.value)}
+                      disabled={!isWeekEditable}
                     >
                       <option value="">Select</option>
                       {subjects.map((subject) => (
@@ -279,6 +348,7 @@ const HomepageContent: React.FC = () => {
                           step="0.5"
                           value={entry.hours[dayStr] || ""}
                           onChange={(e) => handleInputChange(entry.id, dayStr, e.target.value)}
+                          disabled={!isWeekEditable}
                           className={styles.hourInput}
                         />
                       </td>
@@ -288,9 +358,10 @@ const HomepageContent: React.FC = () => {
                     {calculateRowTotal(entry).toFixed(2)}
                   </td>
                   <td>
-                    <button 
-                      onClick={() => deleteRow(entry.id)} 
-                      className={styles.deleteButton} 
+                    <button
+                      onClick={() => deleteRow(entry.id)}
+                      className={styles.deleteButton}
+                      disabled={!isWeekEditable}
                       title="Delete row"
                     >
                       <Trash2 className={styles.buttonIcon} />
@@ -301,7 +372,7 @@ const HomepageContent: React.FC = () => {
 
               <tr className={styles.totalRow}>
                 <td>
-                  <button onClick={addNewRow} className={styles.button}>
+                  <button onClick={addNewRow} className={styles.button} disabled={!isWeekEditable}>
                     <Plus className={styles.buttonIcon} />
                     Project
                   </button>
@@ -328,6 +399,7 @@ const HomepageContent: React.FC = () => {
                         value={dayStatus[dayStr] || defaultStatus}
                         onChange={(e) => handleStatusChange(dayStr, e.target.value)}
                         className={styles.select}
+                        disabled={!isWeekEditable}
                       >
                         <option value="working">Working</option>
                         <option value="holiday">Holiday</option>
@@ -348,6 +420,7 @@ const HomepageContent: React.FC = () => {
           <textarea
             className={styles.descriptionTextarea}
             value={workDescription}
+            disabled={!isWeekEditable}
             onChange={handleDescriptionChange}
             placeholder="Please provide a description of the work you've done this week..."
             rows={2}
@@ -355,7 +428,7 @@ const HomepageContent: React.FC = () => {
         </div>
 
         <div className={styles.submitWrapper}>
-          <button className={styles.submitButton} onClick={handleSubmit}>
+          <button className={styles.submitButton} onClick={handleSubmit} disabled={!isWeekEditable}>
             Submit for approval
           </button>
         </div>
