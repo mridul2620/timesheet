@@ -1,29 +1,50 @@
-"use client"
+"use client";
 
-import { type ReactNode, useState } from "react"
-import Sidebar from "../Sidebar"
-import styles from "./Layout.module.css"
-import HomepageContent from "../homepage/homepage"
-import ProfilePageContent from "../Profile"
+import { type ReactNode, useState, useEffect } from "react";
+import Sidebar from "../Sidebar";
+import styles from "./Layout.module.css";
+import HomepageContent from "../homepage/homepage";
+import ProfilePageContent from "../Profile";
+import TimesheetsPage from "../timesheets";
+import PayrollPage from "../payroll";
 
-export default function Layout({ children }: { children: ReactNode }) {
-  const [currentPage, setCurrentPage] = useState("home")
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
+type User = {
+  role: string;
+};
+
+export default function HomeLayout({ children }: { children: ReactNode }) {
+  const [currentPage, setCurrentPage] = useState("home");
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+   useEffect(() => {
+      const storedData = localStorage.getItem("loginResponse");
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        if (parsedData.success) {
+          setUser(parsedData.user);
+        }
+      }
+    }, []);
 
   const handleNavigation = (page: string) => {
-    setCurrentPage(page)
-  }
+    setCurrentPage(page);
+  };
 
   const renderContent = () => {
     switch (currentPage) {
       case "home":
-        return <HomepageContent />
+        return <HomepageContent />;
       case "profile":
-        return <ProfilePageContent />
+        return <ProfilePageContent />;
+      case "adminDashboard":
+        return user?.role === "admin" ? <TimesheetsPage /> : <HomepageContent />;
+      case "payroll":
+        return user?.role === "admin" ? <PayrollPage /> : <HomepageContent />;
       default:
-        return <HomepageContent />
+        return <HomepageContent />;
     }
-  }
+  };
 
   return (
     <div className={styles.layout}>
@@ -37,5 +58,5 @@ export default function Layout({ children }: { children: ReactNode }) {
         {renderContent()}
       </main>
     </div>
-  )
+  );
 }

@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { usePathname } from "next/navigation"
-import { LayoutDashboard, Clock, Menu, User } from "lucide-react"
-import styles from "./Sidebar.module.css"
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { LayoutDashboard, User, PoundSterling, Menu, CalendarDays } from "lucide-react";
+import styles from "./Sidebar.module.css";
 
 const menuItems = [
   {
@@ -18,13 +18,43 @@ const menuItems = [
     icon: User,
     component: "profile",
   },
-]
+];
+
+const adminMenuItems = [
+  {
+    path: "/time-sheet",
+    name: "Timesheets",
+    icon: CalendarDays,
+    component: "adminDashboard",
+  },
+  {
+    path: "/payroll",
+    name: "Payroll",
+    icon: PoundSterling,
+    component: "payroll",
+  },
+];
+
+type User = {
+  role: string;
+};
 
 export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activePage }: 
     { onNavigate: (page: string) => void, isExpanded: boolean, setIsExpanded: (val: boolean) => void, activePage: string }) {
-    
-    const pathname = usePathname()
   
+    const [user, setUser] = useState<User | null>(null);
+    const pathname = usePathname();
+
+    useEffect(() => {
+      const storedData = localStorage.getItem("loginResponse");
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        if (parsedData.success) {
+          setUser(parsedData.user);
+        }
+      }
+    }, []);
+
     return (
       <div 
         className={`${styles.sidebar} ${isExpanded ? styles.expanded : ""}`} 
@@ -43,20 +73,35 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
         </div>
   
         <nav className={styles.navigation}>
-        {menuItems.map((item) => {
-  const Icon = item.icon;
-  return (
-    <button
-      key={item.path}
-      onClick={() => onNavigate(item.component)}
-      className={`${styles.navItem} ${activePage === item.component ? styles.active : ""}`}
-    >
-      <Icon size={20} />
-      {isExpanded && <span>{item.name}</span>}
-    </button>
-  );
-})}
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => onNavigate(item.component)}
+                className={`${styles.navItem} ${activePage === item.component ? styles.active : ""}`}
+              >
+                <Icon size={20} />
+                {isExpanded && <span>{item.name}</span>}
+              </button>
+            );
+          })}
+
+          {/* Show admin menu items only if user is admin */}
+          {user?.role === "admin" && adminMenuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => onNavigate(item.component)}
+                className={`${styles.navItem} ${activePage === item.component ? styles.active : ""}`}
+              >
+                <Icon size={20} />
+                {isExpanded && <span>{item.name}</span>}
+              </button>
+            );
+          })}
         </nav>
       </div>
-    )
-  }
+    );
+}
