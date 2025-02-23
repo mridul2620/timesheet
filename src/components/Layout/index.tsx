@@ -5,8 +5,8 @@ import Sidebar from "../Sidebar";
 import styles from "./Layout.module.css";
 import HomepageContent from "../homepage/homepage";
 import ProfilePageContent from "../Profile";
-import TimesheetsPage from "../timesheets";
 import PayrollPage from "../payroll";
+import EmployeesPage from "../Employees";
 
 type User = {
   role: string;
@@ -38,7 +38,7 @@ export default function HomeLayout({ children }: { children: ReactNode }) {
       case "profile":
         return <ProfilePageContent />;
       case "adminDashboard":
-        return user?.role === "admin" ? <TimesheetsPage /> : <HomepageContent />;
+        return user?.role === "admin" ? <EmployeesPage /> : <HomepageContent />;
       case "payroll":
         return user?.role === "admin" ? <PayrollPage /> : <HomepageContent />;
       default:

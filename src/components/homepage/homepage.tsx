@@ -6,6 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import styles from "./homepage.module.css";
 import Calendar from "../Calender";
 import Loader from "../Loader";
+import Header from "../Header/header";
 
 type TimeEntry = {
   id: string;
@@ -268,16 +269,7 @@ const HomepageContent: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <h1 className={styles.logo}>Timesheet</h1>
-          <div className={styles.userInfo}>
-            <span className={styles.userName}>{user?.name}</span>
-            <span className={styles.userRole}>{user?.designation}</span>
-          </div>
-        </div>
-      </header>
-
+      <Header title="Timesheet" user={user} />
       <div className={styles.tableContainer}>
         <div className={styles.gridContainer}>
           <div className={styles.calendarSection}>

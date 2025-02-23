@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, User, PoundSterling, Menu, CalendarDays } from "lucide-react";
+import { LayoutDashboard, User, PoundSterling, Users, Menu} from "lucide-react";
 import styles from "./Sidebar.module.css";
 
 const menuItems = [
@@ -22,9 +22,9 @@ const menuItems = [
 
 const adminMenuItems = [
   {
-    path: "/time-sheet",
-    name: "Timesheets",
-    icon: CalendarDays,
+    path: "/employees",
+    name: "Employees",
+    icon: Users,
     component: "adminDashboard",
   },
   {

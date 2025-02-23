@@ -22,13 +22,12 @@ export default function ProfilePageContent() {
         } | null>(null);
   
         useEffect(() => {
-          // Retrieve user data from localStorage
           const storedData = localStorage.getItem("loginResponse");
       
           if (storedData) {
             const parsedData = JSON.parse(storedData);
             if (parsedData.success) {
-              setUser(parsedData.user); // Set user details
+              setUser(parsedData.user);
             }
           }
         }, []);
