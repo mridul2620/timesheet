@@ -1,18 +1,18 @@
 "use client";
 
 import { type ReactNode, useState, useEffect } from "react";
-import Sidebar from "../Sidebar";
+import Sidebar from "../Sidebar/sidebar";
 import styles from "./Layout.module.css";
 import HomepageContent from "../homepage/homepage";
-import ProfilePageContent from "../Profile";
-import PayrollPage from "../payroll";
-import EmployeesPage from "../Employees";
+import ProfilePageContent from "../Profile/profile";
+import PayrollPage from "../payroll/payroll";
+import EmployeesPage from "../Employees/employees";
 
 type User = {
   role: string;
 };
 
-export default function HomeLayout({ children }: { children: ReactNode }) {
+export default function Layout({ children }: { children: ReactNode }) {
   const [currentPage, setCurrentPage] = useState("home");
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [user, setUser] = useState<User | null>(null);

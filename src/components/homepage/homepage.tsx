@@ -5,7 +5,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import styles from "./homepage.module.css";
 import Calendar from "../Calender";
-import Loader from "../Loader";
+import Loader from "../Loader/loader";
 import Header from "../Header/header";
 
 type TimeEntry = {

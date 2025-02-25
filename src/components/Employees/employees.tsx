@@ -1,8 +1,10 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import { Trash2, Plus } from "lucide-react";
 import styles from "./index.module.css";
-import Loader from "../Loader";
+import Loader from "../Loader/loader";
 import Header from "../Header/header";
+import { useRouter } from 'next/navigation';
 
 interface User {
   _id: string;
@@ -10,9 +12,11 @@ interface User {
   name: string;
   designation: string;
   active: boolean;
+  username: string;
 }
 
 const EmployeesPage = () => {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,13 +34,15 @@ const EmployeesPage = () => {
       } finally {
         setLoading(false);
       }
+      
+      // Get current logged in user
       const storedData = localStorage.getItem("loginResponse");
       if (storedData) {
-      const parsedData = JSON.parse(storedData);
-      if (parsedData.success) {
-        setUser(parsedData.user);
+        const parsedData = JSON.parse(storedData);
+        if (parsedData.success) {
+          setUser(parsedData.user);
+        }
       }
-    }
     };
 
     fetchUsers();
@@ -50,10 +56,18 @@ const EmployeesPage = () => {
       .join("");
   };
 
-  const handleDelete = (id: string) => {
-    setUsers(users.filter((user) => user._id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      setUsers(users.filter((user) => user._id !== id));
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
   };
 
+  const navigateToTimesheet = (username: string) => {
+    router.push(`/timesheets/${username}`);
+  };
+  
   if (loading) return <Loader />;
 
   return (
@@ -85,11 +99,18 @@ const EmployeesPage = () => {
             {users.map((user) => (
               <tr key={user._id}>
                 <td>
-                  <div className={styles.avatarContainer}>
+                  <div 
+                    className={styles.avatarContainer}
+                    onClick={() => navigateToTimesheet(user.username)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className={styles.avatar}>
                       {getInitials(user?.name)}
                     </div>
-                    <span>{user?.name}</span>
+                    <div className={styles.nameContainer}>
+                      <span>{user?.name}</span>
+                      <span className={styles.username}>@{user?.username}</span>
+                    </div>
                   </div>
                 </td>
                 <td>{user?.email}</td>

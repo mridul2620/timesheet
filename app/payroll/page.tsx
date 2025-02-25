@@ -1,8 +1,8 @@
 //home page.tsx
 
 "use client";
-import Layout from "@/src/components/Layout";
-import PayrollPage from "@/src/components/payroll";
+import Layout from "@/src/components/Layout/sidebarLayout";
+import PayrollPage from "@/src/components/payroll/payroll";
 import React from "react";
 
 export default function Homepage() {
