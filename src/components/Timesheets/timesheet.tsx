@@ -21,7 +21,6 @@ interface User {
   designation: string;
 }
 
-// For App Router (Next.js 13+)
 const EmployeeTimesheet = () => {
   const params = useParams();
   const username = params?.username as string;
@@ -35,7 +34,6 @@ const EmployeeTimesheet = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
 
   useEffect(() => {
-    // Get admin user from localStorage
     const storedData = localStorage.getItem("loginResponse");
     if (storedData) {
       const parsedData = JSON.parse(storedData);
@@ -44,7 +42,6 @@ const EmployeeTimesheet = () => {
       }
     }
 
-    // Get employee details
     const fetchEmployeeDetails = async () => {
       if (!username) return;
       try {

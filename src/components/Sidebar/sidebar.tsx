@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, User, PoundSterling, Users, Menu} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, User, PoundSterling, Users, Menu } from "lucide-react";
 import styles from "./Sidebar.module.css";
 
 const menuItems = [
@@ -43,6 +43,7 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
     { onNavigate: (page: string) => void, isExpanded: boolean, setIsExpanded: (val: boolean) => void, activePage: string }) {
   
     const [user, setUser] = useState<User | null>(null);
+    const router = useRouter();
     const pathname = usePathname();
 
     useEffect(() => {
@@ -53,7 +54,17 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
           setUser(parsedData.user);
         }
       }
-    }, []);
+      
+      const currentItem = [...menuItems, ...adminMenuItems].find(item => item.path === pathname);
+      if (currentItem) {
+        onNavigate(currentItem.component);
+      }
+    }, [pathname, onNavigate]);
+
+    const handleItemClick = (path: string, component: string) => {
+      onNavigate(component);
+      router.push(path);
+    };
 
     return (
       <div 
@@ -75,26 +86,26 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
         <nav className={styles.navigation}>
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const isActive = activePage === item.component;
             return (
               <button
                 key={item.path}
-                onClick={() => onNavigate(item.component)}
-                className={`${styles.navItem} ${activePage === item.component ? styles.active : ""}`}
+                onClick={() => handleItemClick(item.path, item.component)}
+                className={`${styles.navItem} ${isActive ? styles.active : ""}`}
               >
                 <Icon size={20} />
                 {isExpanded && <span>{item.name}</span>}
               </button>
             );
           })}
-
-          {/* Show admin menu items only if user is admin */}
           {user?.role === "admin" && adminMenuItems.map((item) => {
             const Icon = item.icon;
+            const isActive = activePage === item.component;
             return (
               <button
                 key={item.path}
-                onClick={() => onNavigate(item.component)}
-                className={`${styles.navItem} ${activePage === item.component ? styles.active : ""}`}
+                onClick={() => handleItemClick(item.path, item.component)}
+                className={`${styles.navItem} ${isActive ? styles.active : ""}`}
               >
                 <Icon size={20} />
                 {isExpanded && <span>{item.name}</span>}
