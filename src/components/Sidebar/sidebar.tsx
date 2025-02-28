@@ -78,8 +78,12 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
     };
 
     const handleLogout = () => {
+      // Clear localStorage data
       localStorage.removeItem("loginResponse");
-      //window.location.replace("/");
+      // Set a flag to indicate logged out state
+      sessionStorage.setItem("isLoggedOut", "true");
+      
+      // Use window.location for a full page reload to the login page
       window.location.href = "/";
     };
 
