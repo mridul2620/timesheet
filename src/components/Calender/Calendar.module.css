@@ -1,83 +1,108 @@
 .calendar {
-    background: white;
-    border: 0px;
+  background-color: #121f3a;
+  border: 1px solid #2a3654;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  font-family: "Inter", sans-serif;
+  color: #fff;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.monthYear {
+  font-weight: 500;
+  font-size: 1rem;
+  color: #b9c1d9;
+}
+
+.navButton {
+  background-color: #1a2b4a;
+  border: 1px solid #2a3654;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  cursor: pointer;
+  color: #fff;
+  transition: all 0.3s ease-in;
+}
+
+.navButton:hover {
+  background-color: #2a3654;
+  border-color: #f97316;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #b9c1d9;
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.375rem;
+}
+
+.day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #2a3654;
+  background-color: #1a2b4a;
+  font-size: 0.875rem;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  transition: all 0.3s ease-in;
+}
+
+.day:hover {
+  background-color: #2a3654;
+  border-color: #f97316;
+}
+
+.emptyDay {
+  aspect-ratio: 1;
+}
+
+.selected {
+  background-color: #f97316;
+  color: white;
+  font-weight: 500;
+  border-color: #f97316;
+}
+
+.selected:hover {
+  background-color: #ff8c4c;
+  border-color: #ff8c4c;
+}
+
+.today {
+  border: 2px solid #f97316;
+}
+
+@media (max-width: 768px) {
+  .calendar {
     padding: 1rem;
-    width: 100%;
-  }
-  
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
   }
   
   .monthYear {
-    font-weight: 500;
-    font-size: 1rem;
-  }
-  
-  .navButton {
-    background: none;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.375rem;
-    padding: 0.25rem 0.5rem;
-    cursor: pointer;
-    color: #374151;
-  }
-  
-  .navButton:hover {
-    background-color: #f3f4f6;
-  }
-  
-  .weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0.25rem;
-    margin-bottom: 0.5rem;
-    text-align: center;
     font-size: 0.875rem;
-    color: #6b7280;
-  }
-  
-  .days {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0.25rem;
   }
   
   .day {
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    background: none;
-    font-size: 0.875rem;
-    color: #374151;
-    cursor: pointer;
-    border-radius: 0.375rem;
+    font-size: 0.75rem;
   }
-  
-  .day:hover {
-    background-color: #f3f4f6;
-  }
-  
-  .emptyDay {
-    aspect-ratio: 1;
-  }
-  
-  .selected {
-    background-color: #2563eb;
-    color: white;
-  }
-  
-  .selected:hover {
-    background-color: #1d4ed8;
-  }
-  
-  .today {
-    border: 2px solid #2563eb;
-  }
-  
-  
+}

@@ -1,40 +1,51 @@
 .header {
-    margin-bottom: 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #2a3654;
+  font-family: "Inter", sans-serif;
+  color: #fff;
+}
+
+.heading {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #fff;
+  margin: 0;
+}
+
+.userInfo {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.userName {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.userRole {
+  font-size: 0.875rem;
+  color: #b9c1d9;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
-  
+
   .heading {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1F2937;
-    margin: 0;
+    font-size: 1.25rem;
   }
   
   .userInfo {
-    text-align: right;
+    text-align: left;
   }
-  
-  .userName {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #1F2937;
-  }
-  
-  .userRole {
-    font-size: 0.875rem;
-    color: #6B7280;
-  }
-  
-  @media (max-width: 48rem) {
-    .header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.75rem;
-    }
-  
-    .heading {
-      font-size: 1.25rem;
-    }
-  }
+}

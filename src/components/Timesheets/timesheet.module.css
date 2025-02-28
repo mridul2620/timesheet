@@ -1,130 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap');
+
 .container {
-    font-family: "Poppins", sans-serif;
-    background-color: #F9FAFB;
-    padding: 2rem;
-    min-height: 100vh;
+  font-family: "Inter", sans-serif;
+  background-color: #0c1e35;
+  color: #fff;
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+.tableContainer {
+  width: fit-content;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background-color: #121f3a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.gridContainer {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0.5rem;
+}
+
+.calendarSection {
+  width: 300px;
+  height: 1fr;
+  margin: 1rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  color: #fff;
+}
+
+.table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 500;
+  color: #b9c1d9;
+  border-bottom: 1px solid #2a3654;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #2a3654;
+}
+
+.readOnlyInput {
+  width: 100%;
+  padding: 0.375rem;
+  border: 1px solid #2a3654;
+  border-radius: 0.25rem;
+  background-color: #1a2b4a;
+  color: #b9c1d9;
+  cursor: not-allowed;
+}
+
+.readOnlyHourInput {
+  width: 4rem;
+  padding: 0.375rem;
+  border: 1px solid #2a3654;
+  border-radius: 0.25rem;
+  background-color: #1a2b4a;
+  color: #b9c1d9;
+  text-align: center;
+  cursor: not-allowed;
+}
+
+.totalCell {
+  font-weight: 500;
+  text-align: center;
+  color: #f97316;
+}
+
+.totalRow {
+  font-weight: 500;
+  color: #f97316;
+}
+
+.totalRow td:first-child {
+  text-align: left;
+}
+
+.statusRow {
+  background-color: #121f3a;
+}
+
+.descriptionContainer {
+  margin-top: 2rem;
+  width: 100%;
+  padding: 0 1rem 1rem;
+}
+
+.descriptionHeading {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #b9c1d9;
+  margin-bottom: 0.5rem;
+  font-family: inherit;
+}
+
+.descriptionTextarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #2a3654;
+  border-radius: 0.375rem;
+  background-color: #1a2b4a;
+  color: #b9c1d9;
+  font-size: 0.875rem;
+  resize: vertical;
+  cursor: not-allowed;
+  font-family: inherit;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
   }
-  
-  .tableContainer {
-    width: fit-content;
-    margin: 2rem auto;
-    padding: 0 1rem;
-    overflow-x: auto;
-    border-radius: 0.5rem;
-    background-color: white;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  }
-  
+
   .gridContainer {
-    display: flex;
-    gap: 1.5rem;
-    margin: 0.5rem;
+    flex-direction: column;
   }
-  
+
   .calendarSection {
-    width: 300px;
-    height: 1fr;
-    margin: 1rem;
+    width: 100%;
+    margin: 0;
   }
-  
+
   .table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
   }
-  
-  .table th {
-    padding: 0.75rem;
-    text-align: left;
-    font-weight: 500;
-    color: #374151;
-    border-bottom: 1px solid #e5e7eb;
-    white-space: nowrap;
-  }
-  
-  .table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid #e5e7eb;
-  }
-  
-  .readOnlyInput {
-    width: 100%;
-    padding: 0.375rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.25rem;
-    background-color: #f9fafb;
-    color: #374151;
-    cursor: not-allowed;
-  }
-  
+
   .readOnlyHourInput {
-    width: 4rem;
-    padding: 0.375rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.25rem;
-    background-color: #f9fafb;
-    color: #374151;
-    text-align: center;
-    cursor: not-allowed;
+    width: 3rem;
   }
-  
-  .totalCell {
-    font-weight: 500;
-    text-align: center;
-  }
-  
-  .totalRow {
-    font-weight: 500;
-  }
-  
-  .statusRow {
-    background-color: white;
-  }
-  
-  .descriptionContainer {
-    margin-top: 2rem;
-    width: 100%;
-    padding: 0 1rem 1rem;
-  }
-  
-  .descriptionHeading {
-    font-size: 1.125rem;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 0.5rem;
-  }
-  
-  .descriptionTextarea {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.375rem;
-    background-color: #f9fafb;
-    color: #374151;
-    font-size: 0.875rem;
-    resize: vertical;
-    cursor: not-allowed;
-  }
-  
-  @media (max-width: 768px) {
-    .container {
-      padding: 1rem;
-    }
-  
-    .gridContainer {
-      flex-direction: column;
-    }
-  
-    .calendarSection {
-      width: 100%;
-      margin: 0;
-    }
-  
-    .table {
-      font-size: 0.75rem;
-    }
-  
-    .readOnlyHourInput {
-      width: 3rem;
-    }
-  }
+}
