@@ -2,37 +2,46 @@
 
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, User, PoundSterling, Users, Menu } from "lucide-react";
+import { LayoutDashboard, User, PoundSterling, Users, Menu, ClipboardList, LogOut } from "lucide-react";
 import styles from "./Sidebar.module.css";
 
-const menuItems = [
+// Group menu items by section
+const menuSections = [
   {
-    path: "/home-page",
-    name: "Homepage",
-    icon: LayoutDashboard,
-    component: "home",
+    heading: "Timesheet",
+    items: [
+      {
+        path: "/home-page",
+        name: "Homepage",
+        icon: ClipboardList,
+        component: "home",
+      },
+      {
+        path: "/profile-page",
+        name: "Profile",
+        icon: User,
+        component: "profile",
+      },
+    ]
   },
   {
-    path: "/profile-page",
-    name: "Profile",
-    icon: User,
-    component: "profile",
-  },
-];
-
-const adminMenuItems = [
-  {
-    path: "/employees",
-    name: "Employees",
-    icon: Users,
-    component: "adminDashboard",
-  },
-  {
-    path: "/payroll",
-    name: "Payroll",
-    icon: PoundSterling,
-    component: "payroll",
-  },
+    heading: "Manage",
+    adminOnly: true,
+    items: [
+      {
+        path: "/employees",
+        name: "Employees",
+        icon: Users,
+        component: "adminDashboard",
+      },
+      {
+        path: "/payroll",
+        name: "Payroll",
+        icon: PoundSterling,
+        component: "payroll",
+      },
+    ]
+  }
 ];
 
 type User = {
@@ -55,7 +64,9 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
         }
       }
       
-      const currentItem = [...menuItems, ...adminMenuItems].find(item => item.path === pathname);
+      // Find the current item and set the active component
+      const allItems = menuSections.flatMap(section => section.items);
+      const currentItem = allItems.find(item => item.path === pathname);
       if (currentItem) {
         onNavigate(currentItem.component);
       }
@@ -64,6 +75,12 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
     const handleItemClick = (path: string, component: string) => {
       onNavigate(component);
       router.push(path);
+    };
+
+    const handleLogout = () => {
+      localStorage.removeItem("loginResponse");
+      //window.location.replace("/");
+      window.location.href = "/";
     };
 
     return (
@@ -84,35 +101,48 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
         </div>
   
         <nav className={styles.navigation}>
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activePage === item.component;
+          {menuSections.map((section, index) => {
+            // Skip admin sections for non-admin users
+            if (section.adminOnly && user?.role !== "admin") {
+              return null;
+            }
+            
             return (
-              <button
-                key={item.path}
-                onClick={() => handleItemClick(item.path, item.component)}
-                className={`${styles.navItem} ${isActive ? styles.active : ""}`}
-              >
-                <Icon size={20} />
-                {isExpanded && <span>{item.name}</span>}
-              </button>
-            );
-          })}
-          {user?.role === "admin" && adminMenuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activePage === item.component;
-            return (
-              <button
-                key={item.path}
-                onClick={() => handleItemClick(item.path, item.component)}
-                className={`${styles.navItem} ${isActive ? styles.active : ""}`}
-              >
-                <Icon size={20} />
-                {isExpanded && <span>{item.name}</span>}
-              </button>
+              <div key={index} className={styles.section}>
+                {isExpanded ? (
+                  <h3 className={styles.sectionHeading}>{section.heading}</h3>
+                ) : (
+                  <div className={styles.sectionDivider}></div>
+                )}
+                
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activePage === item.component;
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => handleItemClick(item.path, item.component)}
+                      className={`${styles.navItem} ${isActive ? styles.active : ""}`}
+                    >
+                      <Icon size={20} />
+                      {isExpanded && <span>{item.name}</span>}
+                    </button>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>
+        
+        <div className={styles.sidebarFooter}>
+          <button
+            onClick={handleLogout}
+            className={styles.logoutButton}
+          >
+            <LogOut size={20} />
+            {isExpanded && <span>Logout</span>}
+          </button>
+        </div>
       </div>
     );
 }
