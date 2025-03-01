@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 // Paths that should be accessible without authentication
-const publicPaths = ["/"];
+const publicPaths = ["/", "/forgot-password"];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
