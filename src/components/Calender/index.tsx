@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import styles from "./Calendar.module.css"
 
 interface CalendarProps {
@@ -7,7 +7,22 @@ interface CalendarProps {
 }
 
 export default function Calendar({ selectedDate, onChange }: CalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date())
+  // Initialize currentMonth based on selectedDate
+  const [currentMonth, setCurrentMonth] = useState(
+    new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
+  )
+  
+  // This flag tracks when a user manually changes months
+  const [userChangedMonth, setUserChangedMonth] = useState(false)
+
+  // Only update currentMonth when selectedDate changes AND user hasn't manually changed months
+  useEffect(() => {
+    if (!userChangedMonth) {
+      setCurrentMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+    }
+    // Reset the flag when the effect runs
+    return () => setUserChangedMonth(false);
+  }, [selectedDate]);
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
 
@@ -41,7 +56,11 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
     days.push(
       <button
         key={day}
-        onClick={() => onChange(date)}
+        onClick={() => {
+          onChange(date)
+          // Clear the flag when a date is selected
+          setUserChangedMonth(false)
+        }}
         className={`${styles.day} ${isSelected ? styles.selected : ""} ${isToday ? styles.today : ""}`}
       >
         {day}
@@ -51,10 +70,12 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
 
   const previousMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))
+    setUserChangedMonth(true)
   }
 
   const nextMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))
+    setUserChangedMonth(true)
   }
 
   return (
@@ -83,4 +104,3 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
     </div>
   )
 }
-

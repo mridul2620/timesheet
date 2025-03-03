@@ -25,6 +25,7 @@ const EmployeeTimesheet = () => {
   const params = useParams();
   const username = params?.username as string;
 
+  // We'll preserve the exact date object between renders
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [workDescription, setWorkDescription] = useState("");
@@ -158,6 +159,11 @@ const EmployeeTimesheet = () => {
     }, 0);
   };
 
+  const handleDateChange = (date: Date) => {
+    // Set the selected date as a new date object
+    setSelectedDate(new Date(date));
+  };
+
   if (loading) return <Loader />;
 
   return (
@@ -169,7 +175,10 @@ const EmployeeTimesheet = () => {
       <div className={styles.tableContainer}>
         <div className={styles.gridContainer}>
           <div className={styles.calendarSection}>
-            <Calendar selectedDate={selectedDate} onChange={setSelectedDate} />
+            <Calendar 
+              selectedDate={selectedDate}
+              onChange={handleDateChange}
+            />
           </div>
 
           <table className={styles.table}>
