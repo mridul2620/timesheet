@@ -722,7 +722,6 @@ const EmployeesPage = () => {
   </div>
   )}
 
-  {/* Delete Confirmation Dialog */}
   {deleteConfirmation.show && (
     <div className={styles.dialogBackdrop} onClick={(e) => {
       if (e.target === e.currentTarget) hideDeleteConfirmation();

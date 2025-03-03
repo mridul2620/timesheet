@@ -122,6 +122,81 @@
   font-family: inherit;
 }
 
+.statusActionsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.timesheetStatus {
+  display: flex;
+  align-items: center;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+.statusLabel {
+  margin-right: 0.75rem;
+  color: #b9c1d9;
+}
+
+.statusValue {
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.unapproved {
+  color: #f97316;
+}
+
+.approved {
+  color: #10b981;
+}
+
+.rejected {
+  color: #ef4444;
+}
+
+.approvalActions {
+  display: flex;
+  gap: 1rem;
+}
+
+.actionButton {
+  padding: 0.625rem 1.5rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9375rem;
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.approveButton {
+  background-color: #f97316;
+  color: white;
+}
+
+.approveButton:hover:not(:disabled) {
+  background-color: #ea580c;
+}
+
+.rejectButton {
+  background-color: #ef4444;
+  color: white;
+  border: 1px solid #ef4444;
+}
+
+.rejectButton:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 1rem;
@@ -142,5 +217,20 @@
 
   .readOnlyHourInput {
     width: 3rem;
+  }
+  .statusActionsRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .approvalActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .actionButton {
+    flex: 1;
+    text-align: center;
   }
 }

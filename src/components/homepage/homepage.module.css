@@ -260,7 +260,8 @@
 
 .submitWrapper {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   padding: 1rem;
   border-top: 1px solid #2a3654;
 }
@@ -288,6 +289,39 @@
   background-color: #8c4321;
 }
 
+.timesheetStatus {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.statusLabel {
+  margin-right: 0.5rem;
+  color: #b9c1d9;
+}
+
+.statusValue {
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.unapproved {
+  background-color: #334155;
+  color: #cbd5e1;
+}
+
+.approved {
+  background-color: #065f46;
+  color: #a7f3d0;
+}
+
+.rejected {
+  background-color: #7f1d1d;
+  color: #fecaca;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 1rem;
@@ -311,7 +345,18 @@
     flex-direction: column;
   }
 
+  .submitWrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
   .submitButton {
+    width: 100%;
     margin-left: 0;
+  }
+  
+  .timesheetStatus {
+    width: 100%;
   }
 }

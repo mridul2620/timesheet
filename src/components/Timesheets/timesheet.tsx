@@ -21,11 +21,16 @@ interface User {
   designation: string;
 }
 
+interface Timesheet {
+  entries: TimeEntry[];
+  workDescription: string;
+  dayStatus: { [key: string]: string };
+  status?: string; // Added status field
+}
+
 const EmployeeTimesheet = () => {
   const params = useParams();
   const username = params?.username as string;
-
-  // We'll preserve the exact date object between renders
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [workDescription, setWorkDescription] = useState("");
@@ -33,6 +38,9 @@ const EmployeeTimesheet = () => {
   const [loading, setLoading] = useState(true);
   const [adminUser, setAdminUser] = useState<User | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
+  const [timesheetStatus, setTimesheetStatus] = useState<string>("unapproved");
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [relevantTimesheetId, setRelevantTimesheetId] = useState<string | null>(null);
 
   useEffect(() => {
     const storedData = localStorage.getItem("loginResponse");
@@ -89,7 +97,6 @@ const EmployeeTimesheet = () => {
         );
 
         if (response.data.success) {
-          // Using the same approach as homepage.tsx to find relevant timesheet
           const relevantTimesheet = response.data.timesheets.find((timesheet: any) => {
             return timesheet.entries.some((entry: any) => {
               return Object.keys(entry.hours).some((date) => {
@@ -110,16 +117,18 @@ const EmployeeTimesheet = () => {
             );
             setWorkDescription(relevantTimesheet.workDescription || "");
             setDayStatus(relevantTimesheet.dayStatus || {});
-          } else {
-            // Set empty timesheet
+            setTimesheetStatus(relevantTimesheet.timesheetStatus || "unapproved"); // Updated field name
+            setRelevantTimesheetId(relevantTimesheet._id || null);
+          }else {
             setEntries([{
               project: "",
               subject: "",
               hours: {}
             }]);
             setWorkDescription("");
-            
-            // Set default day status
+            setTimesheetStatus("unapproved");
+            setRelevantTimesheetId(null);
+       
             const newDayStatus: { [key: string]: string } = {};
             weekDates.forEach((date) => {
               const dayStr = date.toISOString().split("T")[0];
@@ -162,6 +171,37 @@ const EmployeeTimesheet = () => {
   const handleDateChange = (date: Date) => {
     // Set the selected date as a new date object
     setSelectedDate(new Date(date));
+  };
+
+  const updateTimesheetStatus = async (status: string) => {
+    if (!relevantTimesheetId || !username) return;
+    
+    setUpdatingStatus(true);
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_TIMESHEET_STATUS}${username}/status`, 
+        {
+          timesheetId: relevantTimesheetId,
+          status
+        }
+      );
+      
+      if (response.data.success) {
+        setTimesheetStatus(status);
+      }
+    } catch (error) {
+      console.error("Error updating timesheet status:", error);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleApprove = () => {
+    updateTimesheetStatus("approved");
+  };
+
+  const handleReject = () => {
+    updateTimesheetStatus("rejected");
   };
 
   if (loading) return <Loader />;
@@ -260,16 +300,40 @@ const EmployeeTimesheet = () => {
             </tbody>
           </table>
         </div>
-
-        <div className={styles.descriptionContainer}>
-          <h3 className={styles.descriptionHeading}>Work Description</h3>
-          <textarea
-            className={styles.descriptionTextarea}
-            value={workDescription}
-            readOnly
-            rows={2}
-          />
-        </div>
+      <div className={styles.descriptionContainer}>
+  <h3 className={styles.descriptionHeading}>Work Description</h3>
+  <textarea
+    className={styles.descriptionTextarea}
+    value={workDescription}
+    readOnly
+    rows={4}
+  />
+  <div className={styles.statusActionsRow}>
+    <div className={styles.timesheetStatus}>
+      <span className={styles.statusLabel}>Status:</span>
+      <span className={`${styles.statusValue} ${styles[timesheetStatus]}`}>
+        {timesheetStatus === "approved" ? "APPROVED" : 
+         timesheetStatus === "rejected" ? "REJECTED" : "UNAPPROVED"}
+      </span>
+    </div>
+    <div className={styles.approvalActions}>
+      <button 
+        className={`${styles.actionButton} ${styles.rejectButton}`}
+        onClick={handleReject}
+        disabled={updatingStatus || timesheetStatus === 'rejected'}
+      >
+        Reject
+      </button>
+      <button 
+        className={`${styles.actionButton} ${styles.approveButton}`}
+        onClick={handleApprove}
+        disabled={updatingStatus || timesheetStatus === 'approved'}
+      >
+        Approve
+      </button>
+    </div>
+  </div>
+</div>
       </div>
     </div>
   );

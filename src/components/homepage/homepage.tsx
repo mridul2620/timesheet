@@ -20,6 +20,8 @@ type Timesheet = {
   username: string;
   entries: TimeEntry[];
   workDescription: string;
+  timesheetStatus?: string;
+  dayStatus: { [key: string]: string };
 };
 
 type User = {
@@ -47,6 +49,7 @@ const HomepageContent: React.FC = () => {
   const [subjects, setSubjects] = useState<{ _id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [isWeekEditable, setIsWeekEditable] = useState(true);
+  const [timesheetStatus, setTimesheetStatus] = useState<string>("unapproved");
 
   const getWeekDates = (date: Date) => {
     const startDate = new Date(date);
@@ -160,6 +163,7 @@ const HomepageContent: React.FC = () => {
         ),
         workDescription,
         dayStatus,
+        timesheetStatus: "unapproved" // Default status for new submissions
       };
 
       const response = await axios.post(
@@ -169,6 +173,9 @@ const HomepageContent: React.FC = () => {
 
       if (response.data.message === "Timesheet submitted successfully") {
         alert("Timesheet submitted successfully!");
+        // Set the timesheet as not editable after submission
+        setIsWeekEditable(false);
+        setTimesheetStatus("unapproved");
       } else {
         alert("Failed to submit timesheet. Please try again.");
       }
@@ -234,6 +241,7 @@ const HomepageContent: React.FC = () => {
           });
 
           if (relevantTimesheet) {
+            // Timesheet exists for this week
             setIsWeekEditable(false);
             setEntries(
               relevantTimesheet.entries.map((entry: { hours: any; }) => ({
@@ -243,10 +251,15 @@ const HomepageContent: React.FC = () => {
             );
             setWorkDescription(relevantTimesheet.workDescription || "");
             setDayStatus(relevantTimesheet.dayStatus || {});
+            
+            // Set the status from the timesheet data
+            setTimesheetStatus(relevantTimesheet.timesheetStatus || "unapproved");
           } else {
+            // No timesheet for this week, reset everything
             setIsWeekEditable(true);
             setEntries([getInitialEntry()]);
             setWorkDescription("");
+            setTimesheetStatus("unapproved");
 
             const newDayStatus: { [key: string]: string } = {};
             weekDates.forEach((date) => {
@@ -409,12 +422,25 @@ const HomepageContent: React.FC = () => {
             rows={2}
           />
         </div>
-
-        <div className={styles.submitWrapper}>
-          <button className={styles.submitButton} onClick={handleSubmit} disabled={!isWeekEditable}>
-            Submit for approval
-          </button>
-        </div>
+<div className={styles.submitWrapper}>
+  {!isWeekEditable && (
+    <div className={styles.timesheetStatus}>
+      <span className={styles.statusLabel}>Timesheet Status:</span>
+      <span className={`${styles.statusValue} ${styles[timesheetStatus]}`}>
+        {timesheetStatus === "approved" ? "Approved" : 
+         timesheetStatus === "rejected" ? "Rejected" : "Pending Approval"}
+      </span>
+    </div>
+  )}
+  
+  <button 
+    className={styles.submitButton} 
+    onClick={handleSubmit} 
+    disabled={!isWeekEditable}
+  >
+    Submit for approval
+  </button>
+</div>
       </div>
     </div>
   );
