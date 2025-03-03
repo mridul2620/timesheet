@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Trash2, Plus, X, Edit, AlertTriangle } from "lucide-react";
+import { Trash2, Plus, X, Edit, AlertTriangle, Search } from "lucide-react";
 import styles from "./index.module.css";
 import Loader from "../Loader/loader";
 import Header from "../Header/header";
@@ -76,6 +76,8 @@ const initialDeleteConfirmation: DeleteConfirmation = {
 const EmployeesPage = () => {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -87,12 +89,19 @@ const EmployeesPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>(initialDeleteConfirmation);
 
+  // Sort users alphabetically by name
+  const sortUsersByName = (userArray: User[]): User[] => {
+    return [...userArray].sort((a, b) => a.name.localeCompare(b.name));
+  };
+
   const fetchUsers = async () => {
     try {
       const response = await fetch(process.env.NEXT_PUBLIC_API_URL as string);
       const data = await response.json();
       if (data.success) {
-        setUsers(data.users);
+        const sortedUsers = sortUsersByName(data.users);
+        setUsers(sortedUsers);
+        setFilteredUsers(sortedUsers);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -112,6 +121,26 @@ const EmployeesPage = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // Filter users based on search term and sort alphabetically
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredUsers(users); // Users are already sorted
+    } else {
+      const term = searchTerm.toLowerCase();
+      const filtered = users.filter(
+        user => 
+          user.name.toLowerCase().includes(term) || 
+          user.username.toLowerCase().includes(term)
+      );
+      // No need to sort again as we're filtering from an already sorted array
+      setFilteredUsers(filtered);
+    }
+  }, [searchTerm, users]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
 
   const getInitials = (name: string = "") => {
     if (!name) return "";
@@ -332,7 +361,12 @@ const EmployeesPage = () => {
       });
 
       if (response.ok) {
-        setUsers(users.filter((user) => user._id !== userId));
+        // Remove user from both lists and maintain sorting
+        const updatedUsers = users.filter((user) => user._id !== userId);
+        setUsers(updatedUsers);
+        setFilteredUsers(
+          filteredUsers.filter((user) => user._id !== userId)
+        );
         hideDeleteConfirmation();
       } else {
         console.error('Failed to delete user');
@@ -355,12 +389,24 @@ const EmployeesPage = () => {
         <div className={styles.teamHeader}>
           <div>
             <span className={styles.title}>Team</span>
-            <span className={styles.userCount}>({users.length} users)</span>
+            <span className={styles.userCount}>({filteredUsers.length} users)</span>
           </div>
-          <button className={styles.inviteButton} onClick={handleOpenDialog}>
-            <Plus size={16} />
-            Add User
-          </button>
+          <div className={styles.headerActions}>
+            <div className={styles.searchContainer}>
+              <Search size={18} className={styles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Search by name or username"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className={styles.searchInput}
+              />
+            </div>
+            <button className={styles.inviteButton} onClick={handleOpenDialog}>
+              <Plus size={16} />
+              Add User
+            </button>
+          </div>
         </div>
 
         <table className={styles.table}>
@@ -374,46 +420,54 @@ const EmployeesPage = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user._id}>
-                <td>
-                  <div 
-                    className={styles.avatarContainer}
-                    onClick={() => navigateToTimesheet(user.username)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className={styles.avatar}>
-                      {getInitials(user?.name)}
-                    </div>
-                    <div className={styles.nameContainer}>
-                      <span>{user?.name}</span>
-                      <span className={styles.username}>@{user?.username}</span>
-                    </div>
-                  </div>
-                </td>
-                <td>{user?.email}</td>
-                <td>{user?.designation}</td>
-                <td>{user?.active ? 'Active' : 'Non-active'}</td>
-                <td>
-                  <div className={styles.actionButtons}>
-                    <button
-                      className={styles.editButton}
-                      onClick={() => handleOpenEditDialog(user)}
-                      aria-label="Edit user"
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
+                <tr key={user._id}>
+                  <td>
+                    <div 
+                      className={styles.avatarContainer}
+                      onClick={() => navigateToTimesheet(user.username)}
+                      style={{ cursor: 'pointer' }}
                     >
-                      <Edit size={14} />
-                    </button>
-                    <button
-                      className={styles.deleteButton}
-                      onClick={() => showDeleteConfirmation(user.username, user._id, user.name)}
-                      aria-label="Delete user"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                      <div className={styles.avatar}>
+                        {getInitials(user?.name)}
+                      </div>
+                      <div className={styles.nameContainer}>
+                        <span>{user?.name}</span>
+                        <span className={styles.username}>@{user?.username}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{user?.email}</td>
+                  <td>{user?.designation}</td>
+                  <td>{user?.active ? 'Active' : 'Non-active'}</td>
+                  <td>
+                    <div className={styles.actionButtons}>
+                      <button
+                        className={styles.editButton}
+                        onClick={() => handleOpenEditDialog(user)}
+                        aria-label="Edit user"
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button
+                        className={styles.deleteButton}
+                        onClick={() => showDeleteConfirmation(user.username, user._id, user.name)}
+                        aria-label="Delete user"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className={styles.noResults}>
+                  No users found matching search criteria
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </main>
