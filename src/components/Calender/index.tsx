@@ -7,20 +7,16 @@ interface CalendarProps {
 }
 
 export default function Calendar({ selectedDate, onChange }: CalendarProps) {
-  // Initialize currentMonth based on selectedDate
   const [currentMonth, setCurrentMonth] = useState(
     new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
   )
-  
-  // This flag tracks when a user manually changes months
+
   const [userChangedMonth, setUserChangedMonth] = useState(false)
 
-  // Only update currentMonth when selectedDate changes AND user hasn't manually changed months
   useEffect(() => {
     if (!userChangedMonth) {
       setCurrentMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
     }
-    // Reset the flag when the effect runs
     return () => setUserChangedMonth(false);
   }, [selectedDate]);
 
@@ -58,7 +54,6 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
         key={day}
         onClick={() => {
           onChange(date)
-          // Clear the flag when a date is selected
           setUserChangedMonth(false)
         }}
         className={`${styles.day} ${isSelected ? styles.selected : ""} ${isToday ? styles.today : ""}`}
