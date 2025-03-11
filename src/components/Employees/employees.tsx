@@ -380,7 +380,7 @@ const EmployeesPage = () => {
     router.push(`/timesheets/${username}`);
   };
   
-  if (loading) return <Loader />;
+  if (loading) return <Loader message="Loading Users..." />;
 
   return (
     <div className={styles.pagecontainer}>
@@ -491,7 +491,7 @@ const EmployeesPage = () => {
       
       {isSubmitting ? (
         <div className={styles.loaderContainer}>
-          <Loader />
+          <Loader message="Adding User..." />
         </div>
       ) : (
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -614,7 +614,7 @@ const EmployeesPage = () => {
       
       {isSubmitting ? (
         <div className={styles.loaderContainer}>
-          <Loader />
+          <Loader message="Updating User..." />
         </div>
       ) : (
         <form onSubmit={handleEditSubmit} className={styles.form}>

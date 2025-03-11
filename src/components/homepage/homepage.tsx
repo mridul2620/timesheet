@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, CheckCircle, AlertTriangle, X } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import styles from "./homepage.module.css";
@@ -18,10 +18,11 @@ type TimeEntry = {
 type Timesheet = {
   _id: string;
   username: string;
+  weekStartDate: string;
   entries: TimeEntry[];
   workDescription: string;
   timesheetStatus?: string;
-  dayStatus: { [key: string]: string };
+  dayStatus?: { [key: string]: string };
 };
 
 type User = {
@@ -30,6 +31,13 @@ type User = {
   email: string;
   role: string;
   designation: string;
+};
+
+type DialogData = {
+  show: boolean;
+  title: string;
+  message: string;
+  isError: boolean;
 };
 
 const HomepageContent: React.FC = () => {
@@ -48,12 +56,21 @@ const HomepageContent: React.FC = () => {
   const [projects, setProjects] = useState<{ _id: string; name: string }[]>([]);
   const [subjects, setSubjects] = useState<{ _id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [isWeekEditable, setIsWeekEditable] = useState(true);
   const [timesheetStatus, setTimesheetStatus] = useState<string>("unapproved");
+  const [currentTimesheetId, setCurrentTimesheetId] = useState<string>("");
+  const [weekStartDate, setWeekStartDate] = useState<string>("");
+  const [dialogData, setDialogData] = useState<DialogData>({
+    show: false,
+    title: "",
+    message: "",
+    isError: false,
+  });
 
   const getWeekDates = (date: Date) => {
     const startDate = new Date(date);
-    startDate.setDate(date.getDate() - date.getDay() + 1);
+    startDate.setDate(date.getDate() - date.getDay() + 1); // Get Monday of the week
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(startDate);
       d.setDate(startDate.getDate() + i);
@@ -68,6 +85,38 @@ const HomepageContent: React.FC = () => {
   };
 
   const weekDates = getWeekDates(selectedDate);
+
+  // Show dialog with message
+  const showDialog = (title: string, message: string, isError: boolean = false) => {
+    setDialogData({
+      show: true,
+      title,
+      message,
+      isError,
+    });
+  };
+
+  // Close dialog
+  const closeDialog = () => {
+    setDialogData({
+      ...dialogData,
+      show: false,
+    });
+  };
+
+  // Initialize or update default day statuses when week changes
+  useEffect(() => {
+    // Only create new day statuses if there isn't already data for this week
+    if (Object.keys(dayStatus).length === 0) {
+      const newDayStatus: { [key: string]: string } = {};
+      weekDates.forEach((date) => {
+        const dayStr = date.toISOString().split("T")[0];
+        const dayOfWeek = date.getDay();
+        newDayStatus[dayStr] = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
+      });
+      setDayStatus(newDayStatus);
+    }
+  }, [weekDates]);
 
   const calculateDayTotal = (date: Date) => {
     const dayStr = date.toISOString().split("T")[0];
@@ -142,7 +191,7 @@ const HomepageContent: React.FC = () => {
   const handleSubmit = async () => {
     try {
       if (!user?.username) {
-        alert("User information is missing");
+        showDialog("Error", "User information is missing", true);
         return;
       }
 
@@ -151,41 +200,90 @@ const HomepageContent: React.FC = () => {
       );
 
       if (!hasEntries) {
-        alert("Please add at least one time entry");
+        showDialog("Error", "Please add at least one time entry", true);
         return;
       }
 
+      // Show loader while submitting
+      setSubmitting(true);
+
+      // Ensure we have day status for all days in the week
+      const updatedDayStatus = { ...dayStatus };
+      weekDates.forEach((date) => {
+        const dayStr = date.toISOString().split("T")[0];
+        if (!updatedDayStatus[dayStr]) {
+          const dayOfWeek = date.getDay();
+          updatedDayStatus[dayStr] = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
+        }
+      });
+
+      // Prepare the timesheet data
       const timesheetData = {
         username: user.username,
-        weekStartDate: selectedDate.toISOString().split("T")[0],
         entries: entries.filter((entry) =>
           Object.values(entry.hours).some((h) => h !== "")
         ),
         workDescription,
-        dayStatus,
-        timesheetStatus: "unapproved" // Default status for new submissions
+        dayStatus: updatedDayStatus, // Ensure we're sending complete day status
       };
 
-      const response = await axios.post(
-        process.env.NEXT_PUBLIC_SUBMIT_API as string,
-        timesheetData
-      );
-
-      if (response.data.message === "Timesheet submitted successfully") {
-        alert("Timesheet submitted successfully!");
-        // Set the timesheet as not editable after submission
-        setIsWeekEditable(false);
-        setTimesheetStatus("unapproved");
+      let response;
+      
+      if (timesheetStatus === "rejected" && currentTimesheetId) {
+        // Update existing rejected timesheet
+        response = await axios.put(
+          `${process.env.NEXT_PUBLIC_UPDATE_TIMESHEET_API || '/api/timesheet/update'}/${currentTimesheetId}`,
+          timesheetData
+        );
+        
+        if (response.data.success) {
+          showDialog("Success", "Timesheet updated and resubmitted successfully!");
+          // Keep the timesheet data but make it non-editable
+          setTimesheetStatus("unapproved");
+          setIsWeekEditable(false);
+          
+          // Refresh data to get the updated state from the server
+          await fetchTimesheetForCurrentWeek();
+        } else {
+          showDialog("Error", "Failed to update timesheet. Please try again.", true);
+        }
       } else {
-        alert("Failed to submit timesheet. Please try again.");
+        // Submit new timesheet
+        const newTimesheetData = {
+          ...timesheetData,
+          weekStartDate: weekDates[0].toISOString().split("T")[0],
+          timesheetStatus: "unapproved"
+        };
+        
+        response = await axios.post(
+          process.env.NEXT_PUBLIC_SUBMIT_API as string,
+          newTimesheetData
+        );
+
+        if (response.data.message === "Timesheet submitted successfully") {
+          showDialog("Success", "Timesheet submitted successfully!");
+          setIsWeekEditable(false);
+          setTimesheetStatus("unapproved");
+          
+          // Refresh data to get the saved state from the server
+          await fetchTimesheetForCurrentWeek();
+        } else {
+          showDialog("Error", "Failed to submit timesheet. Please try again.", true);
+        }
       }
     } catch (error) {
-      console.error("Error submitting timesheet:", error);
+      console.error("Error submitting/updating timesheet:", error);
       if (axios.isAxiosError(error)) {
-        alert(`Error: ${error.response?.data?.message || "An unknown error occurred"}`);
+        showDialog(
+          "Error", 
+          `Failed to submit timesheet: ${error.response?.data?.message || "An unknown error occurred"}`,
+          true
+        );
       } else {
-        alert("An error occurred while submitting the timesheet.");
+        showDialog("Error", "An error occurred while submitting the timesheet.", true);
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -219,48 +317,62 @@ const HomepageContent: React.FC = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const fetchTimesheet = async () => {
-      if (!user?.username) return;
+  const fetchTimesheetForCurrentWeek = async () => {
+    if (!user?.username) return;
 
-      try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_GET_TIMESHEET_API}/${user.username}`
-        );
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_GET_TIMESHEET_API}/${user.username}`
+      );
 
-        if (response.data.success) {
-          const relevantTimesheet = response.data.timesheets.find((timesheet: Timesheet) => {
-            return timesheet.entries.some((entry) => {
-              return Object.keys(entry.hours).some((date) => {
-                const entryDate = new Date(date);
-                const weekStart = getWeekDates(selectedDate)[0];
-                const weekEnd = getWeekDates(selectedDate)[6];
-                return entryDate >= weekStart && entryDate <= weekEnd;
-              });
+      if (response.data.success) {
+        const weekDaysArray = weekDates.map(date => date.toISOString().split('T')[0]);
+        setWeekStartDate(weekDaysArray[0]);
+        
+        // First try to find by weekStartDate matching the Monday of selected week
+        let relevantTimesheet = response.data.timesheets.find((timesheet: Timesheet) => {
+          // Get Monday of the selected week
+          const selectedWeekMonday = weekDates[0].toISOString().split('T')[0];
+          return timesheet.weekStartDate === selectedWeekMonday;
+        });
+        
+        // If not found by weekStartDate, try to find by any entry with hours in this week
+        if (!relevantTimesheet) {
+          relevantTimesheet = response.data.timesheets.find((timesheet: Timesheet) => {
+            // Check if this timesheet has any entries with hours in the selected week
+            return timesheet.entries.some((entry: TimeEntry) => {
+              return Object.keys(entry.hours).some(dateStr => 
+                weekDaysArray.includes(dateStr)
+              );
             });
           });
+        }
 
-          if (relevantTimesheet) {
-            // Timesheet exists for this week
-            setIsWeekEditable(false);
-            setEntries(
-              relevantTimesheet.entries.map((entry: { hours: any; }) => ({
-                ...entry,
-                hours: entry.hours || {},
-              }))
-            );
-            setWorkDescription(relevantTimesheet.workDescription || "");
-            setDayStatus(relevantTimesheet.dayStatus || {});
-            
-            // Set the status from the timesheet data
-            setTimesheetStatus(relevantTimesheet.timesheetStatus || "unapproved");
-          } else {
-            // No timesheet for this week, reset everything
+        if (relevantTimesheet) {
+          // Timesheet exists for this week
+          setCurrentTimesheetId(relevantTimesheet._id);
+          
+          // If timesheet is rejected, make it editable
+          if (relevantTimesheet.timesheetStatus === "rejected") {
             setIsWeekEditable(true);
-            setEntries([getInitialEntry()]);
-            setWorkDescription("");
-            setTimesheetStatus("unapproved");
-
+          } else {
+            setIsWeekEditable(false);
+          }
+          
+          setEntries(
+            relevantTimesheet.entries.map((entry: TimeEntry) => ({
+              ...entry,
+              hours: entry.hours || {},
+            }))
+          );
+          setWorkDescription(relevantTimesheet.workDescription || "");
+          
+          // Handle case where dayStatus may be missing in the API response
+          if (relevantTimesheet.dayStatus) {
+            setDayStatus(relevantTimesheet.dayStatus);
+          } else {
+            // Create default day statuses if needed
             const newDayStatus: { [key: string]: string } = {};
             weekDates.forEach((date) => {
               const dayStr = date.toISOString().split("T")[0];
@@ -269,21 +381,89 @@ const HomepageContent: React.FC = () => {
             });
             setDayStatus(newDayStatus);
           }
-        }
-      } catch (error) {
-        console.error("Error fetching timesheet:", error);
-      }
-    };
+          
+          setTimesheetStatus(relevantTimesheet.timesheetStatus || "unapproved");
+        } else {
+          // No timesheet for this week, reset everything
+          setCurrentTimesheetId("");
+          setIsWeekEditable(true);
+          setEntries([getInitialEntry()]);
+          setWorkDescription("");
+          setTimesheetStatus("unapproved");
 
-    fetchTimesheet();
+          const newDayStatus: { [key: string]: string } = {};
+          weekDates.forEach((date) => {
+            const dayStr = date.toISOString().split("T")[0];
+            const dayOfWeek = date.getDay();
+            newDayStatus[dayStr] = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
+          });
+          setDayStatus(newDayStatus);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching timesheet:", error);
+      showDialog("Error", "Failed to fetch timesheet data. Please try again.", true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTimesheetForCurrentWeek();
   }, [selectedDate, user?.username]);
 
-  if (loading) return <Loader />;
+  // Dialog component
+  const Dialog = () => {
+    if (!dialogData.show) return null;
+    
+    return (
+      <div className={styles.dialogOverlay}>
+        <div className={styles.dialogContent}>
+          <div className={styles.dialogHeader}>
+            <div className={styles.dialogTitle}>
+              {dialogData.isError ? (
+                <AlertTriangle size={24} className={styles.dialogIconError} />
+              ) : (
+                <CheckCircle size={24} className={styles.dialogIconSuccess} />
+              )}
+              <h3>{dialogData.title}</h3>
+            </div>
+            <button className={styles.dialogCloseButton} onClick={closeDialog}>
+              <X size={18} />
+            </button>
+          </div>
+          <div className={styles.dialogBody}>
+            <p>{dialogData.message}</p>
+          </div>
+          <div className={styles.dialogFooter}>
+            <button 
+              className={`${styles.dialogButton} ${dialogData.isError ? styles.dialogButtonError : styles.dialogButtonSuccess}`} 
+              onClick={closeDialog}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) return <Loader message="Loading timesheet..." />;
+  if (submitting) return <Loader message="Submitting timesheet..." />;
 
   return (
     <div className={styles.container}>
       <Header title="Timesheet" user={user} />
+      
+      <Dialog />
+      
       <div className={styles.tableContainer}>
+        {timesheetStatus === "rejected" && (
+          <div className={styles.rejectionBanner}>
+            <span>This timesheet was rejected. Please make the necessary corrections and resubmit.</span>
+          </div>
+        )}
+        
         <div className={styles.gridContainer}>
           <div className={styles.calendarSection}>
             <Calendar selectedDate={selectedDate} onChange={setSelectedDate} />
@@ -388,11 +568,12 @@ const HomepageContent: React.FC = () => {
                   const dayStr = date.toISOString().split("T")[0];
                   const dayOfWeek = date.getDay();
                   const defaultStatus = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
+                  const currentStatus = dayStatus[dayStr] || defaultStatus;
 
                   return (
                     <td key={dayStr}>
                       <select
-                        value={dayStatus[dayStr] || defaultStatus}
+                        value={currentStatus}
                         onChange={(e) => handleStatusChange(dayStr, e.target.value)}
                         className={styles.select}
                         disabled={!isWeekEditable}
@@ -422,25 +603,25 @@ const HomepageContent: React.FC = () => {
             rows={2}
           />
         </div>
-<div className={styles.submitWrapper}>
-  {!isWeekEditable && (
-    <div className={styles.timesheetStatus}>
-      <span className={styles.statusLabel}>Timesheet Status:</span>
-      <span className={`${styles.statusValue} ${styles[timesheetStatus]}`}>
-        {timesheetStatus === "approved" ? "Approved" : 
-         timesheetStatus === "rejected" ? "Rejected" : "Pending Approval"}
-      </span>
-    </div>
-  )}
-  
-  <button 
-    className={styles.submitButton} 
-    onClick={handleSubmit} 
-    disabled={!isWeekEditable}
-  >
-    Submit for approval
-  </button>
-</div>
+        <div className={styles.submitWrapper}>
+          {!isWeekEditable && (
+            <div className={styles.timesheetStatus}>
+              <span className={styles.statusLabel}>Timesheet Status:</span>
+              <span className={`${styles.statusValue} ${styles[timesheetStatus]}`}>
+                {timesheetStatus === "approved" ? "Approved" : 
+                 timesheetStatus === "rejected" ? "Rejected" : "Pending Approval"}
+              </span>
+            </div>
+          )}
+          
+          <button 
+            className={styles.submitButton} 
+            onClick={handleSubmit} 
+            disabled={!isWeekEditable}
+          >
+            {timesheetStatus === "rejected" ? "Resubmit for approval" : "Submit for approval"}
+          </button>
+        </div>
       </div>
     </div>
   );
