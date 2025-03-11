@@ -322,7 +322,281 @@
   color: #fecaca;
 }
 
-/* New dialog styling */
+/* New analytics section styling */
+.analyticsSection {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #2a3654;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.analyticsTitle {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #b9c1d9;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.chartsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: space-between; 
+  width: 100%; 
+}
+
+.chartCard {
+  flex: 1;
+  min-width: 280px;
+  max-width: calc(50% - 1rem);
+  background-color: #1a2b4a;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #2a3654;
+}
+
+.chartHeader {
+  padding: 1rem;
+  border-bottom: 1px solid #2a3654;
+}
+
+.chartTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chartTitle h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.chartIcon {
+  color: #f97316;
+}
+
+.barChartContainer {
+  padding: 1.5rem;
+  height: 280px;
+  display: flex;
+}
+
+.yAxis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-right: 0.75rem;
+  color: #b9c1d9;
+  font-size: 0.75rem;
+  width: 2.5rem;
+  text-align: right;
+}
+
+.barChart {
+  flex: 1;
+  display: flex;
+  justify-content: space-around;
+  height: 220px;
+  border-bottom: 1px solid #2a3654;
+  position: relative;
+}
+
+.barChart::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(to bottom, 
+    rgba(42, 54, 84, 0.5) 0%, 
+    rgba(42, 54, 84, 0.5) 1px, 
+    transparent 1px, 
+    transparent 20%,
+    rgba(42, 54, 84, 0.5) 20%, 
+    rgba(42, 54, 84, 0.5) 21px, 
+    transparent 21px, 
+    transparent 40%,
+    rgba(42, 54, 84, 0.5) 40%, 
+    rgba(42, 54, 84, 0.5) 41px, 
+    transparent 41px, 
+    transparent 60%,
+    rgba(42, 54, 84, 0.5) 60%, 
+    rgba(42, 54, 84, 0.5) 61px, 
+    transparent 61px, 
+    transparent 80%,
+    rgba(42, 54, 84, 0.5) 80%, 
+    rgba(42, 54, 84, 0.5) 81px, 
+    transparent 81px, 
+    transparent 100%);
+  pointer-events: none;
+}
+
+.barColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  position: relative;
+}
+
+.barWrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.bar {
+  width: 24px;
+  max-width: 90%;
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  margin-top: auto;
+}
+
+.barValue {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: #b9c1d9;
+  white-space: nowrap;
+}
+
+.barLabel {
+  margin-top: 0.5rem;
+  color: #b9c1d9;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.pieChartContainer {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: A1.5rem;
+}
+
+.pieChart {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.pieChartSvg {
+  width: 100%;
+  height: auto;
+  transform: rotate(-90deg);
+}
+
+.pieChartSvg text {
+  transform: rotate(90deg);
+  fill: #fff;
+}
+
+.pieChartSvg path {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.pieChartSvg path:hover {
+  opacity: 0.8;
+  transform: scale(1.03) translateX(1%) translateY(1%);
+}
+
+.projectCount {
+  font-size: 24px;
+  font-weight: bold;
+  fill: white;
+}
+
+.projectLabel {
+  font-size: 12px;
+  fill: #b9c1d9;
+}
+
+.pieSegment {
+  transition: opacity 0.2s ease;
+}
+
+.pieSegment:hover {
+  opacity: 0.8;
+}
+
+.segmentTooltip {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  white-space: nowrap;
+}
+.projectHoverLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(12, 30, 53, 0.8);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: white;
+  pointer-events: none;
+  z-index: 10;
+  border: 1px solid #2a3654;
+}
+
+.pieChartLegend {
+  display: flex;
+  width: 50%;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.legendText {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.legendTitle {
+  font-size: 0.875rem;
+  color: #fff;
+}
+
+.legendValue {
+  font-size: 0.75rem;
+  color: #b9c1d9;
+}
+
 .dialogOverlay {
   position: fixed;
   top: 0;
@@ -484,7 +758,43 @@
   opacity: 0.8;
 }
 
-/* Responsive adjustments */
+/* Custom loader styling */
+.loaderContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(12, 30, 53, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.loaderMessage {
+  color: #fff;
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #2a3654;
+  border-top: 4px solid #f97316;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive styling */
 @media (max-width: 768px) {
   .container {
     padding: 1rem;
@@ -523,6 +833,15 @@
     width: 100%;
   }
 
+  .chartsContainer {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .chartCard {
+    width: 100%;
+  }
+  
   .dialogContent {
     width: 95%;
     max-width: 95%;
@@ -533,9 +852,4 @@
     align-items: flex-start;
     gap: 0.5rem;
   }
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }

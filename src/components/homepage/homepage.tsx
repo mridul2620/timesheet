@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Plus, Trash2, CheckCircle, AlertTriangle, X } from "lucide-react";
+import { Plus, Trash2, CheckCircle, AlertTriangle, X, BarChart3, PieChart } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import styles from "./homepage.module.css";
@@ -40,6 +40,18 @@ type DialogData = {
   isError: boolean;
 };
 
+type DailyHours = {
+  day: string;
+  abbreviation: string;
+  hours: number;
+};
+
+type ProjectHours = {
+  project: string;
+  hours: number;
+  color: string;
+};
+
 const HomepageContent: React.FC = () => {
   const getInitialEntry = (): TimeEntry => ({
     id: "1",
@@ -61,6 +73,9 @@ const HomepageContent: React.FC = () => {
   const [timesheetStatus, setTimesheetStatus] = useState<string>("unapproved");
   const [currentTimesheetId, setCurrentTimesheetId] = useState<string>("");
   const [weekStartDate, setWeekStartDate] = useState<string>("");
+  const [hasTimesheetData, setHasTimesheetData] = useState(false);
+  const [dailyHoursData, setDailyHoursData] = useState<DailyHours[]>([]);
+  const [projectHoursData, setProjectHoursData] = useState<ProjectHours[]>([]);
   const [dialogData, setDialogData] = useState<DialogData>({
     show: false,
     title: "",
@@ -68,9 +83,22 @@ const HomepageContent: React.FC = () => {
     isError: false,
   });
 
+  const projectColors = [
+    "#3b82f6", // Blue
+    "#22d3ee", // Cyan
+    "#f97316", // Orange
+    "#a855f7", // Purple
+    "#06b6d4", // Light blue
+    "#10b981", // Green
+    "#f59e0b", // Amber
+    "#ef4444", // Red
+    "#8b5cf6", // Indigo
+    "#ec4899", // Pink
+  ];
+
   const getWeekDates = (date: Date) => {
     const startDate = new Date(date);
-    startDate.setDate(date.getDate() - date.getDay() + 1); // Get Monday of the week
+    startDate.setDate(date.getDate() - date.getDay() + 1);
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(startDate);
       d.setDate(startDate.getDate() + i);
@@ -86,7 +114,70 @@ const HomepageContent: React.FC = () => {
 
   const weekDates = getWeekDates(selectedDate);
 
-  // Show dialog with message
+  useEffect(() => {
+    if (entries.length > 0 && entries[0].project) {
+      setHasTimesheetData(true);
+      calculateDailyHoursData();
+      calculateProjectHoursData();
+    } else {
+      setHasTimesheetData(false);
+    }
+  }, [entries]);
+
+  const calculateDailyHoursData = () => {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const abbreviations = ["S", "M", "T", "W", "T", "F", "S"];
+    
+    const dailyData: DailyHours[] = weekDates.map((date, index) => {
+      const dayStr = date.toISOString().split("T")[0];
+      const dayHours = entries.reduce((total, entry) => {
+        const hours = Number.parseFloat(entry.hours[dayStr] || "0");
+        return total + hours;
+      }, 0);
+
+      return {
+        day: days[date.getDay()],
+        abbreviation: abbreviations[date.getDay()],
+        hours: dayHours
+      };
+    });
+
+    console.log(dailyData);
+
+    setDailyHoursData(dailyData);
+  };
+
+  const calculateProjectHoursData = () => {
+    const projectDataMap = new Map<string, number>();
+
+    entries.forEach(entry => {
+      if (entry.project) {
+        const projectHours = Object.values(entry.hours).reduce((total, hours) => {
+          return total + Number.parseFloat(hours || "0");
+        }, 0);
+
+        if (projectHours > 0) {
+          const currentHours = projectDataMap.get(entry.project) || 0;
+          projectDataMap.set(entry.project, currentHours + projectHours);
+        }
+      }
+    });
+
+    const projectData: ProjectHours[] = Array.from(projectDataMap).map(([project, hours], index) => ({
+      project,
+      hours,
+      color: projectColors[index % projectColors.length]
+    }));
+
+    setProjectHoursData(projectData);
+  };
+
+  const formatHoursAndMinutes = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}h ${m}m`;
+  };
+
   const showDialog = (title: string, message: string, isError: boolean = false) => {
     setDialogData({
       show: true,
@@ -96,7 +187,6 @@ const HomepageContent: React.FC = () => {
     });
   };
 
-  // Close dialog
   const closeDialog = () => {
     setDialogData({
       ...dialogData,
@@ -104,9 +194,7 @@ const HomepageContent: React.FC = () => {
     });
   };
 
-  // Initialize or update default day statuses when week changes
   useEffect(() => {
-    // Only create new day statuses if there isn't already data for this week
     if (Object.keys(dayStatus).length === 0) {
       const newDayStatus: { [key: string]: string } = {};
       weekDates.forEach((date) => {
@@ -204,10 +292,8 @@ const HomepageContent: React.FC = () => {
         return;
       }
 
-      // Show loader while submitting
       setSubmitting(true);
 
-      // Ensure we have day status for all days in the week
       const updatedDayStatus = { ...dayStatus };
       weekDates.forEach((date) => {
         const dayStr = date.toISOString().split("T")[0];
@@ -217,20 +303,18 @@ const HomepageContent: React.FC = () => {
         }
       });
 
-      // Prepare the timesheet data
       const timesheetData = {
         username: user.username,
         entries: entries.filter((entry) =>
           Object.values(entry.hours).some((h) => h !== "")
         ),
         workDescription,
-        dayStatus: updatedDayStatus, // Ensure we're sending complete day status
+        dayStatus: updatedDayStatus,
       };
 
       let response;
       
       if (timesheetStatus === "rejected" && currentTimesheetId) {
-        // Update existing rejected timesheet
         response = await axios.put(
           `${process.env.NEXT_PUBLIC_UPDATE_TIMESHEET_API || '/api/timesheet/update'}/${currentTimesheetId}`,
           timesheetData
@@ -238,17 +322,13 @@ const HomepageContent: React.FC = () => {
         
         if (response.data.success) {
           showDialog("Success", "Timesheet updated and resubmitted successfully!");
-          // Keep the timesheet data but make it non-editable
           setTimesheetStatus("unapproved");
           setIsWeekEditable(false);
-          
-          // Refresh data to get the updated state from the server
           await fetchTimesheetForCurrentWeek();
         } else {
           showDialog("Error", "Failed to update timesheet. Please try again.", true);
         }
       } else {
-        // Submit new timesheet
         const newTimesheetData = {
           ...timesheetData,
           weekStartDate: weekDates[0].toISOString().split("T")[0],
@@ -264,8 +344,7 @@ const HomepageContent: React.FC = () => {
           showDialog("Success", "Timesheet submitted successfully!");
           setIsWeekEditable(false);
           setTimesheetStatus("unapproved");
-          
-          // Refresh data to get the saved state from the server
+
           await fetchTimesheetForCurrentWeek();
         } else {
           showDialog("Error", "Failed to submit timesheet. Please try again.", true);
@@ -329,18 +408,14 @@ const HomepageContent: React.FC = () => {
       if (response.data.success) {
         const weekDaysArray = weekDates.map(date => date.toISOString().split('T')[0]);
         setWeekStartDate(weekDaysArray[0]);
-        
-        // First try to find by weekStartDate matching the Monday of selected week
+
         let relevantTimesheet = response.data.timesheets.find((timesheet: Timesheet) => {
-          // Get Monday of the selected week
           const selectedWeekMonday = weekDates[0].toISOString().split('T')[0];
           return timesheet.weekStartDate === selectedWeekMonday;
         });
-        
-        // If not found by weekStartDate, try to find by any entry with hours in this week
+      
         if (!relevantTimesheet) {
           relevantTimesheet = response.data.timesheets.find((timesheet: Timesheet) => {
-            // Check if this timesheet has any entries with hours in the selected week
             return timesheet.entries.some((entry: TimeEntry) => {
               return Object.keys(entry.hours).some(dateStr => 
                 weekDaysArray.includes(dateStr)
@@ -350,10 +425,7 @@ const HomepageContent: React.FC = () => {
         }
 
         if (relevantTimesheet) {
-          // Timesheet exists for this week
           setCurrentTimesheetId(relevantTimesheet._id);
-          
-          // If timesheet is rejected, make it editable
           if (relevantTimesheet.timesheetStatus === "rejected") {
             setIsWeekEditable(true);
           } else {
@@ -368,11 +440,9 @@ const HomepageContent: React.FC = () => {
           );
           setWorkDescription(relevantTimesheet.workDescription || "");
           
-          // Handle case where dayStatus may be missing in the API response
           if (relevantTimesheet.dayStatus) {
             setDayStatus(relevantTimesheet.dayStatus);
           } else {
-            // Create default day statuses if needed
             const newDayStatus: { [key: string]: string } = {};
             weekDates.forEach((date) => {
               const dayStr = date.toISOString().split("T")[0];
@@ -383,13 +453,14 @@ const HomepageContent: React.FC = () => {
           }
           
           setTimesheetStatus(relevantTimesheet.timesheetStatus || "unapproved");
+          setHasTimesheetData(true);
         } else {
-          // No timesheet for this week, reset everything
           setCurrentTimesheetId("");
           setIsWeekEditable(true);
           setEntries([getInitialEntry()]);
           setWorkDescription("");
           setTimesheetStatus("unapproved");
+          setHasTimesheetData(false);
 
           const newDayStatus: { [key: string]: string } = {};
           weekDates.forEach((date) => {
@@ -412,7 +483,159 @@ const HomepageContent: React.FC = () => {
     fetchTimesheetForCurrentWeek();
   }, [selectedDate, user?.username]);
 
-  // Dialog component
+  const BarChartComponent = () => {
+    const maxHours = Math.max(...dailyHoursData.map(day => day.hours), 10);
+    
+    return (
+      <div className={styles.chartCard}>
+        <div className={styles.chartHeader}>
+          <div className={styles.chartTitle}>
+            <BarChart3 size={18} className={styles.chartIcon} />
+            <h3>Work load report</h3>
+          </div>
+        </div>
+        <div className={styles.barChartContainer}>
+          <div className={styles.yAxis}>
+            <div>{Math.round(maxHours)}h</div>
+            <div>{Math.round(maxHours * 0.8)}h</div>
+            <div>{Math.round(maxHours * 0.6)}h</div>
+            <div>{Math.round(maxHours * 0.4)}h</div>
+            <div>{Math.round(maxHours * 0.2)}h</div>
+            <div>0h</div>
+          </div>
+          <div className={styles.barChart}>
+            {dailyHoursData.map((day, index) => {
+              const heightPercentage = day.hours > 0 
+                ? Math.max((day.hours / maxHours) * 100, 1)
+                : 0;
+                
+              return (
+                <div key={index} className={styles.barColumn}>
+                  <div 
+                    className={styles.barWrapper}
+                    style={{ height: '100%' }}
+                  >
+                    <div 
+                      className={styles.bar}
+                      style={{ 
+                        height: `${heightPercentage}%`,
+                        backgroundColor: day.hours > 0 
+                          ? (index === 1 || index === 4 ? '#22d3ee' : '#3b82f6') 
+                          : 'transparent'
+                      }}
+                    >
+                      {day.hours > 0 && (
+                        <span className={styles.barValue}>{day.hours}h</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className={styles.barLabel}>{day.abbreviation}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const PieChartComponent = () => {
+  const [hoveredSegment, setHoveredSegment] = useState<number | null>(null);
+  const totalHours = projectHoursData.reduce((sum, project) => sum + project.hours, 0);
+  const projectCount = projectHoursData.length;
+    
+  let cumulativePercentage = 0;
+  const segments = projectHoursData.map((project, index) => {
+    const percentage = (project.hours / totalHours) * 100;
+    const startAngle = cumulativePercentage;
+    cumulativePercentage += percentage;
+    const endAngle = cumulativePercentage;
+    const startX = 50 + 40 * Math.cos((startAngle / 100) * 2 * Math.PI - Math.PI/2);
+    const startY = 50 + 40 * Math.sin((startAngle / 100) * 2 * Math.PI - Math.PI/2);
+    const endX = 50 + 40 * Math.cos((endAngle / 100) * 2 * Math.PI - Math.PI/2);
+    const endY = 50 + 40 * Math.sin((endAngle / 100) * 2 * Math.PI - Math.PI/2);
+    const largeArcFlag = percentage > 50 ? 1 : 0;
+    const path = `M 50 50 L ${startX} ${startY} A 40 40 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
+    
+    return { project, percentage, path };
+  });
+
+  const getTooltipPosition = (index: number) => {
+    if (index === null) return { left: 0, top: 0 };
+    const segment = segments[index];
+    const startPercentage = index === 0 ? 0 : segments.slice(0, index).reduce((sum, s) => sum + s.percentage, 0);
+    const midPercentage = startPercentage + segment.percentage / 2;
+    const midAngle = (midPercentage / 100) * 2 * Math.PI - Math.PI/2;
+    const tooltipX = 50 + 50 * Math.cos(midAngle);
+    const tooltipY = 50 + 50 * Math.sin(midAngle);
+    
+    return { left: `${tooltipX}%`, top: `${tooltipY}%` };
+  };
+  
+  return (
+    <div className={styles.chartCard}>
+      <div className={styles.chartHeader}>
+        <div className={styles.chartTitle}>
+          <PieChart size={18} className={styles.chartIcon} />
+          <h3>Projects handled</h3>
+        </div>
+      </div>
+      <div className={styles.pieChartContainer}>
+        <div className={styles.pieChart}>
+          <svg viewBox="0 0 100 100" className={styles.pieChartSvg}>
+            {segments.map((segment, index) => (
+              <path 
+                key={index} 
+                d={segment.path}
+                fill={segment.project.color}
+                onMouseEnter={() => setHoveredSegment(index)}
+                onMouseLeave={() => setHoveredSegment(null)}
+                className={styles.pieSegment}
+              />
+            ))}
+            {/* Inner circle to create donut effect */}
+            <circle cx="50" cy="50" r="25" fill="#121f3a" />
+            
+            {/* Display the number of projects in the center */}
+            <text x="50" y="45" textAnchor="middle" fill="#fff" fontSize="18" fontWeight="bold">
+              {projectCount}
+            </text>
+            <text x="50" y="60" textAnchor="middle" fill="#b9c1d9" fontSize="10">
+              Projects
+            </text>
+          </svg>
+          
+          {/* Tooltip for hovered segment */}
+          {hoveredSegment !== null && (
+            <div 
+              className={styles.segmentTooltip} 
+              style={getTooltipPosition(hoveredSegment)}
+            >
+              {projectHoursData[hoveredSegment].project}
+            </div>
+          )}
+        </div>
+        <div className={styles.pieChartLegend}>
+          {projectHoursData.map((project, index) => (
+            <div 
+              key={index} 
+              className={styles.legendItem}
+              onMouseEnter={() => setHoveredSegment(index)}
+              onMouseLeave={() => setHoveredSegment(null)}
+            >
+              <div className={styles.legendColor} style={{ backgroundColor: project.color }}></div>
+              <div className={styles.legendText}>
+                <div className={styles.legendTitle}>{project.project}</div>
+                <div className={styles.legendValue}>{formatHoursAndMinutes(project.hours)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
   const Dialog = () => {
     if (!dialogData.show) return null;
     
@@ -448,7 +671,7 @@ const HomepageContent: React.FC = () => {
     );
   };
 
-  if (loading) return <Loader message="Loading timesheet..." />;
+  if (loading) return <Loader />;
   if (submitting) return <Loader message="Submitting timesheet..." />;
 
   return (
@@ -461,6 +684,9 @@ const HomepageContent: React.FC = () => {
         {timesheetStatus === "rejected" && (
           <div className={styles.rejectionBanner}>
             <span>This timesheet was rejected. Please make the necessary corrections and resubmit.</span>
+            {currentTimesheetId && (
+              <span className={styles.timesheetId}>ID: {currentTimesheetId}</span>
+            )}
           </div>
         )}
         
@@ -622,6 +848,17 @@ const HomepageContent: React.FC = () => {
             {timesheetStatus === "rejected" ? "Resubmit for approval" : "Submit for approval"}
           </button>
         </div>
+        
+        {/* Analytics section - only shown when timesheet data is available */}
+        {hasTimesheetData && (
+          <div className={styles.analyticsSection}>
+            <h3 className={styles.analyticsTitle}>Analytics for the week</h3>
+            <div className={styles.chartsContainer}>
+              <BarChartComponent />
+              <PieChartComponent />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
