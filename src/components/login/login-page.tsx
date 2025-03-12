@@ -66,7 +66,8 @@ const LoginPage: React.FC = () => {
         const result = await response.json();
         console.log(result);
         localStorage.setItem("loginResponse", JSON.stringify(result));
-        router.push('home-page');
+        //router.push('home-page');
+        window.location.href = '/home-page';
       } else if (response.status === 401) {
         setErrorMessage("Invalid credentials. Please try again.");
       } else {
