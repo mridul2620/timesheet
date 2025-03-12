@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { BarChart3, PieChart } from "lucide-react";
 import styles from "./timesheet.module.css";
 import Header from "../Header/header";
 import Loader from "../Loader/loader";
@@ -28,6 +29,18 @@ interface Timesheet {
   status?: string; // Added status field
 }
 
+type DailyHours = {
+  day: string;
+  abbreviation: string;
+  hours: number;
+};
+
+type ProjectHours = {
+  project: string;
+  hours: number;
+  color: string;
+};
+
 const EmployeeTimesheet = () => {
   const params = useParams();
   const username = params?.username as string;
@@ -41,6 +54,24 @@ const EmployeeTimesheet = () => {
   const [timesheetStatus, setTimesheetStatus] = useState<string>("unapproved");
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [relevantTimesheetId, setRelevantTimesheetId] = useState<string | null>(null);
+  const [hasTimesheetData, setHasTimesheetData] = useState(false);
+  const [dailyHoursData, setDailyHoursData] = useState<DailyHours[]>([]);
+  const [projectHoursData, setProjectHoursData] = useState<ProjectHours[]>([]);
+  const [hoveredProject, setHoveredProject] = useState<string | null>(null);
+
+  // Colors for project pie chart
+  const projectColors = [
+    "#3b82f6", // Blue
+    "#22d3ee", // Cyan
+    "#f97316", // Orange
+    "#a855f7", // Purple
+    "#06b6d4", // Light blue
+    "#10b981", // Green
+    "#f59e0b", // Amber
+    "#ef4444", // Red
+    "#8b5cf6", // Indigo
+    "#ec4899", // Pink
+  ];
 
   useEffect(() => {
     const storedData = localStorage.getItem("loginResponse");
@@ -86,6 +117,74 @@ const EmployeeTimesheet = () => {
 
   const weekDates = getWeekDates(selectedDate);
 
+  // Calculate analytics data when entries change
+  useEffect(() => {
+    if (entries.length > 0 && entries[0].project) {
+      setHasTimesheetData(true);
+      calculateDailyHoursData();
+      calculateProjectHoursData();
+    } else {
+      setHasTimesheetData(false);
+    }
+  }, [entries]);
+
+  // Calculate daily hours for bar chart
+  const calculateDailyHoursData = () => {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const abbreviations = ["S", "M", "T", "W", "T", "F", "S"];
+    
+    const dailyData: DailyHours[] = weekDates.map((date, index) => {
+      const dayStr = date.toISOString().split("T")[0];
+      const dayHours = entries.reduce((total, entry) => {
+        const hours = Number.parseFloat(entry.hours[dayStr] || "0");
+        return total + hours;
+      }, 0);
+
+      return {
+        day: days[date.getDay()],
+        abbreviation: abbreviations[date.getDay()],
+        hours: dayHours
+      };
+    });
+
+    setDailyHoursData(dailyData);
+  };
+
+  // Calculate project hours for pie chart
+  const calculateProjectHoursData = () => {
+    const projectDataMap = new Map<string, number>();
+
+    // Calculate total hours for each project
+    entries.forEach(entry => {
+      if (entry.project) {
+        const projectHours = Object.values(entry.hours).reduce((total, hours) => {
+          return total + Number.parseFloat(hours || "0");
+        }, 0);
+
+        if (projectHours > 0) {
+          const currentHours = projectDataMap.get(entry.project) || 0;
+          projectDataMap.set(entry.project, currentHours + projectHours);
+        }
+      }
+    });
+
+    // Convert to array format needed for chart
+    const projectData: ProjectHours[] = Array.from(projectDataMap).map(([project, hours], index) => ({
+      project,
+      hours,
+      color: projectColors[index % projectColors.length]
+    }));
+
+    setProjectHoursData(projectData);
+  };
+
+  // Format hours for display (e.g., 16h 30m)
+  const formatHoursAndMinutes = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}h ${m}m`;
+  };
+
   useEffect(() => {
     const fetchTimesheet = async () => {
       if (!username) return;
@@ -119,7 +218,7 @@ const EmployeeTimesheet = () => {
             setDayStatus(relevantTimesheet.dayStatus || {});
             setTimesheetStatus(relevantTimesheet.timesheetStatus || "unapproved"); // Updated field name
             setRelevantTimesheetId(relevantTimesheet._id || null);
-          }else {
+          } else {
             setEntries([{
               project: "",
               subject: "",
@@ -203,6 +302,143 @@ const EmployeeTimesheet = () => {
   const handleReject = () => {
     updateTimesheetStatus("rejected");
   };
+
+  // Bar Chart component
+  const BarChartComponent = () => {
+    const maxHours = Math.max(...dailyHoursData.map(day => day.hours), 10);
+    
+    return (
+      <div className={styles.chartCard}>
+        <div className={styles.chartHeader}>
+          <div className={styles.chartTitle}>
+            <BarChart3 size={18} className={styles.chartIcon} />
+            <h3>Work load report</h3>
+          </div>
+        </div>
+        <div className={styles.barChartContainer}>
+          <div className={styles.yAxis}>
+            <div>{Math.round(maxHours)}h</div>
+            <div>{Math.round(maxHours * 0.8)}h</div>
+            <div>{Math.round(maxHours * 0.6)}h</div>
+            <div>{Math.round(maxHours * 0.4)}h</div>
+            <div>{Math.round(maxHours * 0.2)}h</div>
+            <div>0h</div>
+          </div>
+          <div className={styles.barChart}>
+            {dailyHoursData.map((day, index) => {
+              const heightPercentage = day.hours > 0 
+                ? Math.max((day.hours / maxHours) * 100, 1)
+                : 0;
+                
+              return (
+                <div key={index} className={styles.barColumn}>
+                  <div className={styles.barWrapper} style={{ height: '100%' }}>
+                    <div 
+                      className={styles.bar}
+                      style={{ 
+                        height: `${heightPercentage}%`,
+                        backgroundColor: day.hours > 0 
+                          ? (index === 1 || index === 4 ? '#22d3ee' : '#3b82f6') 
+                          : 'transparent'
+                      }}
+                    >
+                      {day.hours > 0 && (
+                        <span className={styles.barValue}>{day.hours}h</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className={styles.barLabel}>{day.abbreviation}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Pie Chart component
+  // Pie Chart component
+const PieChartComponent = () => {
+  const totalHours = projectHoursData.reduce((sum, project) => sum + project.hours, 0);
+  const projectCount = projectHoursData.length;
+  
+  // Calculate the segments for the donut chart
+  let cumulativePercentage = 0;
+  const segments = projectHoursData.map((project, index) => {
+    const percentage = (project.hours / totalHours) * 100;
+    const startAngle = cumulativePercentage;
+    cumulativePercentage += percentage;
+    const endAngle = cumulativePercentage;
+    
+    // SVG Arc parameters
+    const startX = 50 + 40 * Math.cos((startAngle / 100) * 2 * Math.PI - Math.PI/2);
+    const startY = 50 + 40 * Math.sin((startAngle / 100) * 2 * Math.PI - Math.PI/2);
+    const endX = 50 + 40 * Math.cos((endAngle / 100) * 2 * Math.PI - Math.PI/2);
+    const endY = 50 + 40 * Math.sin((endAngle / 100) * 2 * Math.PI - Math.PI/2);
+    
+    // Arc flag is 0 for arcs less than 180 degrees, 1 for arcs greater than 180 degrees
+    const largeArcFlag = percentage > 50 ? 1 : 0;
+    
+    // Path for the segment
+    const path = `M 50 50 L ${startX} ${startY} A 40 40 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
+    
+    return { project, percentage, path };
+  });
+  
+  return (
+    <div className={styles.chartCard}>
+      <div className={styles.chartHeader}>
+        <div className={styles.chartTitle}>
+          <PieChart size={18} className={styles.chartIcon} />
+          <h3>Projects handled</h3>
+        </div>
+      </div>
+      <div className={styles.pieChartContainer}>
+        <div className={styles.pieChart} style={{ position: 'relative' }}>
+          <svg viewBox="0 0 100 100" className={styles.pieChartSvg}>
+            {segments.map((segment, index) => (
+              <path 
+                key={index} 
+                d={segment.path}
+                fill={segment.project.color}
+                onMouseEnter={() => setHoveredProject(segment.project.project)}
+                onMouseLeave={() => setHoveredProject(null)}
+              />
+            ))}
+            
+            {/* Inner circle for donut effect */}
+            <circle cx="50" cy="50" r="25" fill="#121f3a" />
+            
+            {/* Project count in the center - fixed to show correctly */}
+            <text x="50" y="55" textAnchor="middle" fill="#f97316" fontSize="36" fontWeight="bold" style={{ transform: 'rotate(90deg)', transformOrigin: 'center' }}>
+              {projectCount}
+            </text>
+          </svg>
+          
+          {/* Overlay for hovered project name */}
+          {hoveredProject && (
+            <div className={styles.projectHoverLabel}>
+              {hoveredProject}
+            </div>
+          )}
+        </div>
+        
+        <div className={styles.pieChartLegend}>
+          {projectHoursData.map((project, index) => (
+            <div key={index} className={styles.legendItem}>
+              <div className={styles.legendColor} style={{ backgroundColor: project.color }}></div>
+              <div className={styles.legendText}>
+                <div className={styles.legendTitle}>{project.project}</div>
+                <div className={styles.legendValue}>{formatHoursAndMinutes(project.hours)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
   if (loading) return <Loader />;
 
@@ -300,40 +536,51 @@ const EmployeeTimesheet = () => {
             </tbody>
           </table>
         </div>
-      <div className={styles.descriptionContainer}>
-  <h3 className={styles.descriptionHeading}>Work Description</h3>
-  <textarea
-    className={styles.descriptionTextarea}
-    value={workDescription}
-    readOnly
-    rows={4}
-  />
-  <div className={styles.statusActionsRow}>
-    <div className={styles.timesheetStatus}>
-      <span className={styles.statusLabel}>Status:</span>
-      <span className={`${styles.statusValue} ${styles[timesheetStatus]}`}>
-        {timesheetStatus === "approved" ? "APPROVED" : 
-         timesheetStatus === "rejected" ? "REJECTED" : "UNAPPROVED"}
-      </span>
-    </div>
-    <div className={styles.approvalActions}>
-      <button 
-        className={`${styles.actionButton} ${styles.rejectButton}`}
-        onClick={handleReject}
-        disabled={updatingStatus || timesheetStatus === 'rejected'}
-      >
-        Reject
-      </button>
-      <button 
-        className={`${styles.actionButton} ${styles.approveButton}`}
-        onClick={handleApprove}
-        disabled={updatingStatus || timesheetStatus === 'approved'}
-      >
-        Approve
-      </button>
-    </div>
-  </div>
-</div>
+        <div className={styles.descriptionContainer}>
+          <h3 className={styles.descriptionHeading}>Work Description</h3>
+          <textarea
+            className={styles.descriptionTextarea}
+            value={workDescription}
+            readOnly
+            rows={4}
+          />
+          <div className={styles.statusActionsRow}>
+            <div className={styles.timesheetStatus}>
+              <span className={styles.statusLabel}>Status:</span>
+              <span className={`${styles.statusValue} ${styles[timesheetStatus]}`}>
+                {timesheetStatus === "approved" ? "APPROVED" : 
+                timesheetStatus === "rejected" ? "REJECTED" : "UNAPPROVED"}
+              </span>
+            </div>
+            <div className={styles.approvalActions}>
+              <button 
+                className={`${styles.actionButton} ${styles.rejectButton}`}
+                onClick={handleReject}
+                disabled={updatingStatus || timesheetStatus === 'rejected'}
+              >
+                Reject
+              </button>
+              <button 
+                className={`${styles.actionButton} ${styles.approveButton}`}
+                onClick={handleApprove}
+                disabled={updatingStatus || timesheetStatus === 'approved'}
+              >
+                Approve
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Analytics section - only shown when timesheet data is available */}
+        {hasTimesheetData && (
+          <div className={styles.analyticsSection}>
+            <h3 className={styles.analyticsTitle}>Analytics for the week</h3>
+            <div className={styles.chartsContainer}>
+              <BarChartComponent />
+              <PieChartComponent />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

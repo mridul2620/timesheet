@@ -596,13 +596,10 @@ const HomepageContent: React.FC = () => {
             {/* Inner circle to create donut effect */}
             <circle cx="50" cy="50" r="25" fill="#121f3a" />
             
-            {/* Display the number of projects in the center */}
-            <text x="50" y="45" textAnchor="middle" fill="#fff" fontSize="18" fontWeight="bold">
+            <text x="50" y="55" textAnchor="middle" fill="#f97316" fontSize="36" fontWeight="bold" style={{ transform: 'rotate(90deg)', transformOrigin: 'center' }}>
               {projectCount}
             </text>
-            <text x="50" y="60" textAnchor="middle" fill="#b9c1d9" fontSize="10">
-              Projects
-            </text>
+            
           </svg>
           
           {/* Tooltip for hovered segment */}

@@ -326,6 +326,7 @@
 .analyticsSection {
   margin-top: 2rem;
   padding-top: 2rem;
+  padding-bottom: 2rem;
   border-top: 1px solid #2a3654;
   animation: fadeIn 0.5s ease-in-out;
 }
@@ -501,7 +502,11 @@
 
 .pieChartSvg text {
   transform: rotate(90deg);
-  fill: #fff;
+  transform-origin: center;
+  fill: #f97316; /* Orange color like in the image */
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: bold;
 }
 
 .pieChartSvg path {
