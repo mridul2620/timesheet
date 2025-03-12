@@ -361,7 +361,6 @@ const EmployeesPage = () => {
       });
 
       if (response.ok) {
-        // Remove user from both lists and maintain sorting
         const updatedUsers = users.filter((user) => user._id !== userId);
         setUsers(updatedUsers);
         setFilteredUsers(
@@ -414,7 +413,7 @@ const EmployeesPage = () => {
             <tr>
               <th>Name</th>
               <th>Email address</th>
-              <th>Designation</th>
+              <th>Job Title</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
