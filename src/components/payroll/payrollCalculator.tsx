@@ -417,7 +417,7 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
           
           {!selectedUser && (
             <div className={styles.infoMessage}>
-              Please select a user from the team list below.
+              Please select a user from the team list below
             </div>
           )}
         </div>

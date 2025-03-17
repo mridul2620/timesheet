@@ -86,6 +86,12 @@
     font-style: italic;
   }
   
+  .tableContainer {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid #2a3654;
+  }
+  
   .table {
     width: 100%;
     border-collapse: collapse;
@@ -95,18 +101,33 @@
   
   .table th {
     text-align: left;
-    padding: 0.75rem 1rem;
+    padding: 1rem 1.25rem;
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 600;
     color: #b9c1d9;
+    background-color: #1a2b4a;
     border-bottom: 1px solid #2a3654;
+    white-space: nowrap;
   }
   
   .table td {
-    padding: 1rem;
+    padding: 1rem 1.25rem;
     font-size: 0.875rem;
     color: #fff;
     border-bottom: 1px solid #2a3654;
+    transition: background-color 0.15s ease;
+  }
+  
+  .table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .tableRow {
+    transition: background-color 0.2s ease;
+  }
+  
+  .tableRow:hover {
+    background-color: rgba(255, 255, 255, 0.05);
   }
   
   .avatarContainer {

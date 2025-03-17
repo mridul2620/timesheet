@@ -74,12 +74,12 @@
 
 .day:focus,
 .day:active {
-  outline: none; /* Ensures no outline on focus */
-  border: none; /* Prevents unwanted borders */
+  outline: none; 
+  border: none; 
 }
 
 .day:hover {
-  border: 2px solid rgba(30, 144, 255, 0.8); /* Smooth hover border */
+  border: 2px solid rgba(30, 144, 255, 0.8);
   background-color: rgba(30, 144, 255, 0.2);
 }
 

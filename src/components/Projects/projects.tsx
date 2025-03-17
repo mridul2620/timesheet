@@ -8,6 +8,13 @@ import Header from "../Header/header";
 interface Project {
   _id: string;
   name: string;
+  assignedTo?: string[];
+}
+
+interface User {
+  _id: string;
+  name: string;
+  username: string;
 }
 
 interface DeleteConfirmation {
@@ -33,11 +40,13 @@ const ProjectsPage = () => {
   const [projectName, setProjectName] = useState("");
   const [editProjectId, setEditProjectId] = useState("");
   const [editProjectName, setEditProjectName] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [usersList, setUsersList] = useState<User[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>(initialDeleteConfirmation);
 
-  // Sort projects alphabetically by name
   const sortProjectsByName = (projectArray: Project[]): Project[] => {
     return [...projectArray].sort((a, b) => a.name.localeCompare(b.name));
   };
@@ -70,7 +79,6 @@ const ProjectsPage = () => {
     fetchProjects();
   }, []);
 
-  // Filter projects based on search term
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredProjects(projects);
@@ -97,11 +105,50 @@ const ProjectsPage = () => {
     setIsDialogOpen(false);
   };
   
-  const handleOpenEditDialog = (project: Project) => {
+  const handleOpenEditDialog = async (project: Project) => {
     setEditProjectId(project._id);
     setEditProjectName(project.name);
     setIsEditDialogOpen(true);
     setErrorMessage("");
+    
+    // Fetch users when edit dialog opens
+    setIsLoadingUsers(true);
+    try {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL as string);
+      const data = await response.json();
+      
+      if (data.success) {
+        setUsersList(data.users);
+        
+        // Pre-select existing assigned users
+        setSelectedUsers(
+          data.users
+            .filter((user: { name: string; }) => project.assignedTo?.includes(user.name))
+            .map((user: { _id: any; }) => user._id)
+        );
+      } else {
+        setErrorMessage("Failed to fetch users");
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setErrorMessage("An error occurred while fetching users");
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  const handleUserSelect = (userId: string) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId) 
+        : [...prev, userId]
+    );
+  };
+
+  const renderAssignedUsers = (assignedUsers: string[] = []) => {
+    if (assignedUsers.length === 0) return 'Not assigned';
+    
+    return assignedUsers.join(', ');
   };
 
   const handleCloseEditDialog = () => {
@@ -163,7 +210,13 @@ const ProjectsPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: editProjectName }),
+        body: JSON.stringify({ 
+          name: editProjectName,
+          assignedTo: selectedUsers.map(userId => {
+            const user = usersList.find(u => u._id === userId);
+            return user ? user.name : '';
+          }).filter(Boolean)
+        }),
       });
 
       const data = await response.json();
@@ -223,12 +276,12 @@ const ProjectsPage = () => {
   if (loading) return <Loader message="Loading Projects..." />;
 
   return (
-    <div className={styles.pagecontainer}>
+    <div className={styles.pageContainer}>
       <Header title="Projects" user={user} />
       <main className={styles.container}>
         <div className={styles.teamHeader}>
-          <div>
-            <span className={styles.title}>List</span>
+          <div className={styles.titleContainer}>
+            <span className={styles.title}>Projects List</span>
             <span className={styles.userCount}>({filteredProjects.length} projects)</span>
           </div>
           <div className={styles.headerActions}>
@@ -236,7 +289,7 @@ const ProjectsPage = () => {
               <Search size={18} className={styles.searchIcon} />
               <input
                 type="text"
-                placeholder="Search by name"
+                placeholder="Search projects by name"
                 value={searchTerm}
                 onChange={handleSearchChange}
                 className={styles.searchInput}
@@ -249,18 +302,23 @@ const ProjectsPage = () => {
           </div>
         </div>
 
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div className={styles.tableContainer}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Project Name</th>
+                <th>Assigned To</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
             {filteredProjects.length > 0 ? (
               filteredProjects.map((project) => (
-                <tr key={project._id}>
-                  <td>{project.name}</td>
+                <tr key={project._id} className={styles.projectRow}>
+                  <td className={styles.projectName}>{project.name}</td>
+                  <td className={styles.assignedNames}>
+                    {renderAssignedUsers(project.assignedTo)}
+                  </td>
                   <td>
                     <div className={styles.actionButtons}>
                       <button
@@ -268,14 +326,14 @@ const ProjectsPage = () => {
                         onClick={() => handleOpenEditDialog(project)}
                         aria-label="Edit project"
                       >
-                        <Edit size={14} />
+                        <Edit size={16} />
                       </button>
                       <button
                         className={styles.deleteButton}
                         onClick={() => showDeleteConfirmation(project._id, project.name)}
                         aria-label="Delete project"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -283,13 +341,14 @@ const ProjectsPage = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={2} className={styles.noResults}>
+                <td colSpan={3} className={styles.noResults}>
                   No projects found matching search criteria
                 </td>
               </tr>
             )}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </main>
 
       {/* Add Project Dialog */}
@@ -320,7 +379,7 @@ const ProjectsPage = () => {
                 )}
                 
                 <div className={styles.formLayout}>
-                  <div className={styles.formGroupFull}>
+                  <div className={styles.formGroup}>
                     <label htmlFor="name">Project Name</label>
                     <input
                       type="text"
@@ -329,6 +388,7 @@ const ProjectsPage = () => {
                       value={projectName}
                       onChange={(e) => setProjectName(e.target.value)}
                       placeholder="Enter project name"
+                      className={styles.formInput}
                     />
                   </div>
                   
@@ -347,7 +407,7 @@ const ProjectsPage = () => {
         <div className={styles.dialogBackdrop} onClick={(e) => {
           if (e.target === e.currentTarget) handleCloseEditDialog();
         }}>
-          <div className={styles.dialog}>
+          <div className={styles.editDialog}>
             <div className={styles.dialogHeader}>
               <h2>Edit Project</h2>
               <button 
@@ -363,6 +423,10 @@ const ProjectsPage = () => {
               <div className={styles.loaderContainer}>
                 <Loader message="Updating Project..." />
               </div>
+            ) : isLoadingUsers ? (
+              <div className={styles.loaderContainer}>
+                <Loader message="Loading Users..." fullScreen={false} />
+              </div>
             ) : (
               <form onSubmit={handleEditSubmit} className={styles.form}>
                 {errorMessage && (
@@ -370,7 +434,7 @@ const ProjectsPage = () => {
                 )}
                 
                 <div className={styles.formLayout}>
-                  <div className={styles.formGroupFull}>
+                  <div className={styles.formGroup}>
                     <label htmlFor="edit-name">Project Name</label>
                     <input
                       type="text"
@@ -379,7 +443,35 @@ const ProjectsPage = () => {
                       value={editProjectName}
                       onChange={(e) => setEditProjectName(e.target.value)}
                       placeholder="Enter project name"
+                      className={styles.formInput}
                     />
+                  </div>
+                  
+                  <div className={styles.formGroup}>
+                    <label className={styles.userSelectLabel}>Assigned To</label>
+                    <div className={styles.userSelectContainer}>
+                      {usersList.map((user) => (
+                        <div 
+                          key={user._id} 
+                          className={`${styles.userSelectItem} ${selectedUsers.includes(user._id) ? styles.userSelectItemActive : ''}`}
+                        >
+                          <input 
+                            type="checkbox"
+                            id={`user-${user._id}`}
+                            checked={selectedUsers.includes(user._id)}
+                            onChange={() => handleUserSelect(user._id)}
+                            className={styles.userSelectCheckbox}
+                          />
+                          <label 
+                            htmlFor={`user-${user._id}`}
+                            className={styles.userSelectLabel}
+                          >
+                            <span className={styles.userName}>{user.name}</span>
+                            <span className={styles.userUsername}>({user.username})</span>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   
                   <button type="submit" className={styles.submitButton}>
@@ -399,7 +491,7 @@ const ProjectsPage = () => {
         }}>
           <div className={styles.confirmationDialog}>
             <div className={styles.confirmationIcon}>
-              <AlertTriangle size={32} color="#f59e0b" />
+              <AlertTriangle size={32} />
             </div>
             <h2 className={styles.confirmationTitle}>Confirm Deletion</h2>
             <p className={styles.confirmationText}>

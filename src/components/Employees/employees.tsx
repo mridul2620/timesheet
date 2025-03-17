@@ -408,6 +408,7 @@ const EmployeesPage = () => {
           </div>
         </div>
 
+        <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -421,7 +422,7 @@ const EmployeesPage = () => {
           <tbody>
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
-                <tr key={user._id}>
+                <tr key={user._id} className={styles.tableRow}>
                   <td>
                     <div 
                       className={styles.avatarContainer}
@@ -469,6 +470,7 @@ const EmployeesPage = () => {
             )}
           </tbody>
         </table>
+        </div>
       </main>
 
       {/* Add User Dialog */}

@@ -8,6 +8,13 @@ import Header from "../Header/header";
 interface Subject {
   _id: string;
   name: string;
+  assignedTo?: string[];
+}
+
+interface User {
+  _id: string;
+  name: string;
+  username: string;
 }
 
 interface DeleteConfirmation {
@@ -33,6 +40,9 @@ const SubjectsPage = () => {
   const [subjectName, setSubjectName] = useState("");
   const [editSubjectId, setEditSubjectId] = useState("");
   const [editSubjectName, setEditSubjectName] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [usersList, setUsersList] = useState<User[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>(initialDeleteConfirmation);
@@ -97,11 +107,54 @@ const SubjectsPage = () => {
     setIsDialogOpen(false);
   };
   
-  const handleOpenEditDialog = (subject: Subject) => {
+ // In the subjects.tsx file:
+
+// Change handleOpenEditDialog function
+const handleOpenEditDialog = async (subject: Subject) => {
+    // First set the dialog to open and set initial states
     setEditSubjectId(subject._id);
     setEditSubjectName(subject.name);
     setIsEditDialogOpen(true);
     setErrorMessage("");
+    setIsLoadingUsers(true); // Start loading immediately
+    
+    // Then fetch users
+    try {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL as string);
+      const data = await response.json();
+      
+      if (data.success) {
+        setUsersList(data.users);
+        
+        // Pre-select existing assigned users
+        setSelectedUsers(
+          data.users
+            .filter((user: { name: string; }) => subject.assignedTo?.includes(user.name))
+            .map((user: { _id: any; }) => user._id)
+        );
+      } else {
+        setErrorMessage("Failed to fetch users");
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setErrorMessage("An error occurred while fetching users");
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  const handleUserSelect = (userId: string) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId) 
+        : [...prev, userId]
+    );
+  };
+
+  const renderAssignedUsers = (assignedUsers: string[] = []) => {
+    if (assignedUsers.length === 0) return 'Not assigned';
+    
+    return assignedUsers.join(', ');
   };
 
   const handleCloseEditDialog = () => {
@@ -163,7 +216,13 @@ const SubjectsPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: editSubjectName }),
+        body: JSON.stringify({ 
+          name: editSubjectName,
+          assignedTo: selectedUsers.map(userId => {
+            const user = usersList.find(u => u._id === userId);
+            return user ? user.name : '';
+          }).filter(Boolean)
+        }),
       });
 
       const data = await response.json();
@@ -223,12 +282,12 @@ const SubjectsPage = () => {
   if (loading) return <Loader message="Loading Subjects..." />;
 
   return (
-    <div className={styles.pagecontainer}>
+    <div className={styles.pageContainer}>
       <Header title="Subjects" user={user} />
       <main className={styles.container}>
         <div className={styles.teamHeader}>
-          <div>
-            <span className={styles.title}>List</span>
+          <div className={styles.titleContainer}>
+            <span className={styles.title}>Subjects List</span>
             <span className={styles.userCount}>({filteredSubjects.length} subjects)</span>
           </div>
           <div className={styles.headerActions}>
@@ -236,7 +295,7 @@ const SubjectsPage = () => {
               <Search size={18} className={styles.searchIcon} />
               <input
                 type="text"
-                placeholder="Search by name"
+                placeholder="Search subjects by name"
                 value={searchTerm}
                 onChange={handleSearchChange}
                 className={styles.searchInput}
@@ -249,47 +308,53 @@ const SubjectsPage = () => {
           </div>
         </div>
 
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredSubjects.length > 0 ? (
-              filteredSubjects.map((subject) => (
-                <tr key={subject._id}>
-                  <td>{subject.name}</td>
-                  <td>
-                    <div className={styles.actionButtons}>
-                      <button
-                        className={styles.editButton}
-                        onClick={() => handleOpenEditDialog(subject)}
-                        aria-label="Edit subject"
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
-                        className={styles.deleteButton}
-                        onClick={() => showDeleteConfirmation(subject._id, subject.name)}
-                        aria-label="Delete subject"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+        <div className={styles.tableContainer}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Subject Name</th>
+                <th>Assigned To</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSubjects.length > 0 ? (
+                filteredSubjects.map((subject) => (
+                  <tr key={subject._id} className={styles.projectRow}>
+                    <td className={styles.projectName}>{subject.name}</td>
+                    <td className={styles.assignedNames}>
+                      {renderAssignedUsers(subject.assignedTo)}
+                    </td>
+                    <td>
+                      <div className={styles.actionButtons}>
+                        <button
+                          className={styles.editButton}
+                          onClick={() => handleOpenEditDialog(subject)}
+                          aria-label="Edit subject"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          className={styles.deleteButton}
+                          onClick={() => showDeleteConfirmation(subject._id, subject.name)}
+                          aria-label="Delete subject"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3} className={styles.noResults}>
+                    No subjects found matching search criteria
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={2} className={styles.noResults}>
-                  No subjects found matching search criteria
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </main>
 
       {/* Add Subject Dialog */}
@@ -320,7 +385,7 @@ const SubjectsPage = () => {
                 )}
                 
                 <div className={styles.formLayout}>
-                  <div className={styles.formGroupFull}>
+                  <div className={styles.formGroup}>
                     <label htmlFor="name">Subject Name</label>
                     <input
                       type="text"
@@ -329,6 +394,7 @@ const SubjectsPage = () => {
                       value={subjectName}
                       onChange={(e) => setSubjectName(e.target.value)}
                       placeholder="Enter subject name"
+                      className={styles.formInput}
                     />
                   </div>
                   
@@ -347,7 +413,7 @@ const SubjectsPage = () => {
         <div className={styles.dialogBackdrop} onClick={(e) => {
           if (e.target === e.currentTarget) handleCloseEditDialog();
         }}>
-          <div className={styles.dialog}>
+          <div className={styles.editDialog}>
             <div className={styles.dialogHeader}>
               <h2>Edit Subject</h2>
               <button 
@@ -363,6 +429,10 @@ const SubjectsPage = () => {
               <div className={styles.loaderContainer}>
                 <Loader message="Updating Subject..." />
               </div>
+            ) : isLoadingUsers ? (
+              <div className={styles.loaderContainer}>
+                <Loader message="Loading Users..." fullScreen={false} />
+              </div>
             ) : (
               <form onSubmit={handleEditSubmit} className={styles.form}>
                 {errorMessage && (
@@ -370,7 +440,7 @@ const SubjectsPage = () => {
                 )}
                 
                 <div className={styles.formLayout}>
-                  <div className={styles.formGroupFull}>
+                  <div className={styles.formGroup}>
                     <label htmlFor="edit-name">Subject Name</label>
                     <input
                       type="text"
@@ -379,7 +449,35 @@ const SubjectsPage = () => {
                       value={editSubjectName}
                       onChange={(e) => setEditSubjectName(e.target.value)}
                       placeholder="Enter subject name"
+                      className={styles.formInput}
                     />
+                  </div>
+                  
+                  <div className={styles.formGroup}>
+                    <label className={styles.userSelectLabel}>Assigned To</label>
+                    <div className={styles.userSelectContainer}>
+                      {usersList.map((user) => (
+                        <div 
+                          key={user._id} 
+                          className={`${styles.userSelectItem} ${selectedUsers.includes(user._id) ? styles.userSelectItemActive : ''}`}
+                        >
+                          <input 
+                            type="checkbox"
+                            id={`user-${user._id}`}
+                            checked={selectedUsers.includes(user._id)}
+                            onChange={() => handleUserSelect(user._id)}
+                            className={styles.userSelectCheckbox}
+                          />
+                          <label 
+                            htmlFor={`user-${user._id}`}
+                            className={styles.userSelectLabel}
+                          >
+                            <span className={styles.userName}>{user.name}</span>
+                            <span className={styles.userUsername}>({user.username})</span>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   
                   <button type="submit" className={styles.submitButton}>
@@ -399,7 +497,7 @@ const SubjectsPage = () => {
         }}>
           <div className={styles.confirmationDialog}>
             <div className={styles.confirmationIcon}>
-              <AlertTriangle size={32} color="#f59e0b" />
+              <AlertTriangle size={32} />
             </div>
             <h2 className={styles.confirmationTitle}>Confirm Deletion</h2>
             <p className={styles.confirmationText}>

@@ -846,7 +846,6 @@ const HomepageContent: React.FC = () => {
           </button>
         </div>
         
-        {/* Analytics section - only shown when timesheet data is available */}
         {hasTimesheetData && (
           <div className={styles.analyticsSection}>
             <h3 className={styles.analyticsTitle}>Analytics for the week</h3>

@@ -164,6 +164,7 @@ const PayrollPage = () => {
           </div>
         </div>
 
+        <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -179,7 +180,7 @@ const PayrollPage = () => {
                 <tr 
                   key={userItem._id} 
                   onClick={() => handleSelectUser(userItem)}
-                  className={selectedUser?._id === userItem._id ? styles.selectedRow : ''}
+                  className={selectedUser?._id === userItem._id ? styles.selectedRow : styles.tableRow}
                   style={{ cursor: 'pointer' }}
                 >
                   <td>
@@ -207,6 +208,7 @@ const PayrollPage = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

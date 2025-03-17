@@ -8,9 +8,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
-:root{
+:root {
+    --bg-primary: #0c1e35;
+    --bg-secondary: #121f3a;
+    --bg-tertiary: #1a2b4a;
+    --border-color: #2a3654;
+    --text-primary: #fff;
+    --text-secondary: #b9c1d9;
+    --text-disabled: #8494b4;
+    --accent-color: #f97316;
+    --accent-hover: #ff8c4c;
+    --status-approved: #065f46;
+    --status-rejected: #7f1d1d;
+    --status-unapproved: #334155;
     font-family: Arial, Helvetica, sans-serif;
-}
+  }
+  
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
 :body{
     background-color: white;

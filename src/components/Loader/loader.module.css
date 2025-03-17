@@ -20,6 +20,16 @@
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
+
+  .inlineLoaderWrapper {
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+    width: 100%;
+  }
+
   .loaderMessage {
     color: #fff;
     margin-top: 1.5rem;
