@@ -1,0 +1,467 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+.pagecontainer {
+  font-family: "Inter", sans-serif;
+  background-color: #0c1e35;
+  color: #fff;
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+.container {
+  background-color: #121f3a;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.teamHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.userCount {
+  font-size: 0.875rem;
+  color: #b9c1d9;
+  margin-left: 0.5rem;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.searchContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 300px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  color: #94a3b8;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+  border: 1px solid #2c3e50;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #e2e8f0;
+  background-color: #121f3a;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.searchInput::placeholder {
+  color: #64748b;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 1px #4f46e5;
+}
+
+.inviteButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #1a2b4a;
+  border: 1px solid #2a3654;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease-in;
+}
+
+.inviteButton:hover {
+  border-color: #f97316;
+  background-color: #2a3654;
+}
+
+/* Table styles with adjustments for 2-column layout */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  color: #fff;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #b9c1d9;
+  border-bottom: 1px solid #2a3654;
+}
+
+.table td {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: #fff;
+  border-bottom: 1px solid #2a3654;
+}
+
+/* For two-column layout, make the first column wider */
+.table th:first-child,
+.table td:first-child {
+  width: 70%;
+  font-weight: 500;
+}
+
+/* Action column styling */
+.table th:last-child,
+.table td:last-child {
+  width: 30%;
+  text-align: right;
+}
+
+.subjectRow:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.actionButtons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.editButton,
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  padding: 0;
+  transition: background-color 0.2s;
+}
+
+.editButton {
+  color: #4f46e5;
+}
+
+.editButton:hover {
+  background-color: rgba(79, 70, 229, 0.1);
+}
+
+.deleteButton {
+  color: #ef4444;
+}
+
+.deleteButton:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.noResults {
+  text-align: center;
+  padding: 2rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Dialog styles */
+.dialogBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialog {
+  background-color: #121f3a;
+  border-radius: 0.5rem;
+  width: 30rem; /* Smaller width for subject dialogs */
+  max-width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.dialogHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border-bottom: 1px solid #2a3654;
+}
+
+.dialogHeader h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: #b9c1d9;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background-color: #1a2b4a;
+  color: #fff;
+}
+
+.form {
+  padding: 1.5rem;
+}
+
+.formLayout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+.formGroupFull {
+  grid-column: span 1;
+}
+
+.formGroupFull label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #b9c1d9;
+}
+
+.formGroupFull input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid #2a3654;
+  background-color: #1a2b4a;
+  color: #fff;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.formGroupFull input:focus {
+  outline: none;
+  border-color: #f97316;
+}
+
+.formGroupFull input::placeholder {
+  color: #6b7a99;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  background-color: #f97316;
+  color: #fff;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+
+.submitButton:hover {
+  background-color: #ea580c;
+}
+
+.errorMessage {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid #ef4444;
+  color: #fca5a5;
+  padding: 0.75rem;
+  margin-bottom: 1.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.loaderContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 0;
+}
+
+/* Confirmation dialog styles */
+.confirmationDialog {
+  background-color: #121f3a;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  width: 30rem;
+  max-width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.confirmationIcon {
+  margin-bottom: 1.5rem;
+  color: #f59e0b;
+}
+
+.confirmationTitle {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  text-align: center;
+}
+
+.confirmationText {
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.boldText {
+  font-weight: 600;
+  color: white;
+}
+
+.confirmationButtons {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.cancelButton, 
+.confirmButton {
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 100px;
+  font-size: 0.875rem;
+}
+
+.cancelButton {
+  background-color: transparent;
+  color: white;
+  border: 1px solid #475569;
+}
+
+.cancelButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.confirmButton {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+}
+
+.confirmButton:hover {
+  background-color: #dc2626;
+}
+
+/* Subject-specific styling enhancements */
+.subjectName {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.subjectName:before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #f97316;
+  margin-right: 12px;
+}
+
+/* Responsive styles */
+@media (max-width: 48rem) {
+  .pagecontainer {
+    padding: 1rem;
+  }
+
+  .teamHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .headerActions {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .searchContainer {
+    width: 100%;
+  }
+
+  .inviteButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  /* Maintain proper spacing for action buttons on mobile */
+  .actionButtons {
+    justify-content: flex-end;
+  }
+}

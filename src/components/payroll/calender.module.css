@@ -55,21 +55,20 @@
 }
 
 .day {
-  aspect-ratio: 1;
   position: relative;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
   background-color: rgba(255, 255, 255, 0.05);
-  font-size: 0.875rem;
-  color: #fff;
-  cursor: pointer;
-  border-radius: 0.375rem;
-  outline: none;
+  border-radius: 6px;
   transition: border-color 0.3s ease, background-color 0.3s ease;
+  border: none; /* Remove unwanted borders */
+  outline: none; /* Prevent focus outline */
 }
 
 .day:focus,
@@ -119,8 +118,25 @@
   display: none;
 }
 
+.endDate {
+  background-color: #0078d7;
+  color: white;
+  font-weight: 500;
+  border-color: #0078d7;
+  z-index: 3;
+}
+
+.endDate::after {
+  display: none;
+}
+
+.inRange {
+  background-color: rgba(0, 120, 215, 0.3);
+  border-color: rgba(0, 120, 215, 0.5);
+}
+
 .today {
-  border: 2px solid #0078d7;
+  position: relative;
 }
 
 .today::before {
