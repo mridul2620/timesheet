@@ -39,9 +39,8 @@
 }
 
 .calendarSection {
-  width: 100%;
   background-color: var(--bg-secondary);
-  border-radius: 0.5rem;
+  width: 300px;
   height: 1fr;
   margin: 1rem;
 }
