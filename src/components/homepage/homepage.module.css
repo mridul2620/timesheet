@@ -42,7 +42,8 @@
   width: 100%;
   background-color: var(--bg-secondary);
   border-radius: 0.5rem;
-  padding: 0.5rem;
+  height: 1fr;
+  margin: 1rem;
 }
 
 .tableWrapper {
