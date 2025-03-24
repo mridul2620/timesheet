@@ -74,7 +74,6 @@ const initialDeleteConfirmation: DeleteConfirmation = {
 };
 
 const EmployeesPage = () => {
-  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,7 +88,6 @@ const EmployeesPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>(initialDeleteConfirmation);
 
-  // Sort users alphabetically by name
   const sortUsersByName = (userArray: User[]): User[] => {
     return [...userArray].sort((a, b) => a.name.localeCompare(b.name));
   };
@@ -122,10 +120,10 @@ const EmployeesPage = () => {
     fetchUsers();
   }, []);
 
-  // Filter users based on search term and sort alphabetically
+
   useEffect(() => {
     if (searchTerm.trim() === "") {
-      setFilteredUsers(users); // Users are already sorted
+      setFilteredUsers(users);
     } else {
       const term = searchTerm.toLowerCase();
       const filtered = users.filter(
@@ -133,7 +131,6 @@ const EmployeesPage = () => {
           user.name.toLowerCase().includes(term) || 
           user.username.toLowerCase().includes(term)
       );
-      // No need to sort again as we're filtering from an already sorted array
       setFilteredUsers(filtered);
     }
   }, [searchTerm, users]);
@@ -374,10 +371,6 @@ const EmployeesPage = () => {
       console.error('Error deleting user:', error);
     }
   };
-
-  const navigateToTimesheet = (username: string) => {
-    router.push(`/timesheets/${username}`);
-  };
   
   if (loading) return <Loader message="Loading Users..." />;
 
@@ -426,8 +419,6 @@ const EmployeesPage = () => {
                   <td>
                     <div 
                       className={styles.avatarContainer}
-                      onClick={() => navigateToTimesheet(user.username)}
-                      style={{ cursor: 'pointer' }}
                     >
                       <div className={styles.avatar}>
                         {getInitials(user?.name)}

@@ -84,27 +84,24 @@
   box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.25);
 }
 
-/* Button styles */
 .inviteButton {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #f97316;
-  border: none;
+  background-color: #1a2b4a;
+  border: 1px solid #2a3654;
   color: #fff;
-  padding: 0.75rem 1.25rem;
-  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease-in;
 }
 
 .inviteButton:hover {
-  background-color: #ea580c;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  border-color: #f97316;
+  background-color: #2a3654;
 }
 
 /* Table container and styles */

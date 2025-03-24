@@ -1,0 +1,66 @@
+/* print-styles.css */
+@page {
+    size: A4;
+    margin: 1cm;
+  }
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: white;
+    color: #333;
+    padding: 1rem;
+  }
+  .month-title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  .week-container {
+    page-break-after: always;
+    margin-bottom: 2rem;
+  }
+  .week-title {
+    text-align: center;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .table-container {
+    width: 100%;
+    margin: 0 auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  th {
+    background-color: #f5f5f5;
+    font-weight: normal;
+  }
+  .total-cell {
+    text-align: center;
+    font-weight: bold;
+  }
+  .total-row {
+    font-weight: bold;
+  }
+  .description-container {
+    margin-top: 1rem;
+    width: 100%;
+    padding: 0 1rem 1rem;
+  }
+  .description-heading {
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  .description-text {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 0.375rem;
+    min-height: 60px;
+  }

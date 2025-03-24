@@ -52,21 +52,54 @@ type ProjectHours = {
   color: string;
 };
 
-const HomepageContent: React.FC = () => {
-  const getInitialEntry = (): TimeEntry => ({
-    id: "1",
-    project: "",
-    subject: "",
-    hours: {},
-  });
+// Updated Project type to include assignedTo array
+type Project = {
+  _id: string;
+  name: string;
+  assignedTo: string[];
+};
 
-  const [entries, setEntries] = useState<TimeEntry[]>([getInitialEntry()]);
+// Updated Subject type to include assignedTo array
+type Subject = {
+  _id: string;
+  name: string;
+  assignedTo: string[];
+};
+
+const HomepageContent: React.FC = () => {
+  
+  const getInitialEntries = (): TimeEntry[] => {
+    return [
+      {
+        id: "1",
+        project: "",
+        subject: "",
+        hours: {},
+      },
+      {
+        id: "2",
+        project: "",
+        subject: "",
+        hours: {},
+      },
+      {
+        id: "3",
+        project: "",
+        subject: "",
+        hours: {},
+      }
+    ];
+  };
+
+  const [entries, setEntries] = useState<TimeEntry[]>(getInitialEntries());
   const [user, setUser] = useState<User | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workDescription, setWorkDescription] = useState("");
   const [dayStatus, setDayStatus] = useState<{ [key: string]: string }>({});
-  const [projects, setProjects] = useState<{ _id: string; name: string }[]>([]);
-  const [subjects, setSubjects] = useState<{ _id: string; name: string }[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isWeekEditable, setIsWeekEditable] = useState(true);
@@ -113,6 +146,27 @@ const HomepageContent: React.FC = () => {
   };
 
   const weekDates = getWeekDates(selectedDate);
+
+  // Filter projects and subjects based on user's name
+  useEffect(() => {
+    if (user && projects.length > 0) {
+      const filtered = projects.filter(project => 
+        project.assignedTo.length === 0 || project.assignedTo.includes(user.name)
+      );
+      setFilteredProjects(filtered);
+    }
+  }, [user, projects]);
+
+  useEffect(() => {
+    if (user && subjects.length > 0) {
+      const filtered = subjects.filter(subject => 
+        !subject.assignedTo || 
+        subject.assignedTo.length === 0 || 
+        subject.assignedTo.includes(user.name)
+      );
+      setFilteredSubjects(filtered);
+    }
+  }, [user, subjects]);
 
   useEffect(() => {
     if (entries.length > 0 && entries[0].project) {
@@ -383,16 +437,27 @@ const HomepageContent: React.FC = () => {
           axios.get(process.env.NEXT_PUBLIC_PROJECTS_API as string),
           axios.get(process.env.NEXT_PUBLIC_SUBJECTS_API as string),
         ]);
-
-        setProjects(projectsResponse.data?.projects || []);
-        setSubjects(subjectsResponse.data?.subjects || []);
+  
+        // Handle projects response
+        if (projectsResponse.data?.success && projectsResponse.data?.projects) {
+          setProjects(projectsResponse.data.projects);
+        } else {
+          setProjects([]);
+        }
+  
+        // Handle subjects response - updated to match the new structure
+        if (subjectsResponse.data?.subjects) {
+          setSubjects(subjectsResponse.data.subjects);
+        } else {
+          setSubjects([]);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchData();
   }, []);
 
@@ -457,7 +522,7 @@ const HomepageContent: React.FC = () => {
         } else {
           setCurrentTimesheetId("");
           setIsWeekEditable(true);
-          setEntries([getInitialEntry()]);
+          setEntries(getInitialEntries()); 
           setWorkDescription("");
           setTimesheetStatus("unapproved");
           setHasTimesheetData(false);
@@ -511,10 +576,7 @@ const HomepageContent: React.FC = () => {
                 
               return (
                 <div key={index} className={styles.barColumn}>
-                  <div 
-                    className={styles.barWrapper}
-                    style={{ height: '100%' }}
-                  >
+                  <div className={styles.barWrapper} style={{ height: '100%' }}>
                     <div 
                       className={styles.bar}
                       style={{ 
@@ -692,13 +754,14 @@ const HomepageContent: React.FC = () => {
             <Calendar selectedDate={selectedDate} onChange={setSelectedDate} />
           </div>
 
+          <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>
               <tr>
                 <th>Projects</th>
                 <th>Subject</th>
                 {weekDates.map((date) => (
-                  <th key={date.toISOString()}>{formatDate(date)}</th>
+                  <th key={date.toISOString()} className={styles.weekColumn}>{formatDate(date)}</th>
                 ))}
                 <th>Total</th>
               </tr>
@@ -714,7 +777,7 @@ const HomepageContent: React.FC = () => {
                       disabled={!isWeekEditable}
                     >
                       <option value="">Select</option>
-                      {projects.map((project) => (
+                      {filteredProjects.map((project) => (
                         <option key={project._id} value={project.name}>
                           {project.name}
                         </option>
@@ -729,7 +792,7 @@ const HomepageContent: React.FC = () => {
                       disabled={!isWeekEditable}
                     >
                       <option value="">Select</option>
-                      {subjects.map((subject) => (
+                      {filteredSubjects.map((subject) => (
                         <option key={subject._id} value={subject.name}>
                           {subject.name}
                         </option>
@@ -813,6 +876,7 @@ const HomepageContent: React.FC = () => {
               </tr>
             </tbody>
           </table>
+        </div>
         </div>
 
         <div className={styles.descriptionContainer}>
