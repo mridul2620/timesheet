@@ -80,14 +80,6 @@ const EmployeesListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [newUser, setNewUser] = useState<NewUser>(initialNewUser);
-  const [editUser, setEditUser] = useState<EditUser>(initialEditUser);
-  const [originalEditUser, setOriginalEditUser] = useState<EditUser>(initialEditUser);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>(initialDeleteConfirmation);
 
   const sortUsersByName = (userArray: User[]): User[] => {
     return [...userArray].sort((a, b) => a.name.localeCompare(b.name));
@@ -148,8 +140,22 @@ const EmployeesListPage = () => {
   };
 
 
-  const navigateToTimesheet = (username: string) => {
-    router.push(`/timesheets/${username}`);
+  const navigateToTimesheet = (username: string, userData: User) => {
+    // Optional: Store essential user data in localStorage to ensure it's available in timesheet
+    try {
+      localStorage.setItem('currentEmployeeData', JSON.stringify({
+        username: userData.username,
+        name: userData.name,
+        email: userData.email,
+        designation: userData.designation
+      }));
+      
+      console.log("Navigating to timesheet for:", userData.name, "with email:", userData.email);
+      router.push(`/timesheets/${username}`);
+    } catch (error) {
+      console.error("Error storing employee data:", error);
+      router.push(`/timesheets/${username}`);
+    }
   };
   
   if (loading) return <Loader message="Loading Users..." />;
@@ -193,25 +199,25 @@ const EmployeesListPage = () => {
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
                 <tr key={user._id} className={styles.tableRow}>
-                  <td>
-                    <div 
-                      className={styles.avatarContainer}
-                      onClick={() => navigateToTimesheet(user.username)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className={styles.avatar}>
-                        {getInitials(user?.name)}
-                      </div>
-                      <div className={styles.nameContainer}>
-                        <span>{user?.name}</span>
-                        <span className={styles.username}>@{user?.username}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>{user?.email}</td>
-                  <td>{user?.designation}</td>
-                  <td>{user?.active ? 'Active' : 'Non-active'}</td>
-                </tr>
+  <td>
+    <div 
+      className={styles.avatarContainer}
+      onClick={() => navigateToTimesheet(user.username, user)}
+      style={{ cursor: 'pointer' }}
+    >
+      <div className={styles.avatar}>
+        {getInitials(user?.name)}
+      </div>
+      <div className={styles.nameContainer}>
+        <span>{user?.name}</span>
+        <span className={styles.username}>@{user?.username}</span>
+      </div>
+    </div>
+  </td>
+  <td>{user?.email}</td>
+  <td>{user?.designation}</td>
+  <td>{user?.active ? 'Active' : 'Non-active'}</td>
+</tr>
               ))
             ) : (
               <tr>

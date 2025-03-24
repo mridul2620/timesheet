@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { BarChart3, PieChart } from "lucide-react";
+import { BarChart3, PieChart, X } from "lucide-react";
 import styles from "./timesheet.module.css";
 import Header from "../Header/header";
 import Loader from "../Loader/loader";
@@ -22,13 +22,6 @@ interface User {
   designation: string;
 }
 
-interface Timesheet {
-  entries: TimeEntry[];
-  workDescription: string;
-  dayStatus: { [key: string]: string };
-  status?: string; // Added status field
-}
-
 type DailyHours = {
   day: string;
   abbreviation: string;
@@ -40,6 +33,11 @@ type ProjectHours = {
   hours: number;
   color: string;
 };
+
+interface NotificationState {
+  show: boolean;
+  message: string;
+}
 
 const EmployeeTimesheet = () => {
   const params = useParams();
@@ -58,45 +56,55 @@ const EmployeeTimesheet = () => {
   const [dailyHoursData, setDailyHoursData] = useState<DailyHours[]>([]);
   const [projectHoursData, setProjectHoursData] = useState<ProjectHours[]>([]);
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
+  const [notification, setNotification] = useState<NotificationState>({ show: false, message: "" });
 
-  // Colors for project pie chart
   const projectColors = [
-    "#3b82f6", // Blue
-    "#22d3ee", // Cyan
-    "#f97316", // Orange
-    "#a855f7", // Purple
-    "#06b6d4", // Light blue
-    "#10b981", // Green
-    "#f59e0b", // Amber
-    "#ef4444", // Red
-    "#8b5cf6", // Indigo
-    "#ec4899", // Pink
+    "#3b82f6", "#22d3ee", "#f97316", "#a855f7", "#06b6d4", 
+    "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"
   ];
 
   useEffect(() => {
     const storedData = localStorage.getItem("loginResponse");
     if (storedData) {
-      const parsedData = JSON.parse(storedData);
-      if (parsedData.success) {
-        setAdminUser(parsedData.user);
-      }
-    }
-
-    const fetchEmployeeDetails = async () => {
-      if (!username) return;
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_GET_TIMESHEET_API}/${username}`);
-        if (response.data.success) {
-          setSelectedEmployee(response.data.user);
+        const parsedData = JSON.parse(storedData);
+        if (parsedData.success) {
+          setAdminUser(parsedData.user);
         }
       } catch (error) {
-        console.error("Error fetching employee details:", error);
+        console.error("Error parsing admin data:", error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!username) return;
+    
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_USER_API_URL}/${username}`);
+        if (response.data.success && response.data.user) {
+          setSelectedEmployee(response.data.user);
+          localStorage.setItem('currentEmployeeData', JSON.stringify(response.data.user));
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        
+        const storedEmployeeData = localStorage.getItem("currentEmployeeData");
+        if (storedEmployeeData) {
+          try {
+            const employeeData = JSON.parse(storedEmployeeData);
+            if (employeeData.username === username) {
+              setSelectedEmployee(employeeData);
+            }
+          } catch (e) {
+            console.error("Error parsing stored employee data:", e);
+          }
+        }
       }
     };
 
-    if (username) {
-      fetchEmployeeDetails();
-    }
+    fetchUserData();
   }, [username]);
 
   const getWeekDates = (date: Date) => {
@@ -117,7 +125,6 @@ const EmployeeTimesheet = () => {
 
   const weekDates = getWeekDates(selectedDate);
 
-  // Calculate analytics data when entries change
   useEffect(() => {
     if (entries.length > 0 && entries[0].project) {
       setHasTimesheetData(true);
@@ -128,12 +135,11 @@ const EmployeeTimesheet = () => {
     }
   }, [entries]);
 
-  // Calculate daily hours for bar chart
   const calculateDailyHoursData = () => {
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const abbreviations = ["S", "M", "T", "W", "T", "F", "S"];
     
-    const dailyData: DailyHours[] = weekDates.map((date, index) => {
+    const dailyData: DailyHours[] = weekDates.map((date) => {
       const dayStr = date.toISOString().split("T")[0];
       const dayHours = entries.reduce((total, entry) => {
         const hours = Number.parseFloat(entry.hours[dayStr] || "0");
@@ -150,11 +156,9 @@ const EmployeeTimesheet = () => {
     setDailyHoursData(dailyData);
   };
 
-  // Calculate project hours for pie chart
   const calculateProjectHoursData = () => {
     const projectDataMap = new Map<string, number>();
 
-    // Calculate total hours for each project
     entries.forEach(entry => {
       if (entry.project) {
         const projectHours = Object.values(entry.hours).reduce((total, hours) => {
@@ -168,7 +172,6 @@ const EmployeeTimesheet = () => {
       }
     });
 
-    // Convert to array format needed for chart
     const projectData: ProjectHours[] = Array.from(projectDataMap).map(([project, hours], index) => ({
       project,
       hours,
@@ -178,7 +181,6 @@ const EmployeeTimesheet = () => {
     setProjectHoursData(projectData);
   };
 
-  // Format hours for display (e.g., 16h 30m)
   const formatHoursAndMinutes = (hours: number) => {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
@@ -216,7 +218,7 @@ const EmployeeTimesheet = () => {
             );
             setWorkDescription(relevantTimesheet.workDescription || "");
             setDayStatus(relevantTimesheet.dayStatus || {});
-            setTimesheetStatus(relevantTimesheet.timesheetStatus || "unapproved"); // Updated field name
+            setTimesheetStatus(relevantTimesheet.timesheetStatus || "unapproved");
             setRelevantTimesheetId(relevantTimesheet._id || null);
           } else {
             setEntries([{
@@ -268,12 +270,57 @@ const EmployeeTimesheet = () => {
   };
 
   const handleDateChange = (date: Date) => {
-    // Set the selected date as a new date object
     setSelectedDate(new Date(date));
   };
 
+  const sendEmailNotification = async (status: string) => {
+    if (!selectedEmployee?.email) {
+      showNotification("Unable to send notification: Email address not found");
+      return;
+    }
+
+    const timesheetData = {
+      entries: entries,
+      weekDates: weekDates.map(date => date.toISOString()),
+      dayStatus: dayStatus,
+      workDescription: workDescription
+    };
+
+    try {
+      const emailData = {
+        userEmail: selectedEmployee.email,
+        userName: selectedEmployee.name || username,
+        status: status,
+        startDate: weekDates[0].toISOString(),
+        endDate: weekDates[6].toISOString(),
+        timesheetData: timesheetData,
+        adminName: adminUser?.name || 'Admin'
+      };
+      
+      const emailApiUrl = process.env.NEXT_PUBLIC_EMAIL_API_URL as string;
+      const response = await axios.post(emailApiUrl, emailData);
+
+      if (response.data.success) {
+        showNotification("The user has been notified via email.");
+      } else {
+        showNotification("Failed to send email: " + (response.data.message || "Unknown error"));
+      }
+    } catch (error: any) {
+      if (error.response) {
+        showNotification(`Failed to send email: ${error.response.status} - ${error.response.data.message || "Server error"}`);
+      } else if (error.request) {
+        showNotification("Failed to send email: No response from server");
+      } else {
+        showNotification(`Failed to send email: ${error.message}`);
+      }
+    }
+  };
+
   const updateTimesheetStatus = async (status: string) => {
-    if (!relevantTimesheetId || !username) return;
+    if (!relevantTimesheetId || !username) {
+      showNotification("Cannot update status: Missing timesheet ID or username");
+      return;
+    }
     
     setUpdatingStatus(true);
     try {
@@ -287,23 +334,64 @@ const EmployeeTimesheet = () => {
       
       if (response.data.success) {
         setTimesheetStatus(status);
+        await sendEmailNotification(status);
+        showNotification(`Timesheet ${status} successfully`);
       }
     } catch (error) {
       console.error("Error updating timesheet status:", error);
+      showNotification(`Failed to update timesheet status to ${status}`);
     } finally {
       setUpdatingStatus(false);
     }
   };
 
-  const handleApprove = () => {
-    updateTimesheetStatus("approved");
+  const handleApprove = () => updateTimesheetStatus("approved");
+  const handleReject = () => updateTimesheetStatus("rejected");
+
+  const showNotification = (message: string) => {
+    setNotification({
+      show: true,
+      message: message
+    });
+
+    setTimeout(() => {
+      setNotification({
+        show: false,
+        message: ""
+      });
+    }, 3000);
   };
 
-  const handleReject = () => {
-    updateTimesheetStatus("rejected");
+  const closeNotification = () => {
+    setNotification({
+      show: false,
+      message: ""
+    });
   };
 
-  // Bar Chart component
+  const NotificationDialog = () => {
+    if (!notification.show) return null;
+
+    return (
+      <div className={styles.notificationOverlay}>
+        <div className={styles.notificationDialog}>
+          <div className={styles.notificationHeader}>
+            <span>Notification</span>
+            <button 
+              className={styles.closeButton}
+              onClick={closeNotification}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className={styles.notificationContent}>
+            {notification.message}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const BarChartComponent = () => {
     const maxHours = Math.max(...dailyHoursData.map(day => day.hours), 10);
     
@@ -357,88 +445,76 @@ const EmployeeTimesheet = () => {
     );
   };
 
-  // Pie Chart component
-  // Pie Chart component
-const PieChartComponent = () => {
-  const totalHours = projectHoursData.reduce((sum, project) => sum + project.hours, 0);
-  const projectCount = projectHoursData.length;
-  
-  // Calculate the segments for the donut chart
-  let cumulativePercentage = 0;
-  const segments = projectHoursData.map((project, index) => {
-    const percentage = (project.hours / totalHours) * 100;
-    const startAngle = cumulativePercentage;
-    cumulativePercentage += percentage;
-    const endAngle = cumulativePercentage;
+  const PieChartComponent = () => {
+    const totalHours = projectHoursData.reduce((sum, project) => sum + project.hours, 0);
+    const projectCount = projectHoursData.length;
     
-    // SVG Arc parameters
-    const startX = 50 + 40 * Math.cos((startAngle / 100) * 2 * Math.PI - Math.PI/2);
-    const startY = 50 + 40 * Math.sin((startAngle / 100) * 2 * Math.PI - Math.PI/2);
-    const endX = 50 + 40 * Math.cos((endAngle / 100) * 2 * Math.PI - Math.PI/2);
-    const endY = 50 + 40 * Math.sin((endAngle / 100) * 2 * Math.PI - Math.PI/2);
+    let cumulativePercentage = 0;
+    const segments = projectHoursData.map((project, index) => {
+      const percentage = (project.hours / totalHours) * 100;
+      const startAngle = cumulativePercentage;
+      cumulativePercentage += percentage;
+      const endAngle = cumulativePercentage;
+      
+      const startX = 50 + 40 * Math.cos((startAngle / 100) * 2 * Math.PI - Math.PI/2);
+      const startY = 50 + 40 * Math.sin((startAngle / 100) * 2 * Math.PI - Math.PI/2);
+      const endX = 50 + 40 * Math.cos((endAngle / 100) * 2 * Math.PI - Math.PI/2);
+      const endY = 50 + 40 * Math.sin((endAngle / 100) * 2 * Math.PI - Math.PI/2);
+      
+      const largeArcFlag = percentage > 50 ? 1 : 0;
+      const path = `M 50 50 L ${startX} ${startY} A 40 40 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
+      
+      return { project, percentage, path };
+    });
     
-    // Arc flag is 0 for arcs less than 180 degrees, 1 for arcs greater than 180 degrees
-    const largeArcFlag = percentage > 50 ? 1 : 0;
-    
-    // Path for the segment
-    const path = `M 50 50 L ${startX} ${startY} A 40 40 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
-    
-    return { project, percentage, path };
-  });
-  
-  return (
-    <div className={styles.chartCard}>
-      <div className={styles.chartHeader}>
-        <div className={styles.chartTitle}>
-          <PieChart size={18} className={styles.chartIcon} />
-          <h3>Projects handled</h3>
+    return (
+      <div className={styles.chartCard}>
+        <div className={styles.chartHeader}>
+          <div className={styles.chartTitle}>
+            <PieChart size={18} className={styles.chartIcon} />
+            <h3>Projects handled</h3>
+          </div>
         </div>
-      </div>
-      <div className={styles.pieChartContainer}>
-        <div className={styles.pieChart} style={{ position: 'relative' }}>
-          <svg viewBox="0 0 100 100" className={styles.pieChartSvg}>
-            {segments.map((segment, index) => (
-              <path 
-                key={index} 
-                d={segment.path}
-                fill={segment.project.color}
-                onMouseEnter={() => setHoveredProject(segment.project.project)}
-                onMouseLeave={() => setHoveredProject(null)}
-              />
-            ))}
+        <div className={styles.pieChartContainer}>
+          <div className={styles.pieChart} style={{ position: 'relative' }}>
+            <svg viewBox="0 0 100 100" className={styles.pieChartSvg}>
+              {segments.map((segment, index) => (
+                <path 
+                  key={index} 
+                  d={segment.path}
+                  fill={segment.project.color}
+                  onMouseEnter={() => setHoveredProject(segment.project.project)}
+                  onMouseLeave={() => setHoveredProject(null)}
+                />
+              ))}
+              <circle cx="50" cy="50" r="25" fill="#121f3a" />
+              <text x="50" y="55" textAnchor="middle" fill="#f97316" fontSize="36" fontWeight="bold" style={{ transform: 'rotate(90deg)', transformOrigin: 'center' }}>
+                {projectCount}
+              </text>
+            </svg>
             
-            {/* Inner circle for donut effect */}
-            <circle cx="50" cy="50" r="25" fill="#121f3a" />
-            
-            {/* Project count in the center - fixed to show correctly */}
-            <text x="50" y="55" textAnchor="middle" fill="#f97316" fontSize="36" fontWeight="bold" style={{ transform: 'rotate(90deg)', transformOrigin: 'center' }}>
-              {projectCount}
-            </text>
-          </svg>
-          
-          {/* Overlay for hovered project name */}
-          {hoveredProject && (
-            <div className={styles.projectHoverLabel}>
-              {hoveredProject}
-            </div>
-          )}
-        </div>
-        
-        <div className={styles.pieChartLegend}>
-          {projectHoursData.map((project, index) => (
-            <div key={index} className={styles.legendItem}>
-              <div className={styles.legendColor} style={{ backgroundColor: project.color }}></div>
-              <div className={styles.legendText}>
-                <div className={styles.legendTitle}>{project.project}</div>
-                <div className={styles.legendValue}>{formatHoursAndMinutes(project.hours)}</div>
+            {hoveredProject && (
+              <div className={styles.projectHoverLabel}>
+                {hoveredProject}
               </div>
-            </div>
-          ))}
+            )}
+          </div>
+          
+          <div className={styles.pieChartLegend}>
+            {projectHoursData.map((project, index) => (
+              <div key={index} className={styles.legendItem}>
+                <div className={styles.legendColor} style={{ backgroundColor: project.color }}></div>
+                <div className={styles.legendText}>
+                  <div className={styles.legendTitle}>{project.project}</div>
+                  <div className={styles.legendValue}>{formatHoursAndMinutes(project.hours)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   if (loading) return <Loader />;
 
@@ -448,6 +524,7 @@ const PieChartComponent = () => {
         title={`Timesheet - ${selectedEmployee?.name || username}`} 
         user={adminUser}
       />
+      {notification.show && <NotificationDialog />}
       <div className={styles.tableContainer}>
         <div className={styles.gridContainer}>
           <div className={styles.calendarSection}>
@@ -553,7 +630,7 @@ const PieChartComponent = () => {
               </span>
             </div>
             <div className={styles.approvalActions}>
-              <button 
+            <button 
                 className={`${styles.actionButton} ${styles.rejectButton}`}
                 onClick={handleReject}
                 disabled={updatingStatus || timesheetStatus === 'rejected'}
@@ -571,7 +648,6 @@ const PieChartComponent = () => {
           </div>
         </div>
         
-        {/* Analytics section - only shown when timesheet data is available */}
         {hasTimesheetData && (
           <div className={styles.analyticsSection}>
             <h3 className={styles.analyticsTitle}>Analytics for the week</h3>
