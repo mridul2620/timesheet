@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { CalendarClock, User, PoundSterling, Users, Menu, ClipboardList, LogOut, House, BookOpenText, ClipboardPlus} from "lucide-react";
 import styles from "./Sidebar.module.css";
@@ -82,9 +82,13 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
     useEffect(() => {
       const storedData = localStorage.getItem("loginResponse");
       if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        if (parsedData.success) {
-          setUser(parsedData.user);
+        try {
+          const parsedData = JSON.parse(storedData);
+          if (parsedData.success) {
+            setUser(parsedData.user);
+          }
+        } catch (error) {
+          console.error("Error parsing user data:", error);
         }
       }
       
@@ -96,12 +100,25 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
       }
     }, [pathname, onNavigate]);
 
-    const handleItemClick = (path: string, component: string) => {
+    // Using useCallback to memoize the navigation handler
+    const handleItemClick = useCallback((path: string, component: string, e: React.MouseEvent) => {
+      // Prevent default and stop propagation to ensure the click isn't interfered with
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Directly update the window location to ensure navigation works
+      // This is a more direct approach than using the router
+      window.location.href = path;
+      
+      // Also call onNavigate for component state
       onNavigate(component);
-      router.push(path);
-    };
+    }, [onNavigate]);
 
-    const handleLogout = () => {
+    const handleLogout = useCallback((e: React.MouseEvent) => {
+      // Prevent default and stop propagation
+      e.preventDefault();
+      e.stopPropagation();
+      
       // Clear localStorage data
       localStorage.removeItem("loginResponse");
       // Set a flag to indicate logged out state
@@ -109,7 +126,7 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
       
       // Use window.location for a full page reload to the login page
       window.location.href = "/";
-    };
+    }, []);
 
     return (
       <div 
@@ -147,14 +164,15 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
                   const Icon = item.icon;
                   const isActive = activePage === item.component;
                   return (
-                    <button
+                    <a
                       key={item.path}
-                      onClick={() => handleItemClick(item.path, item.component)}
+                      href={item.path}
                       className={`${styles.navItem} ${isActive ? styles.active : ""}`}
+                      onClick={(e) => handleItemClick(item.path, item.component, e)}
                     >
                       <Icon size={20} />
                       {isExpanded && <span>{item.name}</span>}
-                    </button>
+                    </a>
                   );
                 })}
               </div>
@@ -163,13 +181,14 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
         </nav>
         
         <div className={styles.sidebarFooter}>
-          <button
-            onClick={handleLogout}
+          <a
+            href="/"
             className={styles.logoutButton}
+            onClick={handleLogout}
           >
             <LogOut size={20} />
             {isExpanded && <span>Logout</span>}
-          </button>
+          </a>
         </div>
       </div>
     );

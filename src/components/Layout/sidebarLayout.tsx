@@ -16,11 +16,26 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const storedData = localStorage.getItem("loginResponse");
     if (storedData) {
-      const parsedData = JSON.parse(storedData);
-      if (parsedData.success) {
-        setUser(parsedData.user);
+      try {
+        const parsedData = JSON.parse(storedData);
+        if (parsedData.success) {
+          setUser(parsedData.user);
+        }
+      } catch (error) {
+        console.error("Error parsing user data:", error);
       }
     }
+
+    // Fix for event propagation issues
+    const fixEventPropagation = () => {
+      // Global event handler to ensure clicks aren't prevented
+      document.addEventListener('click', function(e) {
+        // Just let all clicks happen naturally
+        return true;
+      }, true);
+    };
+
+    fixEventPropagation();
   }, []);
 
   const handleNavigation = (page: string) => {

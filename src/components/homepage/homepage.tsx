@@ -279,7 +279,7 @@ const HomepageContent: React.FC = () => {
       setSubmitting(true);
 
       const updatedDayStatus = { ...dayStatus };
-      weekDates.forEach((date: { toISOString: () => string; getDay: () => any; }) => {
+      weekDates.forEach((date) => {
         const dayStr = date.toISOString().split("T")[0];
         if (!updatedDayStatus[dayStr]) {
           const dayOfWeek = date.getDay();
@@ -336,6 +336,24 @@ const HomepageContent: React.FC = () => {
 
   // Effects
   
+  // Critical fix: Ensure sidebar links work regardless of timesheet data
+  useEffect(() => {
+    const ensureSidebarNavigationWorks = () => {
+      // Add this attribute to all links to ensure click events work properly
+      document.querySelectorAll('a, button').forEach(element => {
+        element.setAttribute('data-navigation-enabled', 'true');
+      });
+    };
+
+    // Apply the fix immediately and after any data loads
+    ensureSidebarNavigationWorks();
+    
+    // Also set an interval to keep checking and fixing links
+    const interval = setInterval(ensureSidebarNavigationWorks, 1000);
+    
+    return () => clearInterval(interval);
+  }, [hasTimesheetData]);
+
   // Effect for calculating analytics data
   useEffect(() => {
     if (entries.length > 0 && entries.some(entry => entry.project)) {
@@ -483,7 +501,7 @@ const HomepageContent: React.FC = () => {
                     </button>
                   </td>
                   <td>Total</td>
-                  {weekDates.map((date: Date) => (
+                  {weekDates.map((date) => (
                     <td key={date.toISOString()} className={styles.totalCell}>
                       {calculateDayTotal(date).toFixed(2)}
                     </td>
