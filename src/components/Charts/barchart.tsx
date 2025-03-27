@@ -1,6 +1,6 @@
 import React from "react";
 import { BarChart3 } from "lucide-react";
-import styles from "./Charts.module.css";
+import styles from "./charts.module.css";
 
 type DailyHours = {
   day: string;

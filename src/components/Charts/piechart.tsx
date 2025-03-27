@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { PieChart } from "lucide-react";
-import styles from "./Charts.module.css";
+import styles from "./charts.module.css";
 
 type ProjectHours = {
   project: string;
