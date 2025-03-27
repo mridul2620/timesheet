@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import "./forgotPass.css";
 
 const ForgotPasswordForm = () => {
   const [identifier, setIdentifier] = useState("");
@@ -48,25 +49,30 @@ const ForgotPasswordForm = () => {
         <h2 className="text-white text-2xl font-bold text-center font-serif mb-2">
           Chartsign
         </h2>
-        <div className="input-container">
-          <input
-            type="text"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="Email or Username"
-            required
-            className="border rounded px-3 py-2 mb-3"
-          />
-        </div>
+        <h3 className="text-white text-lg text-center mb-4">Forgot Password</h3>
+        
+        <input
+          type="text"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          placeholder="Email or Username"
+          required
+        />
+        
         <button type="submit" disabled={isLoading}>
           {isLoading ? "Sending..." : "Reset Password"}
         </button>
+        
+        {message && (
+          <p className={message.includes("sent") ? "success-message" : "error-message"}>
+            {message}
+          </p>
+        )}
       </form>
-      {message && (
-        <p className={message.includes("sent") ? "text-green-500" : "text-red-500"}>
-          {message}
-        </p>
-      )}
+      <div className="footer-text">
+        <p>Copyright © 2019-2024 Chartsign Ltd</p>
+        <p>Entry to this site is restricted to employees and affiliates of Chartsign Limited</p>
+      </div>
     </div>
   );
 };

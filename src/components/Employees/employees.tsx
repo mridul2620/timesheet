@@ -175,7 +175,7 @@ const EmployeesPage = () => {
       newUsername: userToEdit.username,
       email: userToEdit.email,
       name: userToEdit.name,
-      role: userToEdit.role || "",
+      role: userToEdit.role,
       payrate: userToEdit.payrate?.toString() || "",
       designation: userToEdit.designation,
       active: userToEdit.active

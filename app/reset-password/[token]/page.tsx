@@ -30,7 +30,6 @@ const ResetPasswordPage = ({ params }: { params: { token: string } }) => {
 
   return (
     <div>
-      <h1>Reset Password</h1>
       <ResetPasswordForm token={token} />
     </div>
   );

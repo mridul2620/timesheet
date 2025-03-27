@@ -1,0 +1,240 @@
+.chartCard {
+    background-color: var(--bg-tertiary);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .chartHeader {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .chartTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .chartTitle h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  
+  .chartIcon {
+    color: var(--accent-color);
+  }
+  
+  .barChartContainer {
+    padding: 1.5rem;
+    height: 280px;
+    display: flex;
+  }
+  
+  .yAxis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-right: 0.75rem;
+    color: #b9c1d9;
+    font-size: 0.75rem;
+    width: 2.5rem;
+    text-align: right;
+  }
+  
+  .barChart {
+    flex: 1;
+    display: flex;
+    justify-content: space-around;
+    height: 220px;
+    border-bottom: 1px solid #2a3654;
+    position: relative;
+  }
+  
+  .barChart::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      linear-gradient(to bottom, 
+      rgba(42, 54, 84, 0.5) 0%, 
+      rgba(42, 54, 84, 0.5) 1px, 
+      transparent 1px, 
+      transparent 20%,
+      rgba(42, 54, 84, 0.5) 20%, 
+      rgba(42, 54, 84, 0.5) 21px, 
+      transparent 21px, 
+      transparent 40%,
+      rgba(42, 54, 84, 0.5) 40%, 
+      rgba(42, 54, 84, 0.5) 41px, 
+      transparent 41px, 
+      transparent 60%,
+      rgba(42, 54, 84, 0.5) 60%, 
+      rgba(42, 54, 84, 0.5) 61px, 
+      transparent 61px, 
+      transparent 80%,
+      rgba(42, 54, 84, 0.5) 80%, 
+      rgba(42, 54, 84, 0.5) 81px, 
+      transparent 81px, 
+      transparent 100%);
+    pointer-events: none;
+  }
+  
+  .barColumn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    position: relative;
+  }
+  
+  .barWrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  
+  .bar {
+    width: 24px;
+    max-width: 90%;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    margin-top: auto;
+  }
+  
+  .barValue {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    color: #b9c1d9;
+    white-space: nowrap;
+  }
+  
+  .barLabel {
+    margin-top: 0.5rem;
+    color: #b9c1d9;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .pieChartContainer {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 1rem;
+    flex: 1;
+  }
+  
+  .pieChart {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+    position: relative;
+  }
+  
+  .pieChartSvg {
+    width: 100%;
+    height: auto;
+    transform: rotate(-90deg);
+  }
+  
+  .pieChartSvg text {
+    transform: rotate(90deg);
+    transform-origin: center;
+    fill: var(--accent-color);
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .pieChartSvg path {
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .pieChartSvg path:hover {
+    opacity: 0.8;
+    transform: scale(1.03) translateX(1%) translateY(1%);
+  }
+  
+  .pieSegment {
+    transition: opacity 0.2s ease;
+  }
+  
+  .pieSegment:hover {
+    opacity: 0.8;
+  }
+  
+  .segmentTooltip {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    white-space: nowrap;
+  }
+  
+  .pieChartLegend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    width: 100%;
+  }
+  
+  .legendItem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .legendColor {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+  }
+  
+  .legendText {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .legendTitle {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+  
+  .legendValue {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+  
+  @media (max-width: 576px) {
+    .chartCard {
+      min-height: 300px;
+    }
+  }

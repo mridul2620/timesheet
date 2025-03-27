@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import "./resetpassword.css";
 
 const ResetPasswordForm = ({ token }: { token: string }) => {
   const [password, setPassword] = useState("");
@@ -10,7 +11,6 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Create URLSearchParams object to encode data
     const data = new URLSearchParams();
     data.append("password", password);
 
@@ -25,33 +25,33 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
         }
       );
       setMessage(res.data.message);
-      router.push("/"); // Redirect to login page on success
+      router.push("/");
     } catch (error: any) {
       setMessage(error.response?.data?.message || "An error occurred");
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 bg-white rounded shadow-md">
-        <h1 className="text-2xl font-bold mb-6">Reset Password</h1>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="New Password"
-            required
-            className="border rounded px-3 py-2 mb-3 w-full"
-          />
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded w-full"
-          >
-            Reset Password
-          </button>
-        </form>
-        {message && <p className="mt-4 text-center text-red-500">{message}</p>}
+    <div className="container">
+      <div className="drop drop-4"></div>
+      <form onSubmit={handleSubmit}>
+        <h2 className="text-white text-2xl font-bold text-center font-serif mb-2">
+          Chartsign
+        </h2>
+        <h3 className="text-white text-lg text-center mb-4">Reset Password</h3>
+        {message && <p className="error-message">{message}</p>}
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="New Password"
+          required
+        />
+        <button type="submit">Reset Password</button>
+      </form>
+      <div className="footer-text">
+        <p>Copyright © 2019-2024 Chartsign Ltd</p>
+        <p>Entry to this site is restricted to employees and affiliates of Chartsign Limited</p>
       </div>
     </div>
   );
