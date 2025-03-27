@@ -18,6 +18,7 @@ const LoginPage: React.FC = () => {
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter(); 
 
   const usernameRegex = /^[a-zA-Z0-9]+$/;
@@ -48,6 +49,7 @@ const LoginPage: React.FC = () => {
     }
 
     setErrorMessage("");
+    setIsLoading(true);
 
     const data = new URLSearchParams();
     data.append("username", username);
@@ -77,6 +79,8 @@ const LoginPage: React.FC = () => {
     } catch (error) {
       console.error("Error:", error);
       setErrorMessage("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -199,7 +203,16 @@ const LoginPage: React.FC = () => {
           </ul>
         </div>
         <br />
-        <button type="submit" onClick={handleSubmit}>Sign In</button>
+        <button type="submit" disabled={isLoading} className={isLoading ? "loading" : ""}>
+          {isLoading ? (
+            <div className="spinner-container">
+              <div className="spinner"></div>
+              <span>Signing In</span>
+            </div>
+          ) : (
+            "Sign In"
+          )}
+        </button>
         <div className="text-center">
           <Link
             href="/forgot-password"

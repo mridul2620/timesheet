@@ -123,6 +123,49 @@ button:active {
   background-color: var(--accent-color);
 }
 
+button:disabled {
+  opacity: 0.9;
+  cursor: default;
+}
+
+.spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+button.loading {
+  min-width: 150px;
+  background-color: var(--accent-color);
+  position: relative;
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+}
+
+button.loading:hover {
+  background-color: var(--accent-color);
+}
+
+
 .drop {
   background: var(--white);
   border-radius: 10px;
@@ -315,6 +358,15 @@ button:focus {
     margin: 0.2rem 0;
   }
 
+  .spinner {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .spinner-container {
+    gap: 6px;
+  }
+
   .footer-text {
     margin-top: 18px;
     font-size: 0.75rem;
@@ -389,6 +441,19 @@ button:focus {
 
   .password-checklist li {
     margin: 0.1rem 0;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .spinner-container {
+    gap: 4px;
+  }
+  
+  button.loading {
+    min-width: 120px;
   }
 
   .footer-text {
