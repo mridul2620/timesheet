@@ -11,20 +11,27 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    // Debug logs for development
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Current path:", pathname);
+      console.log("Is reset password path:", pathname.startsWith("/reset-password/"));
+    }
+    
     const isLoggedOut = sessionStorage.getItem("isLoggedOut") === "true";
     const isAuthenticated = localStorage.getItem("loginResponse") !== null;
     
     // Check if the current path is public or a reset password path
-    const isResetPasswordPath = pathname.startsWith("/reset-password");
+    const isResetPasswordPath = pathname.startsWith("/reset-password/");
     const isPublicPath = publicPaths.includes(pathname) || isResetPasswordPath;
     
     // Redirect to login if not authenticated and trying to access a protected route
     if ((isLoggedOut || !isAuthenticated) && !isPublicPath) {
       window.location.href = "/";
+      return;
     }
     
     // Clear logout flag if on a public route and authenticated
-    if (isPublicPath && isAuthenticated) {
+    if (isPublicPath && isAuthenticated && isLoggedOut) {
       sessionStorage.removeItem("isLoggedOut");
     }
     

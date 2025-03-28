@@ -6,13 +6,18 @@ import "./resetpassword.css";
 const ResetPasswordForm = ({ token }: { token: string }) => {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
     const data = new URLSearchParams();
     data.append("password", password);
+    
+    // Log the API URL being used (for debugging)
+    console.log("API URL:", `${process.env.NEXT_PUBLIC_SERVER_URL}/api/reset/${token}`);
 
     try {
       const res = await axios.post(
@@ -24,10 +29,18 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
           },
         }
       );
+      console.log("API Response:", res.data);
       setMessage(res.data.message);
-      router.push("/");
+      
+      // Add a small delay before redirecting
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
     } catch (error: any) {
+      console.error("Reset password error:", error);
       setMessage(error.response?.data?.message || "An error occurred");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,7 +60,9 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
           placeholder="New Password"
           required
         />
-        <button type="submit">Reset Password</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Processing..." : "Reset Password"}
+        </button>
       </form>
       <div className="footer-text">
         <p>Copyright © 2019-2024 Chartsign Ltd</p>
