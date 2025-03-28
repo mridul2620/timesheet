@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import "./resetpassword.css";
 
 const ResetPasswordForm = ({ token }: { token: string }) => {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,6 +42,10 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className="reset-password-wrapper">
       <div className="reset-password-container">
@@ -50,15 +56,29 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
           </h2>
           <h3 className="text-white text-lg text-center mb-4">Reset Password</h3>
           
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="New Password"
-            required
-          />
+          <div className="password-input-container">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="New Password"
+              required
+            />
+            <button 
+              type="button" 
+              className="password-toggle-btn"
+              onClick={togglePasswordVisibility}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff size={20} />
+              ) : (
+                <Eye size={20} />
+              )}
+            </button>
+          </div>
           
-          <button type="submit" disabled={loading}>
+          <button type="submit" disabled={loading} className="submit-btn">
             {loading ? "Sending..." : "Reset Password"}
           </button>
           
