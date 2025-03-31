@@ -95,6 +95,16 @@ class TimesheetService {
     }
   }
 
+async fetchClients(): Promise<any[]> {
+  try {
+    const response = await axios.get(process.env.NEXT_PUBLIC_CLIENT_API as string);
+    return response.data?.clients ? response.data.clients : [];
+  } catch (error) {
+    console.error("Error fetching clients:", error);
+    return [];
+  }
+}
+
   async fetchProjects(): Promise<any[]> {
     try {
       const response = await axios.get(process.env.NEXT_PUBLIC_PROJECTS_API as string);

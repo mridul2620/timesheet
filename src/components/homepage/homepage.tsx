@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Plus } from "lucide-react";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import styles from "./homepage.module.css";
 import Calendar from "../Calender";
@@ -12,7 +11,7 @@ import Dialog from "./dialog";
 import TimesheetRow from "./timesheetRow";
 import StatusRow from "./timesheetStatus";
 import TimesheetService from "./timesheetservive";
-import { TimeEntry, User, Project, Subject, DailyHours, ProjectHours, DialogData } from "./timesheetTypes";
+import { TimeEntry, User, Project, Subject, DailyHours, ProjectHours, DialogData, Client } from "./timesheetTypes";
 
 const HomepageContent: React.FC = () => {
   const projectColors = [
@@ -20,22 +19,25 @@ const HomepageContent: React.FC = () => {
     "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"
   ];
   
-  // Helper function to create initial entries
+
   const getInitialEntries = (): TimeEntry[] => {
     return Array(3).fill(null).map((_, index) => ({
       id: String(index + 1),
+      client: "",
       project: "",
       subject: "",
       hours: {},
     }));
   };
+  
 
-  // State management
   const [entries, setEntries] = useState<TimeEntry[]>(getInitialEntries());
   const [user, setUser] = useState<User | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workDescription, setWorkDescription] = useState("");
   const [dayStatus, setDayStatus] = useState<{ [key: string]: string }>({});
+  const [clients, setClients] = useState<Client[]>([]);
+  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -57,20 +59,17 @@ const HomepageContent: React.FC = () => {
   });
   const [dataNotFound, setDataNotFound] = useState(false);
 
-  // Derived values
   const weekDates = useMemo(() => 
     TimesheetService.getWeekDates(selectedDate), 
     [selectedDate]
   );
 
-  // Format hours and minutes helper
   const formatHoursAndMinutes = (hours: number) => {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
     return `${h}h ${m}m`;
   };
 
-  // Dialog handlers
   const showDialog = (title: string, message: string, isError: boolean = false) => {
     setDialogData({ show: true, title, message, isError });
   };
@@ -79,12 +78,10 @@ const HomepageContent: React.FC = () => {
     setDialogData(prev => ({ ...prev, show: false }));
   };
 
-  // Day status initialization
   const initializeDefaultDayStatus = useCallback(() => {
     setDayStatus(TimesheetService.initializeDayStatus(weekDates));
   }, [weekDates]);
 
-  // Reset form to default values
   const resetToDefaultValues = useCallback(() => {
     setCurrentTimesheetId("");
     setIsWeekEditable(true);
@@ -96,7 +93,6 @@ const HomepageContent: React.FC = () => {
     setDataNotFound(false);
   }, [initializeDefaultDayStatus]);
 
-  // Calculate analytics data
   const calculateDailyHoursData = useCallback(() => {
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const abbreviations = ["S", "M", "T", "W", "T", "F", "S"];
@@ -143,7 +139,6 @@ const HomepageContent: React.FC = () => {
     setProjectHoursData(projectData);
   }, [entries, projectColors]);
 
-  // Hour calculation helpers
   const calculateDayTotal = useCallback((date: Date) => {
     const dayStr = date.toISOString().split("T")[0];
     return entries.reduce((total, entry) => {
@@ -164,7 +159,24 @@ const HomepageContent: React.FC = () => {
     }, 0);
   }, [entries, calculateRowTotal]);
 
-  // Event handlers
+  useEffect(() => {
+    if (user && clients.length > 0) {
+      const filtered = clients.filter(client => 
+        client.assignedTo.length === 0 || client.assignedTo.includes(user.name)
+      );
+      setFilteredClients(filtered);
+    }
+  }, [user, clients]);
+  
+  
+  const handleClientChange = (entryId: string, value: string) => {
+    setEntries((prev) =>
+      prev.map((entry) =>
+        entry.id === entryId ? { ...entry, client: value } : entry
+      )
+    );
+  };
+
   const handleProjectChange = (entryId: string, value: string) => {
     setEntries((prev) =>
       prev.map((entry) =>
@@ -204,6 +216,7 @@ const HomepageContent: React.FC = () => {
       ...prev,
       {
         id: String(Date.now()),
+        client: "",
         project: "",
         subject: "",
         hours: {},
@@ -215,7 +228,6 @@ const HomepageContent: React.FC = () => {
     setEntries((prev) => prev.filter((entry) => entry.id !== entryId));
   };
 
-  // Fetch timesheet data for current week
   const fetchTimesheetForCurrentWeek = useCallback(async () => {
     if (!user?.username) return;
 
@@ -404,24 +416,27 @@ const HomepageContent: React.FC = () => {
 
   // Effect for fetching projects and subjects
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [projectsData, subjectsData] = await Promise.all([
-          TimesheetService.fetchProjects(),
-          TimesheetService.fetchSubjects(),
-        ]);
-  
-        setProjects(projectsData);
-        setSubjects(subjectsData);
-      } catch (error) {
-        console.error("Error fetching project/subject data:", error);
-        setProjects([]);
-        setSubjects([]);
-      }
-    };
-  
-    fetchData();
-  }, []);
+  const fetchData = async () => {
+    try {
+      const [clientsData, projectsData, subjectsData] = await Promise.all([
+        TimesheetService.fetchClients(),
+        TimesheetService.fetchProjects(),
+        TimesheetService.fetchSubjects(),
+      ]);
+
+      setClients(clientsData);
+      setProjects(projectsData);
+      setSubjects(subjectsData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setClients([]);
+      setProjects([]);
+      setSubjects([]);
+    }
+  };
+
+  fetchData();
+}, []);
 
   // Effect for fetching timesheet data
   useEffect(() => {
@@ -466,6 +481,7 @@ const HomepageContent: React.FC = () => {
             <table className={styles.table}>
               <thead>
                 <tr>
+                  <th>Client</th>
                   <th>Projects</th>
                   <th>Subject</th>
                   {weekDates.map((date) => (
@@ -483,8 +499,10 @@ const HomepageContent: React.FC = () => {
                     entry={entry}
                     weekDates={weekDates}
                     isWeekEditable={isWeekEditable}
+                    filteredClients={filteredClients}
                     filteredProjects={filteredProjects}
                     filteredSubjects={filteredSubjects}
+                    handleClientChange={handleClientChange}
                     handleProjectChange={handleProjectChange}
                     handleSubjectChange={handleSubjectChange}
                     handleInputChange={handleInputChange}
@@ -500,6 +518,7 @@ const HomepageContent: React.FC = () => {
                       Project
                     </button>
                   </td>
+                  <td></td>
                   <td>Total</td>
                   {weekDates.map((date) => (
                     <td key={date.toISOString()} className={styles.totalCell}>

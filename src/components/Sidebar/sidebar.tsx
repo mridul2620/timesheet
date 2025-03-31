@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarClock, User, PoundSterling, Users, Menu, ClipboardList, LogOut, House, BookOpenText, ClipboardPlus} from "lucide-react";
+import { CalendarClock, User, BriefcaseBusiness, PoundSterling, Users, Menu, ClipboardList, LogOut, House, BookOpenText, ClipboardPlus} from "lucide-react";
 import styles from "./Sidebar.module.css";
 
 // Group menu items by section
@@ -51,6 +51,12 @@ const menuSections = [
         name: "Payroll",
         icon: PoundSterling,
         component: "payroll",
+      },
+      {
+        path: "/clients",
+        name: "Clients",
+        icon: BriefcaseBusiness,
+        component: "client",
       },
       {
         path: "/projects",

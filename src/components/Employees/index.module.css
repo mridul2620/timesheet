@@ -426,6 +426,36 @@
   color: #6b7a99;
 }
 
+.passwordInputContainer {
+  position: relative;
+  width: 100%;
+}
+
+.passwordInputContainer input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.passwordToggleButton {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #6b7a99;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.passwordToggleButton:hover {
+  color: #f97316;
+}
+
 .submitButton {
   width: 100%;
   padding: 0.75rem;

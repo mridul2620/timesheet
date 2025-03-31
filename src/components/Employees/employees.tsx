@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Trash2, Plus, X, Edit, AlertTriangle, Search } from "lucide-react";
+import { Trash2, Plus, X, Edit, AlertTriangle, Search, Eye, EyeOff } from "lucide-react";
 import styles from "./index.module.css";
 import Loader from "../Loader/loader";
 import Header from "../Header/header";
@@ -87,6 +87,7 @@ const EmployeesPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>(initialDeleteConfirmation);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const sortUsersByName = (userArray: User[]): User[] => {
     return [...userArray].sort((a, b) => a.name.localeCompare(b.name));
@@ -137,6 +138,10 @@ const EmployeesPage = () => {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  };
+
+  const togglePasswordVisibility = () => {
+    setPasswordVisible(!passwordVisible);
   };
 
   const getInitials = (name: string = "") => {
@@ -566,17 +571,26 @@ const EmployeesPage = () => {
             </div>
             
             <div className={styles.formGroup}>
-              <label htmlFor="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={newUser.password}
-                onChange={handleInputChange}
-                placeholder="Enter password"
-              />
-            </div>
-            
+  <label htmlFor="password">Password</label>
+  <div className={styles.passwordInputContainer}>
+    <input
+      type={passwordVisible ? "text" : "password"}
+      id="password"
+      name="password"
+      value={newUser.password}
+      onChange={handleInputChange}
+      placeholder="Enter password"
+    />
+    <button 
+      type="button"
+      className={styles.passwordToggleButton}
+      onClick={togglePasswordVisibility}
+      aria-label={passwordVisible ? "Hide password" : "Show password"}
+    >
+      {passwordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+    </button>
+  </div>
+</div>
             <button type="submit" className={styles.submitButton}>
               Add User
             </button>

@@ -30,7 +30,7 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
         const x = e.clientX - (rect.left + rect.width / 2);
         const y = e.clientY - (rect.top + rect.height / 2);
         const distance = Math.sqrt(x * x + y * y);
-        const intensity = Math.max(0, 1 - distance / 150); // Adjust fade effect range
+        const intensity = Math.max(0, 1 - distance / 135); // Adjust fade effect range
   
         day.style.setProperty("--mouse-x", `${x + rect.width / 2}px`);
         day.style.setProperty("--mouse-y", `${y + rect.height / 2}px`);

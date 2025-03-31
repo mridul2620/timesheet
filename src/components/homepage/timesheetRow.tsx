@@ -7,8 +7,10 @@ type TimesheetRowProps = {
   entry: TimeEntry;
   weekDates: Date[];
   isWeekEditable: boolean;
+  filteredClients: any[]; 
   filteredProjects: any[];
   filteredSubjects: any[];
+  handleClientChange: (entryId: string, value: string) => void;
   handleProjectChange: (entryId: string, value: string) => void;
   handleSubjectChange: (entryId: string, value: string) => void;
   handleInputChange: (entryId: string, day: string, value: string) => void;
@@ -20,8 +22,10 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
   entry,
   weekDates,
   isWeekEditable,
+  filteredClients,
   filteredProjects,
   filteredSubjects,
+  handleClientChange,
   handleProjectChange,
   handleSubjectChange,
   handleInputChange,
@@ -30,6 +34,21 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
 }) => {
   return (
     <tr key={entry.id}>
+      <td>
+  <select
+    className={`${styles.select} ${styles.clientSelect}`}
+    value={entry.client || ""}
+    onChange={(e) => handleClientChange(entry.id, e.target.value)}
+    disabled={!isWeekEditable}
+  >
+    <option value="">Select</option>
+    {filteredClients.map((client) => (
+      <option key={client._id} value={client.name}>
+        {client.name}
+      </option>
+    ))}
+  </select>
+</td>
       <td>
         <select
           className={styles.select}

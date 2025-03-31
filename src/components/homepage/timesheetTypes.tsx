@@ -1,5 +1,6 @@
 export type TimeEntry = {
     id: string;
+    client: string;
     project: string;
     subject: string;
     hours: { [key: string]: string };
@@ -40,6 +41,12 @@ export type TimeEntry = {
     project: string;
     hours: number;
     color: string;
+  };
+
+  export type Client = {
+    _id: string;
+    name: string;
+    assignedTo: string[];
   };
   
   export type Project = {

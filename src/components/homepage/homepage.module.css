@@ -4,17 +4,18 @@
   font-family: "Inter", sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  padding: 2rem;
+  padding: 1.8rem; /* Reduced from 2rem */
   min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
+  font-size: 0.9rem; /* Scaled down base font size */
 }
 
 .tableContainer {
   width: 100%;
-  margin: 1rem auto;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
+  margin: 0.9rem auto; /* Reduced from 1rem */
+  padding: 0.45rem; /* Reduced from 0.5rem */
+  border-radius: 0.45rem; /* Reduced from 0.5rem */
   background-color: var(--bg-secondary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   overflow: hidden;
@@ -22,13 +23,15 @@
 
 .gridContainer {
   display: flex;
-  gap: 1rem;
-  margin: 0.5rem;
+  gap: 0.7rem; /* Reduced from 0.75rem */
+  margin: 0.45rem 0.23rem; /* Reduced from 0.5rem 0.25rem */
+  align-items: flex-start;
 }
 
 .calendarSection {
-  width: 300px; 
-  margin: 0.5rem;
+  width: 234px; /* Reduced from 260px by 10% */
+  margin: 0.45rem 0.23rem; /* Reduced from 0.5rem 0.25rem */
+  flex-shrink: 0;
 }
 
 .tableWrapper {
@@ -36,35 +39,37 @@
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+  min-width: 0;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: 0.8rem; /* Reduced from 0.875rem */
   color: var(--text-primary);
-  min-width: 650px;
+  min-width: 585px; /* Reduced from 650px by 10% */
 }
 
 .table th {
-  padding: 0.75rem;
+  padding: 0.7rem; /* Reduced from 0.75rem */
   text-align: left;
   font-weight: 500;
-  font-size: 0.8rem;
+  font-size: 0.72rem; /* Reduced from 0.8rem */
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border-color);
   white-space: nowrap;
 }
 
 .table td {
-  padding: 0.75rem;
+  padding: 0.7rem; /* Reduced from 0.75rem */
   border-bottom: 1px solid var(--border-color);
 }
 
 .weekColumn {
-  width: 80px;
-  min-width: 80px;
-  max-width: 80px;
+  width: 68px; /* Reduced from 75px */
+  min-width: 68px; /* Reduced from 75px */
+  max-width: 68px; /* Reduced from 75px */
+  text-align: start;
 }
 
 .totalCell {
@@ -90,19 +95,19 @@
   width: 100%;
   padding: 2px;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: 7px; /* Slightly reduced from 8px */
+  font-size: 11px; /* Reduced from 12px */
 }
 
 .select {
   width: 100%;
-  min-width: 70px;
+  min-width: 80px; 
   padding: 2px;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 7px; /* Slightly reduced from 8px */
   background: var(--bg-tertiary);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 11px; /* Reduced from 12px */
   transition: all 0.3s ease-in-out;
   cursor: pointer;
   font-family: inherit;
@@ -138,11 +143,12 @@
 }
 
 .hourInput {
-  width: 80%;
-  max-width: 3rem;
-  padding: 0.275rem;
+  width: 100%;
+  max-width: 3rem; /* Reduced from 3rem */
+  min-width: 2.5rem; /* Reduced from 2.5rem */
+  padding: 0.25rem; /* Reduced from 0.25rem */
   border: 1px solid var(--border-color);
-  border-radius: 0.25rem;
+  border-radius: 0.23rem; /* Reduced from 0.25rem */
   text-align: start;
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
@@ -154,10 +160,10 @@
   background-color: var(--bg-tertiary);
   color: var(--text-disabled);
   width: 80%;
-  max-width: 3rem;
-  padding: 0.275rem;
+  max-width: 2.7rem; /* Reduced from 3rem */
+  padding: 0.25rem; /* Slightly reduced from 0.275rem */
   border: 1px solid var(--border-color);
-  border-radius: 0.25rem;
+  border-radius: 0.23rem; /* Reduced from 0.25rem */
   text-align: center;
 }
 
@@ -167,7 +173,7 @@
 }
 
 .deleteButton {
-  padding: 0.375rem;
+  padding: 0.34rem; /* Reduced from 0.375rem */
   border: none;
   background: none;
   color: var(--accent-color);
@@ -191,13 +197,13 @@
 .button {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  gap: 0.45rem; /* Reduced from 0.5rem */
+  padding: 0.45rem 0.9rem; /* Reduced from 0.5rem 1rem */
   border: 1px solid var(--border-color);
-  border-radius: 0.375rem;
+  border-radius: 0.34rem; /* Reduced from 0.375rem */
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
-  font-size: 0.875rem;
+  font-size: 0.8rem; /* Reduced from 0.875rem */
   cursor: pointer;
   transition: all 0.3s ease-in;
 }
@@ -215,9 +221,19 @@
 }
 
 .buttonIcon {
-  width: 1rem;
-  height: 1rem;
+  width: 0.9rem; /* Reduced from 1rem */
+  height: 0.9rem; /* Reduced from 1rem */
   color: var(--accent-color);
+}
+
+.clientSelect {
+  width: 80%; 
+  min-width: 59px;
+}
+
+.statusSelect {
+  width: 100%; /* Increased from original to make values more visible */
+  min-width: 75px; /* Increased minimum width */
 }
 
 .statusRow {
@@ -235,25 +251,25 @@
 }
 
 .descriptionContainer {
-  margin-top: 2rem;
+  margin-top: 1.8rem; /* Reduced from 2rem */
   width: 100%;
-  padding: 0 1rem 1rem;
+  padding: 0 0.9rem 0.9rem; /* Reduced from 0 1rem 1rem */
 }
 
 .descriptionHeading {
-  font-size: 1.125rem;
+  font-size: 1rem; /* Reduced from 1.125rem */
   font-weight: 500;
   color: var(--text-secondary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.45rem; /* Reduced from 0.5rem */
   font-family: inherit;
 }
 
 .descriptionTextarea {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.7rem; /* Reduced from 0.75rem */
   border: 1px solid var(--border-color);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  border-radius: 0.34rem; /* Reduced from 0.375rem */
+  font-size: 0.8rem; /* Reduced from 0.875rem */
   font-family: inherit;
   resize: vertical;
   background-color: var(--bg-tertiary);
@@ -276,10 +292,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
+  padding: 0.9rem; /* Reduced from 1rem */
   border-top: 1px solid var(--border-color);
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.9rem; /* Reduced from 1rem */
 }
 
 .submitButton {
@@ -287,9 +303,9 @@
   background-color: var(--accent-color);
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  padding: 0.45rem 0.9rem; /* Reduced from 0.5rem 1rem */
+  border-radius: 0.34rem; /* Reduced from 0.375rem */
+  font-size: 0.8rem; /* Reduced from 0.875rem */
   cursor: pointer;
   font-family: inherit;
   transition: background-color 0.3s ease-in;
@@ -308,19 +324,19 @@
 .timesheetStatus {
   display: flex;
   align-items: center;
-  font-size: 0.875rem;
+  font-size: 0.8rem; /* Reduced from 0.875rem */
 }
 
 .statusLabel {
-  margin-right: 0.5rem;
+  margin-right: 0.45rem; /* Reduced from 0.5rem */
   color: var(--text-secondary);
 }
 
 .statusValue {
   font-weight: 500;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
+  padding: 0.23rem 0.7rem; /* Reduced from 0.25rem 0.75rem */
+  border-radius: 0.23rem; /* Reduced from 0.25rem */
+  font-size: 0.8rem; /* Reduced from 0.875rem */
 }
 
 .unapproved {
@@ -340,31 +356,31 @@
 
 /* Analytics section styling */
 .analyticsSection {
-  margin-top: 2rem;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  margin-top: 1.8rem; /* Reduced from 2rem */
+  padding-top: 0.9rem; /* Reduced from 1rem */
+  padding-bottom: 0.9rem; /* Reduced from 1rem */
   border-top: 1px solid var(--border-color);
   animation: fadeIn 0.5s ease-in-out;
 }
 
 .analyticsTitle {
-  font-size: 1.125rem;
+  font-size: 1rem; /* Reduced from 1.125rem */
   font-weight: 500;
   color: var(--text-secondary);
-  margin-bottom: 1rem;
+  margin-bottom: 0.9rem; /* Reduced from 1rem */
   text-align: center;
 }
 
 .chartsContainer {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(252px, 1fr)); /* Reduced from 280px */
+  gap: 0.9rem; /* Reduced from 1rem */
   width: 100%;
 }
 
 .chartCard {
   background-color: var(--bg-tertiary);
-  border-radius: 0.5rem;
+  border-radius: 0.45rem; /* Reduced from 0.5rem */
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border-color);
@@ -374,19 +390,19 @@
 }
 
 .chartHeader {
-  padding: 1rem;
+  padding: 0.9rem; /* Reduced from 1rem */
   border-bottom: 1px solid var(--border-color);
 }
 
 .chartTitle {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem; /* Reduced from 0.5rem */
 }
 
 .chartTitle h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.9rem; /* Reduced from 1rem */
   font-weight: 500;
   color: var(--text-primary);
 }
@@ -396,8 +412,8 @@
 }
 
 .barChartContainer {
-  padding: 1.5rem;
-  height: 280px;
+  padding: 1.35rem; /* Reduced from 1.5rem */
+  height: 252px; /* Reduced from 280px */
   display: flex;
 }
 
@@ -405,10 +421,10 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding-right: 0.75rem;
+  padding-right: 0.7rem; /* Reduced from 0.75rem */
   color: #b9c1d9;
-  font-size: 0.75rem;
-  width: 2.5rem;
+  font-size: 0.7rem; /* Reduced from 0.75rem */
+  width: 2.25rem; /* Reduced from 2.5rem */
   text-align: right;
 }
 
@@ -416,7 +432,7 @@
   flex: 1;
   display: flex;
   justify-content: space-around;
-  height: 220px;
+  height: 198px; /* Reduced from 220px */
   border-bottom: 1px solid #2a3654;
   position: relative;
 }
@@ -470,7 +486,7 @@
 }
 
 .bar {
-  width: 24px;
+  width: 22px; /* Reduced from 24px */
   max-width: 90%;
   border-radius: 4px 4px 0 0;
   position: relative;
@@ -479,33 +495,33 @@
 
 .barValue {
   position: absolute;
-  top: -20px;
+  top: -18px; /* Reduced from -20px */
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.75rem;
+  font-size: 0.7rem; /* Reduced from 0.75rem */
   color: #b9c1d9;
   white-space: nowrap;
 }
 
 .barLabel {
-  margin-top: 0.5rem;
+  margin-top: 0.45rem; /* Reduced from 0.5rem */
   color: #b9c1d9;
-  font-size: 0.75rem;
+  font-size: 0.7rem; /* Reduced from 0.75rem */
   font-weight: 500;
 }
 
 .pieChartContainer {
-  padding: 1rem;
+  padding: 0.9rem; /* Reduced from 1rem */
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 1rem;
+  gap: 0.9rem; /* Reduced from 1rem */
   flex: 1;
 }
 
 .pieChart {
-  width: 200px;
-  height: 200px;
+  width: 180px; /* Reduced from 200px */
+  height: 180px; /* Reduced from 200px */
   margin: 0 auto;
   position: relative;
 }
@@ -521,7 +537,7 @@
   transform-origin: center;
   fill: var(--accent-color);
   font-family: 'Inter', sans-serif;
-  font-size: 24px;
+  font-size: 22px; /* Reduced from 24px */
   font-weight: bold;
 }
 
@@ -547,9 +563,9 @@
   position: absolute;
   background-color: rgba(0, 0, 0, 0.8);
   color: white;
-  padding: 4px 8px;
+  padding: 4px 7px; /* Slightly reduced horizontal padding */
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px; /* Reduced from 12px */
   pointer-events: none;
   transform: translate(-50%, -50%);
   z-index: 10;
@@ -559,20 +575,20 @@
 .pieChartLegend {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  gap: 0.7rem; /* Reduced from 0.75rem */
+  margin-top: 0.9rem; /* Reduced from 1rem */
   width: 100%;
 }
 
 .legendItem {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem; /* Reduced from 0.5rem */
 }
 
 .legendColor {
-  width: 12px;
-  height: 12px;
+  width: 11px; /* Reduced from 12px */
+  height: 11px; /* Reduced from 12px */
   border-radius: 2px;
 }
 
@@ -584,16 +600,16 @@
 }
 
 .legendTitle {
-  font-size: 0.875rem;
+  font-size: 0.8rem; /* Reduced from 0.875rem */
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
+  max-width: 135px; /* Reduced from 150px */
 }
 
 .legendValue {
-  font-size: 0.75rem;
+  font-size: 0.7rem; /* Reduced from 0.75rem */
   color: var(--text-secondary);
 }
 
@@ -623,17 +639,17 @@
 
 .dialogContent {
   background-color: var(--bg-secondary);
-  border-radius: 0.5rem;
-  width: 400px;
+  border-radius: 0.45rem; /* Reduced from 0.5rem */
+  width: 360px; /* Reduced from 400px */
   max-width: 90%;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 9px 23px rgba(0, 0, 0, 0.5); /* Slightly reduced from 0 10px 25px */
   animation: slideIn 0.3s ease-out;
   border: 1px solid var(--border-color);
 }
 
 @keyframes slideIn {
   from {
-    transform: translateY(-30px);
+    transform: translateY(-27px); /* Reduced from -30px */
     opacity: 0;
   }
   to {
@@ -646,19 +662,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 0.9rem 1.35rem; /* Reduced from 1rem 1.5rem */
   border-bottom: 1px solid var(--border-color);
 }
 
 .dialogTitle {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.7rem; /* Reduced from 0.75rem */
 }
 
 .dialogTitle h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.1rem; /* Reduced from 1.25rem */
   font-weight: 500;
   color: var(--text-primary);
 }
@@ -676,11 +692,11 @@
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.23rem; /* Reduced from 0.25rem */
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.25rem;
+  border-radius: 0.23rem; /* Reduced from 0.25rem */
   transition: all 0.2s ease;
 }
 
@@ -690,28 +706,28 @@
 }
 
 .dialogBody {
-  padding: 1.5rem;
+  padding: 1.35rem; /* Reduced from 1.5rem */
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 0.8rem; /* Reduced from 0.875rem */
   line-height: 1.5;
 }
 
 .dialogFooter {
-  padding: 1rem 1.5rem;
+  padding: 0.9rem 1.35rem; /* Reduced from 1rem 1.5rem */
   display: flex;
   justify-content: flex-end;
   border-top: 1px solid var(--border-color);
 }
 
 .dialogButton {
-  padding: 0.5rem 1.5rem;
-  border-radius: 0.375rem;
+  padding: 0.45rem 1.35rem; /* Reduced from 0.5rem 1.5rem */
+  border-radius: 0.34rem; /* Reduced from 0.375rem */
   font-weight: 500;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
-  font-size: 0.875rem;
+  font-size: 0.8rem; /* Reduced from 0.875rem */
 }
 
 .dialogButtonSuccess {
@@ -736,15 +752,15 @@
 .rejectionBanner {
   background-color: var(--status-rejected);
   color: #fecaca;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  border-radius: 0.375rem;
+  padding: 0.7rem 0.9rem; /* Reduced from 0.75rem 1rem */
+  margin-bottom: 0.9rem; /* Reduced from 1rem */
+  border-radius: 0.34rem; /* Reduced from 0.375rem */
   display: flex;
   justify-content: space-between;
   align-items: center;
   animation: highlight 1s ease-in-out;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.45rem; /* Reduced from 0.5rem */
 }
 
 @keyframes highlight {
@@ -757,7 +773,7 @@
 }
 
 .timesheetId {
-  font-size: 0.75rem;
+  font-size: 0.7rem; /* Reduced from 0.75rem */
   opacity: 0.8;
 }
 
@@ -778,14 +794,14 @@
 
 .loaderMessage {
   color: var(--text-primary);
-  margin-top: 1.5rem;
-  font-size: 1rem;
+  margin-top: 1.35rem; /* Reduced from 1.5rem */
+  font-size: 0.9rem; /* Reduced from 1rem */
   font-weight: 500;
 }
 
 .spinner {
-  width: 48px;
-  height: 48px;
+  width: 43px; /* Reduced from 48px */
+  height: 43px; /* Reduced from 48px */
   border: 4px solid var(--border-color);
   border-top: 4px solid var(--accent-color);
   border-radius: 50%;
@@ -797,9 +813,33 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Keep the media queries as they are, but adjust some values */
+@media (max-width: 1100px) {
+  .gridContainer {
+    flex-direction: column;
+  }
+
+  .calendarSection {
+    width: 100%;
+    max-width: 315px; /* Reduced from 350px */
+    margin: 0.45rem auto; /* Reduced from 0.5rem auto */
+  }
+}
+
+@media (max-width: 992px) {
+  .gridContainer {
+    flex-direction: column;
+  }
+
+  .calendarSection {
+    width: 100%;
+    margin: 0;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
-    padding: 1rem;
+    padding: 0.9rem; /* Reduced from 1rem */
   }
 
   .gridContainer {
@@ -812,7 +852,7 @@
   }
 
   .tableContainer {
-    padding: 0.25rem;
+    padding: 0.23rem; /* Reduced from 0.25rem */
   }
 
   .submitWrapper {
@@ -832,20 +872,29 @@
 
 @media (max-width: 576px) {
   .tableWrapper {
-    font-size: 0.75rem;
+    font-size: 0.7rem; /* Reduced from 0.75rem */
   }
   
   .table th, 
   .table td {
-    padding: 0.5rem 0.25rem;
+    padding: 0.7rem 0.45rem; /* Reduced from 0.75rem 0.5rem */
+    white-space: nowrap;
   }
+
+  .table th:nth-child(1),
+.table th:nth-child(2),
+.table th:nth-child(3) {
+  width: 99px; /* Reduced from 110px */
+  min-width: 99px; /* Reduced from 110px */
+  max-width: 126px; /* Reduced from 140px */
+}
   
   .hourInput {
-    max-width: 3rem;
-    padding: 0.25rem;
+    max-width: 2.7rem; /* Reduced from 3rem */
+    padding: 0.23rem; /* Reduced from 0.25rem */
   }
   
   .chartCard {
-    min-height: 300px;
+    min-height: 270px; /* Reduced from 300px */
   }
 }

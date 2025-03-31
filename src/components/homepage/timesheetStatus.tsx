@@ -16,11 +16,11 @@ const StatusRow: React.FC<StatusRowProps> = ({
 }) => {
   return (
     <tr className={styles.statusRow}>
-      <td colSpan={2}>Status</td>
+      <td colSpan={3}>Status</td>
       {weekDates.map((date) => {
         const dayStr = date.toISOString().split("T")[0];
         const dayOfWeek = date.getDay();
-        const defaultStatus = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
+        const defaultStatus = dayOfWeek === 0 || dayOfWeek === 6 ? "not-working" : "working";
         const currentStatus = dayStatus[dayStr] || defaultStatus;
 
         return (
@@ -28,7 +28,7 @@ const StatusRow: React.FC<StatusRowProps> = ({
             <select
               value={currentStatus}
               onChange={(e) => handleStatusChange(dayStr, e.target.value)}
-              className={styles.select}
+              className={`${styles.select} ${styles.statusSelect}`}
               disabled={!isWeekEditable}
             >
               <option value="working">Working</option>

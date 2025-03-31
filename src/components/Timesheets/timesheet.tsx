@@ -9,6 +9,7 @@ import Calendar from "../Calender";
 import { useParams } from 'next/navigation';
 
 interface TimeEntry {
+  client: string; // Added client field
   project: string;
   subject: string;
   hours: { [key: string]: string };
@@ -213,6 +214,7 @@ const EmployeeTimesheet = () => {
             setEntries(
               relevantTimesheet.entries.map((entry: any) => ({
                 ...entry,
+                client: entry.client || "", // Ensure client field is set
                 hours: entry.hours || {},
               }))
             );
@@ -222,6 +224,7 @@ const EmployeeTimesheet = () => {
             setRelevantTimesheetId(relevantTimesheet._id || null);
           } else {
             setEntries([{
+              client: "", // Initialize with empty client
               project: "",
               subject: "",
               hours: {}
@@ -537,6 +540,7 @@ const EmployeeTimesheet = () => {
           <table className={styles.table}>
             <thead>
               <tr>
+                <th>Client</th>
                 <th>Projects</th>
                 <th>Subject</th>
                 {weekDates.map((date) => (
@@ -546,45 +550,77 @@ const EmployeeTimesheet = () => {
               </tr>
             </thead>
             <tbody>
-              {entries.map((entry, index) => (
-                <tr key={index}>
-                  <td>
-                    <input
-                      type="text"
-                      value={entry.project}
-                      className={styles.readOnlyInput}
-                      readOnly
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={entry.subject}
-                      className={styles.readOnlyInput}
-                      readOnly
-                    />
-                  </td>
-                  {weekDates.map((date) => {
-                    const dayStr = date.toISOString().split("T")[0];
-                    return (
-                      <td key={dayStr}>
-                        <input
-                          type="text"
-                          value={entry.hours[dayStr] || ""}
-                          className={styles.readOnlyHourInput}
-                          readOnly
-                        />
-                      </td>
-                    );
-                  })}
-                  <td className={styles.totalCell}>
-                    {calculateRowTotal(entry).toFixed(2)}
-                  </td>
-                </tr>
-              ))}
+            {entries.map((entry, index) => (
+  <tr key={index}>
+    <td>
+      <div style={{ position: 'relative' }}>
+        <input
+          type="text"
+          value={entry.client}
+          className={styles.readOnlyInput}
+          readOnly
+          title={entry.client} // Native HTML tooltip
+        />
+        {entry.client && (
+          <div className={styles.tooltipWrapper}>
+            <span className={styles.tooltipText}>{entry.client}</span>
+          </div>
+        )}
+      </div>
+    </td>
+    <td>
+      <div style={{ position: 'relative' }}>
+        <input
+          type="text"
+          value={entry.project}
+          className={styles.readOnlyInput}
+          readOnly
+          title={entry.project} // Native HTML tooltip
+        />
+        {entry.project && (
+          <div className={styles.tooltipWrapper}>
+            <span className={styles.tooltipText}>{entry.project}</span>
+          </div>
+        )}
+      </div>
+    </td>
+    <td>
+      <div style={{ position: 'relative' }}>
+        <input
+          type="text"
+          value={entry.subject}
+          className={styles.readOnlyInput}
+          readOnly
+          title={entry.subject} // Native HTML tooltip
+        />
+        {entry.subject && (
+          <div className={styles.tooltipWrapper}>
+            <span className={styles.tooltipText}>{entry.subject}</span>
+          </div>
+        )}
+      </div>
+    </td>
+    {weekDates.map((date) => {
+      const dayStr = date.toISOString().split("T")[0];
+      return (
+        <td key={dayStr}>
+          <input
+            type="text"
+            value={entry.hours[dayStr] || ""}
+            className={styles.readOnlyHourInput}
+            readOnly
+          />
+        </td>
+      );
+    })}
+    <td className={styles.totalCell}>
+      {calculateRowTotal(entry).toFixed(2)}
+    </td>
+  </tr>
+))}
 
               <tr className={styles.totalRow}>
-                <td colSpan={2}>Total</td>
+                <td colSpan={3}>Total</td>
                 {weekDates.map((date) => (
                   <td key={date.toISOString()} className={styles.totalCell}>
                     {calculateDayTotal(date).toFixed(2)}
@@ -594,7 +630,7 @@ const EmployeeTimesheet = () => {
               </tr>
 
               <tr className={styles.statusRow}>
-                <td colSpan={2}>Status</td>
+                <td colSpan={3}>Status</td>
                 {weekDates.map((date) => {
                   const dayStr = date.toISOString().split("T")[0];
                   return (

@@ -89,7 +89,7 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
           )}
         </form>
         <div className="footer-text">
-          <p>Copyright © 2019-2024 Chartsign Ltd</p>
+          <p>Copyright © 2019-2025 Chartsign Ltd</p>
           <p>Entry to this site is restricted to employees and affiliates of Chartsign Limited</p>
         </div>
       </div>
