@@ -278,18 +278,24 @@ const HomepageContent: React.FC = () => {
         showDialog("Error", "User information is missing", true);
         return;
       }
-
+  
       const hasEntries = entries.some((entry) =>
         Object.values(entry.hours).some((h) => h !== "")
       );
-
+  
       if (!hasEntries) {
         showDialog("Error", "Please add at least one time entry", true);
         return;
       }
-
+      
+      // Validate work description
+      if (!workDescription || workDescription.trim() === '') {
+        showDialog("Error", "Please add a work description", true);
+        return;
+      }
+  
       setSubmitting(true);
-
+  
       const updatedDayStatus = { ...dayStatus };
       weekDates.forEach((date) => {
         const dayStr = date.toISOString().split("T")[0];
@@ -298,7 +304,7 @@ const HomepageContent: React.FC = () => {
           updatedDayStatus[dayStr] = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
         }
       });
-
+  
       const timesheetData = {
         username: user.username,
         entries: entries.filter((entry) =>
@@ -307,7 +313,7 @@ const HomepageContent: React.FC = () => {
         workDescription,
         dayStatus: updatedDayStatus,
       };
-
+  
       let response;
       
       if (timesheetStatus === "rejected" && currentTimesheetId) {
@@ -329,7 +335,7 @@ const HomepageContent: React.FC = () => {
         };
         
         response = await TimesheetService.submitTimesheet(newTimesheetData);
-
+  
         if (response.success) {
           showDialog("Success", response.message);
           setIsWeekEditable(false);
@@ -540,7 +546,7 @@ const HomepageContent: React.FC = () => {
         </div>
 
         <div className={styles.descriptionContainer}>
-          <h3 className={styles.descriptionHeading}>Work Description</h3>
+          <h3 className={styles.descriptionHeading}>Work Description *</h3>
           <textarea
             className={styles.descriptionTextarea}
             value={workDescription}

@@ -44,6 +44,11 @@ class TimesheetService {
 
   async submitTimesheet(timesheetData: any): Promise<{ success: boolean; message: string }> {
     try {
+      // Pre-submission validation for work description
+      if (!timesheetData.workDescription || timesheetData.workDescription.trim() === '') {
+        return { success: false, message: "Please add a work description." };
+      }
+      
       const response = await axios.post(
         process.env.NEXT_PUBLIC_SUBMIT_API as string,
         timesheetData
@@ -56,11 +61,10 @@ class TimesheetService {
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        // Return the specific error from the server if available
         return {
           success: false,
-          message: `Failed to submit timesheet: ${
-            error.response?.data?.message || "An unknown error occurred"
-          }`,
+          message: error.response?.data?.message || "An unknown error occurred"
         };
       }
       return { success: false, message: "An error occurred while submitting the timesheet." };
@@ -72,6 +76,11 @@ class TimesheetService {
     timesheetData: any
   ): Promise<{ success: boolean; message: string }> {
     try {
+      // Pre-submission validation for work description
+      if (!timesheetData.workDescription || timesheetData.workDescription.trim() === '') {
+        return { success: false, message: "Please add a work description." };
+      }
+      
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_UPDATE_TIMESHEET_API || "/api/timesheet/update"}/${timesheetId}`,
         timesheetData
@@ -84,26 +93,25 @@ class TimesheetService {
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        // Return the specific error from the server if available
         return {
           success: false,
-          message: `Failed to update timesheet: ${
-            error.response?.data?.message || "An unknown error occurred"
-          }`,
+          message: error.response?.data?.message || "An unknown error occurred"
         };
       }
       return { success: false, message: "An error occurred while updating the timesheet." };
     }
   }
 
-async fetchClients(): Promise<any[]> {
-  try {
-    const response = await axios.get(process.env.NEXT_PUBLIC_CLIENT_API as string);
-    return response.data?.clients ? response.data.clients : [];
-  } catch (error) {
-    console.error("Error fetching clients:", error);
-    return [];
+  async fetchClients(): Promise<any[]> {
+    try {
+      const response = await axios.get(process.env.NEXT_PUBLIC_CLIENT_API as string);
+      return response.data?.clients ? response.data.clients : [];
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      return [];
+    }
   }
-}
 
   async fetchProjects(): Promise<any[]> {
     try {
