@@ -482,8 +482,8 @@ const HomepageContent: React.FC = () => {
               <thead>
                 <tr>
                   <th>Client</th>
-                  <th>Projects</th>
                   <th>Subject</th>
+                  <th>Projects</th>
                   {weekDates.map((date) => (
                     <th key={date.toISOString()} className={styles.weekColumn}>
                       {TimesheetService.formatDate(date)}

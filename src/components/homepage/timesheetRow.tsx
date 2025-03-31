@@ -52,21 +52,6 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
       <td>
         <select
           className={styles.select}
-          value={entry.project}
-          onChange={(e) => handleProjectChange(entry.id, e.target.value)}
-          disabled={!isWeekEditable}
-        >
-          <option value="">Select</option>
-          {filteredProjects.map((project) => (
-            <option key={project._id} value={project.name}>
-              {project.name}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td>
-        <select
-          className={styles.select}
           value={entry.subject}
           onChange={(e) => handleSubjectChange(entry.id, e.target.value)}
           disabled={!isWeekEditable}
@@ -75,6 +60,21 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
           {filteredSubjects.map((subject) => (
             <option key={subject._id} value={subject.name}>
               {subject.name}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td>
+        <select
+          className={styles.select}
+          value={entry.project}
+          onChange={(e) => handleProjectChange(entry.id, e.target.value)}
+          disabled={!isWeekEditable}
+        >
+          <option value="">Select</option>
+          {filteredProjects.map((project) => (
+            <option key={project._id} value={project.name}>
+              {project.name}
             </option>
           ))}
         </select>

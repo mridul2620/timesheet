@@ -36,7 +36,7 @@ const menuSections = [
     items: [
       {
         path: "/employees",
-        name: "Employees",
+        name: "Worker",
         icon: Users,
         component: "adminDashboard",
       },

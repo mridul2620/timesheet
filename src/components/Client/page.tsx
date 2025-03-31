@@ -225,10 +225,10 @@ const ClientsPage = () => {
         await fetchClients();
         handleCloseEditDialog();
       } else {
-        setErrorMessage(data.message || "Error updating C");
+        setErrorMessage(data.message || "Error updating Client");
       }
     } catch (error) {
-      console.error('Error updating C:', error);
+      console.error('Error updating Client:', error);
       setErrorMessage("An error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);

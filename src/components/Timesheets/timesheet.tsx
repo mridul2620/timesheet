@@ -541,8 +541,8 @@ const EmployeeTimesheet = () => {
             <thead>
               <tr>
                 <th>Client</th>
-                <th>Projects</th>
                 <th>Subject</th>
+                <th>Projects</th>
                 {weekDates.map((date) => (
                   <th key={date.toISOString()}>{formatDate(date)}</th>
                 ))}
@@ -572,22 +572,6 @@ const EmployeeTimesheet = () => {
       <div style={{ position: 'relative' }}>
         <input
           type="text"
-          value={entry.project}
-          className={styles.readOnlyInput}
-          readOnly
-          title={entry.project} // Native HTML tooltip
-        />
-        {entry.project && (
-          <div className={styles.tooltipWrapper}>
-            <span className={styles.tooltipText}>{entry.project}</span>
-          </div>
-        )}
-      </div>
-    </td>
-    <td>
-      <div style={{ position: 'relative' }}>
-        <input
-          type="text"
           value={entry.subject}
           className={styles.readOnlyInput}
           readOnly
@@ -596,6 +580,22 @@ const EmployeeTimesheet = () => {
         {entry.subject && (
           <div className={styles.tooltipWrapper}>
             <span className={styles.tooltipText}>{entry.subject}</span>
+          </div>
+        )}
+      </div>
+    </td>
+    <td>
+      <div style={{ position: 'relative' }}>
+        <input
+          type="text"
+          value={entry.project}
+          className={styles.readOnlyInput}
+          readOnly
+          title={entry.project} // Native HTML tooltip
+        />
+        {entry.project && (
+          <div className={styles.tooltipWrapper}>
+            <span className={styles.tooltipText}>{entry.project}</span>
           </div>
         )}
       </div>

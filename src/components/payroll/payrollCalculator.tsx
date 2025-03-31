@@ -232,10 +232,13 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
   }, [selectedUser?.username, selectedDate, endDate, isMonthlyView, fetchTrigger]);
 
   const setBasicUserData = (user: User) => {
+    // Format the payrate to display with 2 decimal places
+    const payrate = user.payrate !== undefined ? user.payrate.toFixed(2) : '0.00';
+    
     setPayrollData(prev => ({
       employee: user.name,
       timePeriod: getTimePeriod(),
-      hourlyRate: `£${Math.round(user.payrate || 0)}`,
+      hourlyRate: `£${payrate}`,
       workingDays: 0,
       totalTime: 0,
       averageTimePerDay: 0,
@@ -283,10 +286,13 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
     
     const workingDays = uniqueDays.size;
     
+    // Preserve the decimal places in the hourly rate
     const hourlyRate = typeof user.payrate === 'number' ? user.payrate : 
                       (typeof user.payrate === 'string' ? parseFloat(user.payrate) : 0);
     
     const averageTimePerDay = workingDays > 0 ? totalHours / workingDays : 0;
+    
+    // Calculate net pay using the exact hourly rate with decimals
     const netPay = hourlyRate * totalHours;
     
     const timePeriod = getTimePeriod();
@@ -294,7 +300,7 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
     setPayrollData(prev => ({
       employee: user.name,
       timePeriod,
-      hourlyRate: `£${Math.round(hourlyRate)}`,
+      hourlyRate: `£${hourlyRate.toFixed(2)}`,
       workingDays,
       totalTime: totalHours,
       averageTimePerDay: parseFloat(averageTimePerDay.toFixed(2)),
@@ -317,11 +323,14 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
       
       const newStatus = statusPaid ? 'Unpaid' : 'Paid';
       
+      // Extract the payrate value without the £ symbol and preserve the decimal value
+      const payrate = parseFloat(payrollData.hourlyRate.replace('£', ''));
+      
       const payrollRecord = {
         username: selectedUser.username,
         name: selectedUser.name,
         timePeriod: payrollData.timePeriod,
-        payrate: parseInt(payrollData.hourlyRate.replace('£', '')),
+        payrate: payrate,
         netPay: payrollData.netPay,
         totalTime: payrollData.totalTime,
         workingDays: payrollData.workingDays,
@@ -450,7 +459,7 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
             </div>
             <div className={styles.gridItem}>
               <h3>Net Pay</h3>
-              {loading || checkingPayrollStatus ? <SkeletonLoader /> : <p>£{payrollData.netPay}</p>}
+              {loading || checkingPayrollStatus ? <SkeletonLoader /> : <p>£{payrollData.netPay.toFixed(2)}</p>}
             </div>
             <div className={styles.gridItem}>
               <h3>Status</h3>

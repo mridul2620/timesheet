@@ -381,7 +381,7 @@ const EmployeesPage = () => {
 
   return (
     <div className={styles.pagecontainer}>
-      <Header title="Employees" user={user} />
+      <Header title="Worker" user={user} />
       <main className={styles.container}>
         <div className={styles.teamHeader}>
           <div>
