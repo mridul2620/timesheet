@@ -1,5 +1,5 @@
 import React from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Save } from "lucide-react";
 import styles from "./homepage.module.css";
 import { TimeEntry } from "./timesheetTypes";
 
@@ -16,6 +16,8 @@ type TimesheetRowProps = {
   handleInputChange: (entryId: string, day: string, value: string) => void;
   calculateRowTotal: (entry: TimeEntry) => number;
   deleteRow: (entryId: string) => void;
+  saveRow: (entry: TimeEntry) => void;
+  isSaving: { [key: string]: boolean };
 };
 
 const TimesheetRow: React.FC<TimesheetRowProps> = ({
@@ -31,24 +33,26 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
   handleInputChange,
   calculateRowTotal,
   deleteRow,
+  saveRow,
+  isSaving,
 }) => {
   return (
     <tr key={entry.id}>
       <td>
-  <select
-    className={`${styles.select} ${styles.clientSelect}`}
-    value={entry.client || ""}
-    onChange={(e) => handleClientChange(entry.id, e.target.value)}
-    disabled={!isWeekEditable}
-  >
-    <option value="">Select</option>
-    {filteredClients.map((client) => (
-      <option key={client._id} value={client.name}>
-        {client.name}
-      </option>
-    ))}
-  </select>
-</td>
+        <select
+          className={`${styles.select} ${styles.clientSelect}`}
+          value={entry.client || ""}
+          onChange={(e) => handleClientChange(entry.id, e.target.value)}
+          disabled={!isWeekEditable}
+        >
+          <option value="">Select</option>
+          {filteredClients.map((client) => (
+            <option key={client._id} value={client.name}>
+              {client.name}
+            </option>
+          ))}
+        </select>
+      </td>
       <td>
         <select
           className={styles.select}
@@ -98,14 +102,24 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
       })}
       <td className={styles.totalCell}>{calculateRowTotal(entry).toFixed(2)}</td>
       <td>
-        <button
-          onClick={() => deleteRow(entry.id)}
-          className={styles.deleteButton}
-          disabled={!isWeekEditable}
-          title="Delete row"
-        >
-          <Trash2 className={styles.buttonIcon} />
-        </button>
+        <div className={styles.actionButtons}>
+          <button
+            onClick={() => saveRow(entry)}
+            className={`${styles.saveButton} ${entry.isDraft ? styles.saved : ''} ${isSaving[entry.id] ? styles.saving : ''}`}
+            disabled={!isWeekEditable || isSaving[entry.id]}
+            title="Save row"
+          >
+            <Save size={16} />
+          </button>
+          <button
+            onClick={() => deleteRow(entry.id)}
+            className={styles.deleteButton}
+            disabled={!isWeekEditable}
+            title="Delete row"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </td>
     </tr>
   );
