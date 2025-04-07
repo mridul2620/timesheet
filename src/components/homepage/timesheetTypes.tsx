@@ -21,9 +21,14 @@ export type Timesheet = {
 export type User = {
   name: string;
   username: string;
-  email: string;
+  email: string | string[];
   role: string;
   designation: string;
+  active?: boolean;
+  allocatedHours: Array<{
+    year: string;
+    hours: string;
+  }>;
 };
 
 export type DialogData = {

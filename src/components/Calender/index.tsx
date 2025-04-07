@@ -46,6 +46,7 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
 
+  // Calculate first day offset - Sunday is 0, Monday is 1, etc.
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay()
 
   const monthNames = [
@@ -64,11 +65,14 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
   ]
 
   const days = []
+  // Add empty spaces for days before the first day of the month
   for (let i = 0; i < firstDayOfMonth; i++) {
     days.push(<div key={`empty-${i}`} className={styles.emptyDay} />)
   }
 
+  // Create date buttons for each day of the month
   for (let day = 1; day <= daysInMonth; day++) {
+    // Create the exact date object for this day
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
     const isSelected = selectedDate.toDateString() === date.toDateString()
     const isToday = new Date().toDateString() === date.toDateString()
@@ -77,8 +81,15 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
       <button
         key={day}
         onClick={() => {
-          onChange(date)
-          setUserChangedMonth(false)
+          // Create a new Date with the exact date at midnight
+          const exactDate = new Date(
+            currentMonth.getFullYear(),
+            currentMonth.getMonth(),
+            day,
+            0, 0, 0, 0
+          );
+          onChange(exactDate);
+          setUserChangedMonth(false);
         }}
         className={`${styles.day} ${isSelected ? styles.selected : ""} ${isToday ? styles.today : ""}`}
       >
@@ -110,7 +121,7 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
           &gt;
         </button>
       </div>
-      <div className={styles.weekdays}>
+      <div className={styles.weekdays}>  
         <div>Sun</div>
         <div>Mon</div>
         <div>Tue</div>

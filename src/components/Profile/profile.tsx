@@ -81,7 +81,6 @@ export default function ProfilePageContent() {
               </div>
               <div className={styles.emailDetails}>
                 <p>{user?.email}</p>
-                <span>1 month ago</span>
               </div>
             </div>
             <button className={styles.addEmailButton}>+ Add Email Address</button>

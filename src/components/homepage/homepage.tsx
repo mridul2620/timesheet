@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
 import styles from "./homepage.module.css";
 import Calendar from "../Calender";
@@ -9,21 +9,20 @@ import BarChartComponent from "../Charts/barchart";
 import PieChartComponent from "../Charts/piechart";
 import Dialog from "./dialog";
 import DraftBanner from "./draftBanner";
-import TimesheetRow from "./timesheetRow";
-import StatusRow from "./timesheetStatus";
 import TimesheetService from "./timesheetservive";
-import { TimeEntry, User, Project, Subject, DailyHours, ProjectHours, DialogData, Client, DraftTimesheet, Timesheet } from "./timesheetTypes";
+import { TimeEntry, User, Project, Subject, DailyHours, DialogData, Client, DraftTimesheet, Timesheet } from "./timesheetTypes";
+import axios from "axios";
+import StatusRow from "./timesheetStatus";
 
 const HomepageContent: React.FC = () => {
-  // Color palette for project visualization
-  const projectColors = [
+  const subjectColors = [
     "#3b82f6", "#22d3ee", "#f97316", "#a855f7", "#06b6d4", 
     "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"
   ];
   
   // Helper function to initialize empty timesheet rows
   const getInitialEntries = (): TimeEntry[] => {
-    return Array(3).fill(null).map((_, index) => ({
+    return Array(2).fill(null).map((_, index) => ({
       id: String(index + 1),
       client: "",
       project: "",
@@ -38,7 +37,7 @@ const HomepageContent: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workDescription, setWorkDescription] = useState("");
   const [dayStatus, setDayStatus] = useState<{ [key: string]: string }>({});
-  
+  const [showWeekend, setShowWeekend] = useState(false);
   // Master data and filtered data for dropdowns
   const [clients, setClients] = useState<Client[]>([]);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
@@ -57,9 +56,14 @@ const HomepageContent: React.FC = () => {
   const [hasTimesheetData, setHasTimesheetData] = useState(false);
   const [dataNotFound, setDataNotFound] = useState(false);
   
+  // Allocated hours tracking
+  const [allocatedHours, setAllocatedHours] = useState<number>(0);
+  const [hoursRemaining, setHoursRemaining] = useState<number>(0);
+  const [calculatingHours, setCalculatingHours] = useState<boolean>(false);
+  const [previousSubmittedHours, setPreviousSubmittedHours] = useState<number>(0);
+  
   // Analytics data
   const [dailyHoursData, setDailyHoursData] = useState<DailyHours[]>([]);
-  const [projectHoursData, setProjectHoursData] = useState<ProjectHours[]>([]);
   
   // Dialog popup state
   const [dialogData, setDialogData] = useState<DialogData>({
@@ -78,11 +82,37 @@ const HomepageContent: React.FC = () => {
   const [draftBannerKey, setDraftBannerKey] = useState(0);
 
   // Get week dates based on selected date
+  const getCorrectWeekDates = (date: Date): Date[] => {
+    // Create a copy of the date to avoid mutating the original
+    const inputDate = new Date(date.getTime());
+    
+    // Set to midnight to ensure consistent behavior
+    inputDate.setHours(0, 0, 0, 0);
+    
+    // Get the current day of the week (0 = Sunday, 1 = Monday, etc.)
+    const dayOfWeek = inputDate.getDay();
+    
+    // Calculate the start date (Sunday) of the week containing the selected date
+    const startDate = new Date(inputDate);
+    startDate.setDate(inputDate.getDate() - dayOfWeek);
+    
+    // Set to midnight to ensure consistency
+    startDate.setHours(0, 0, 0, 0);
+    
+    // Create an array of all 7 days in the week, starting from Sunday
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(startDate);
+      day.setDate(startDate.getDate() + i);
+      day.setHours(0, 0, 0, 0); // Ensure consistent time for each date
+      return day;
+    });
+  };
+
   const weekDates = useMemo(() => 
-    TimesheetService.getWeekDates(selectedDate), 
+    getCorrectWeekDates(selectedDate), 
     [selectedDate]
   );
-
+  
   // Helper functions
   const formatHoursAndMinutes = (hours: number) => {
     const h = Math.floor(hours);
@@ -116,12 +146,24 @@ const HomepageContent: React.FC = () => {
     setShowPersistentBanner(false);
   }, [initializeDefaultDayStatus]);
 
+  // Weekend toggle handler
+  const toggleWeekend = () => {
+    setShowWeekend(!showWeekend);
+  };
+
   // Analytics calculations
   const calculateDailyHoursData = useCallback(() => {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const abbreviations = ["S", "M", "T", "W", "T", "F", "S"];
+    // Updated day names and abbreviations to start from Monday
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const abbreviations = ["M", "T", "W", "T", "F", "S", "S"];
     
-    const dailyData: DailyHours[] = weekDates.map((date) => {
+    // Create a new array of weekDates sorted to start from Monday
+    const mondayFirstWeekDates = [
+      ...weekDates.slice(1),  // Move Sunday to the end
+      weekDates[0]            // Put Sunday at the end of the array
+    ];
+
+    const dailyData: DailyHours[] = mondayFirstWeekDates.map((date, index) => {
       const dayStr = date.toISOString().split("T")[0];
       const dayHours = entries.reduce((total, entry) => {
         const hours = Number.parseFloat(entry.hours[dayStr] || "0");
@@ -129,8 +171,8 @@ const HomepageContent: React.FC = () => {
       }, 0);
 
       return {
-        day: days[date.getDay()],
-        abbreviation: abbreviations[date.getDay()],
+        day: days[index],
+        abbreviation: abbreviations[index],
         hours: dayHours
       };
     });
@@ -138,30 +180,45 @@ const HomepageContent: React.FC = () => {
     setDailyHoursData(dailyData);
   }, [weekDates, entries]);
 
-  const calculateProjectHoursData = useCallback(() => {
-    const projectDataMap = new Map<string, number>();
+  const calculateSubjectHoursData = useCallback(() => {
+    const subjectDataMap = new Map<string, { hours: number, color: string }>();
 
     entries.forEach(entry => {
-      if (entry.project) {
-        const projectHours = Object.values(entry.hours).reduce((total, hours) => {
+      if (entry.subject) {
+        const subjectHours = Object.values(entry.hours).reduce((total, hours) => {
           return total + Number.parseFloat(hours || "0");
         }, 0);
-
-        if (projectHours > 0) {
-          const currentHours = projectDataMap.get(entry.project) || 0;
-          projectDataMap.set(entry.project, currentHours + projectHours);
+  
+        if (subjectHours > 0) {
+          if (!subjectDataMap.has(entry.subject)) {
+            // Assign a unique color to each subject
+            const color = subjectColors[subjectDataMap.size % subjectColors.length];
+            subjectDataMap.set(entry.subject, { hours: subjectHours, color });
+          } else {
+            const existing = subjectDataMap.get(entry.subject)!;
+            subjectDataMap.set(entry.subject, { 
+              hours: existing.hours + subjectHours, 
+              color: existing.color 
+            });
+          }
         }
       }
     });
 
-    const projectData: ProjectHours[] = Array.from(projectDataMap).map(([project, hours], index) => ({
-      project,
-      hours,
-      color: projectColors[index % projectColors.length]
+    const subjectData = Array.from(subjectDataMap).map(([subject, data]) => ({
+      subject,
+      hours: data.hours,
+      color: data.color
     }));
+  
+    setSubjectHoursData(subjectData);
+  }, [entries]);
 
-    setProjectHoursData(projectData);
-  }, [entries, projectColors]);
+  const [subjectHoursData, setSubjectHoursData] = useState<{
+    subject: string;
+    hours: number;
+    color: string;
+  }[]>([]);
 
   const calculateDayTotal = useCallback((date: Date) => {
     const dayStr = date.toISOString().split("T")[0];
@@ -182,6 +239,84 @@ const HomepageContent: React.FC = () => {
       return total + calculateRowTotal(entry);
     }, 0);
   }, [entries, calculateRowTotal]);
+  
+  // Validate if a row has all required fields filled
+  const isRowComplete = useCallback((entry: TimeEntry) => {
+    const hasBasicInfo = entry.client && entry.subject && entry.project;
+    const hasHours = Object.values(entry.hours).some(h => h && parseFloat(h) > 0);
+    return hasBasicInfo && hasHours;
+  }, []);
+  
+  // Check if any row is complete for submit button validation
+  const hasCompleteRow = useMemo(() => {
+    return entries.some(entry => isRowComplete(entry));
+  }, [entries, isRowComplete]);
+
+ // Add these functions to your HomepageContent component
+
+// Calculate total hours used across all timesheets
+const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
+  try {
+    setCalculatingHours(true);
+    
+    // Get the financial year for the selected date
+    const financialYear = TimesheetService.getFinancialYear(selectedDate);
+    
+    // Get allocated hours for the selected date's financial year
+    let allocatedHoursForYear = 0;
+    
+    try {
+      const storedData = localStorage.getItem("loginResponse");
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        if (parsedData.success && parsedData.user && parsedData.user.allocatedHours) {
+          // Find the allocated hours for the financial year
+          const allocatedHoursEntry = parsedData.user.allocatedHours.find(
+            (entry: { year: string; hours: string }) => entry.year === financialYear
+          );
+          
+          if (allocatedHoursEntry) {
+            allocatedHoursForYear = parseFloat(allocatedHoursEntry.hours);
+            setAllocatedHours(allocatedHoursForYear);
+          } else {
+            setAllocatedHours(0);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error getting allocated hours:", error);
+      setAllocatedHours(0);
+    }
+    
+    // Calculate hours used in the current financial year
+    const hoursUsed = await TimesheetService.calculateHoursUsedInFinancialYear(
+      username,
+      selectedDate,
+      currentTimesheetId
+    );
+    
+    setPreviousSubmittedHours(hoursUsed);
+    
+    // Only calculate current week hours if we're not viewing an already submitted timesheet
+    if (!currentTimesheetId || timesheetStatus === "rejected") {
+      // Calculate current week hours
+      const currentWeekHours = calculateWeekTotal();
+      
+      // Calculate and set remaining hours
+      setHoursRemaining(allocatedHoursForYear - hoursUsed - currentWeekHours);
+    } else {
+      // For submitted timesheets that we're viewing, don't double-count
+      setHoursRemaining(allocatedHoursForYear - hoursUsed);
+    }
+    
+    return hoursUsed;
+  } catch (error) {
+    console.error("Error fetching previous timesheet hours:", error);
+    return 0;
+  } finally {
+    setCalculatingHours(false);
+  }
+}, [selectedDate, calculateWeekTotal, currentTimesheetId, timesheetStatus]);
 
   // Event handlers
   const handleClientChange = (entryId: string, value: string) => {
@@ -209,13 +344,28 @@ const HomepageContent: React.FC = () => {
   };
 
   const handleInputChange = (entryId: string, day: string, value: string) => {
-    setEntries((prev) =>
-      prev.map((entry) =>
+    setEntries((prev) => {
+      const updatedEntries = prev.map((entry) =>
         entry.id === entryId
           ? { ...entry, hours: { ...entry.hours, [day]: value }, isDraft: entry.isDraft }
           : entry
-      )
-    );
+      );
+      
+      // Recalculate hours remaining when hours are updated
+      if (!currentTimesheetId || timesheetStatus === "rejected") {
+        // Recalculate hours remaining when hours are updated
+        const weekTotal = updatedEntries.reduce((total, entry) => {
+          return total + Object.values(entry.hours).reduce((rowTotal, hours) => {
+            return rowTotal + Number.parseFloat(hours || "0");
+          }, 0);
+        }, 0);
+        
+        // Update hours remaining
+        setHoursRemaining(allocatedHours - previousSubmittedHours - weekTotal);
+      }
+      
+      return updatedEntries;
+    });
   };
 
   const handleStatusChange = (day: string, value: string) => {
@@ -278,7 +428,21 @@ const HomepageContent: React.FC = () => {
     }
     
     // Then remove it from the UI
-    setEntries((prev) => prev.filter((entry) => entry.id !== entryId));
+    setEntries((prev) => {
+      const updatedEntries = prev.filter((entry) => entry.id !== entryId);
+      
+      // Recalculate hours remaining
+      const weekTotal = updatedEntries.reduce((total, entry) => {
+        return total + Object.values(entry.hours).reduce((rowTotal, hours) => {
+          return rowTotal + Number.parseFloat(hours || "0");
+        }, 0);
+      }, 0);
+      
+      // Update hours remaining
+      setHoursRemaining(allocatedHours - previousSubmittedHours - weekTotal);
+      
+      return updatedEntries;
+    });
   };
 
   const saveRow = async (entry: TimeEntry) => {
@@ -300,11 +464,13 @@ const HomepageContent: React.FC = () => {
     setIsSaving(prev => ({ ...prev, [entry.id]: true }));
     
     try {
+      // Always include the current workDescription in the save request
+      // This ensures the description is saved even when updating a row
       const response = await TimesheetService.saveDraftEntry(
         user.username,
         weekStartDate,
         entry,
-        workDescription,
+        workDescription, // Always send the current workDescription
         dayStatus
       );
       
@@ -337,7 +503,7 @@ const HomepageContent: React.FC = () => {
       setIsSaving(prev => ({ ...prev, [entry.id]: false }));
     }
   };
-
+  
   // Submit timesheet
   const handleSubmit = async () => {
     try {
@@ -398,6 +564,11 @@ const HomepageContent: React.FC = () => {
           setShowDraftBanner(false);
           setShowPersistentBanner(false);
           await fetchTimesheetForCurrentWeek();
+          
+          // Update previous submitted hours after submitting
+          if (user?.username) {
+            fetchPreviousSubmittedHours(user.username);
+          }
         } else {
           showDialog("Error", response.message, true);
         }
@@ -418,6 +589,11 @@ const HomepageContent: React.FC = () => {
           setShowDraftBanner(false);
           setShowPersistentBanner(false);
           await fetchTimesheetForCurrentWeek();
+          
+          // Update previous submitted hours after submitting
+          if (user?.username) {
+            fetchPreviousSubmittedHours(user.username);
+          }
         } else {
           showDialog("Error", response.message, true);
         }
@@ -481,19 +657,21 @@ const HomepageContent: React.FC = () => {
     }
   }, [user?.username, weekStartDate]);
 
-  const fetchTimesheetForCurrentWeek = useCallback(async () => {
+  const fetchTimesheetForCurrentWeek = useCallback(async (userData?: User | null, 
+    specifiedWeekStartDate?: string) => {
     if (!user?.username) return;
   
     try {
       setLoading(true);
       setDataNotFound(false);
       
-      const weekStartDateStr = weekDates[0].toISOString().split('T')[0];
+      const username = userData?.username || user?.username;
+      const weekStartDateStr = specifiedWeekStartDate || TimesheetService.getWeekStartDate(selectedDate);
       setWeekStartDate(weekStartDateStr);
       
       // Use priority logic to determine what data to show
       const priorityData = await TimesheetService.getPriorityDataForWeek(
-        user.username, 
+        username, 
         weekStartDateStr
       );
       
@@ -587,9 +765,50 @@ const HomepageContent: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.username, weekDates, initializeDefaultDayStatus, resetToDefaultValues]);
+  }, [user?.username, selectedDate, initializeDefaultDayStatus, resetToDefaultValues]);
 
   // Effects
+  
+  // Get allocated hours from localStorage and setup calculations
+  useEffect(() => {
+    // Get allocated hours from localStorage
+    try {
+      const storedData = localStorage.getItem("loginResponse");
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        if (parsedData.success && parsedData.user && parsedData.user.allocatedHours) {
+          const financialYear = TimesheetService.getFinancialYear(selectedDate);
+          
+          // Find the allocated hours for the financial year
+          const allocatedHoursEntry = parsedData.user.allocatedHours.find(
+            (entry: { year: string; hours: string }) => entry.year === financialYear
+          );
+          
+          if (allocatedHoursEntry) {
+            const allocatedHoursValue = parseFloat(allocatedHoursEntry.hours);
+            setAllocatedHours(allocatedHoursValue);
+            
+            // Initialize with allocated hours, but show loading until we calculate properly
+            setHoursRemaining(allocatedHoursValue);
+            setCalculatingHours(true);
+          } else {
+            setAllocatedHours(0);
+            setHoursRemaining(0);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error getting allocated hours:", error);
+    }
+  }, [selectedDate]);
+  
+  
+  // Calculate hours used when user data or entries change
+  useEffect(() => {
+    if (user?.username && allocatedHours > 0) {
+      fetchPreviousSubmittedHours(user.username);
+    }
+  }, [user?.username, allocatedHours, fetchPreviousSubmittedHours, currentTimesheetId, timesheetStatus]);
   
   // Initial load - check for drafts and set up user data
   useEffect(() => {
@@ -598,99 +817,36 @@ const HomepageContent: React.FC = () => {
       if (userData) {
         setUser(userData);
         
-        // Get current week's start date
+        // Get the current date and its financial year
         const today = new Date();
+        const financialYear = TimesheetService.getFinancialYear(today);
+        
+        // Get allocated hours for the current financial year
+        if (userData.allocatedHours) {
+          const allocatedHoursEntry = userData.allocatedHours.find(
+            (entry: { year: string; hours: string }) => entry.year === financialYear
+          );
+          
+          if (allocatedHoursEntry) {
+            const allocatedHoursValue = parseFloat(allocatedHoursEntry.hours);
+            setAllocatedHours(allocatedHoursValue);
+            setHoursRemaining(allocatedHoursValue);
+          } else {
+            setAllocatedHours(0);
+            setHoursRemaining(0);
+          }
+        }
+        
+        // Only proceed if we have a valid user
         const weekStartStr = TimesheetService.getWeekStartDate(today);
         
         try {
           setLoading(true);
-          
-          // Set the week start date and update calendar
           setWeekStartDate(weekStartStr);
-          setSelectedDate(new Date(weekStartStr));
+          setSelectedDate(today);
           
-          // Use the priority logic to determine which data to show
-          const priorityData = await TimesheetService.getPriorityDataForWeek(
-            userData.username, 
-            weekStartStr
-          );
-          
-          if (priorityData.dataSource === 'timesheet') {
-            // Load timesheet data
-            const timesheet = priorityData.data as Timesheet;
-            setCurrentTimesheetId(timesheet._id);
-            setIsWeekEditable(timesheet.timesheetStatus === "rejected");
-            
-            setEntries(
-              timesheet.entries.map((entry: TimeEntry) => ({
-                ...entry,
-                hours: entry.hours || {},
-              }))
-            );
-            setWorkDescription(timesheet.workDescription || "");
-            
-            if (timesheet.dayStatus) {
-              setDayStatus(timesheet.dayStatus);
-            } else {
-              initializeDefaultDayStatus();
-            }
-            
-            setTimesheetStatus(timesheet.timesheetStatus || "unapproved");
-            setHasTimesheetData(true);
-            setHasDrafts(false);
-            
-            // If rejected, show a banner
-            if (timesheet.timesheetStatus === "rejected") {
-              setDraftBannerMessage("This timesheet was rejected. Please make the necessary corrections and resubmit.");
-              setDraftBannerKey(Date.now());
-              setShowDraftBanner(true);
-            }
-          } 
-          else if (priorityData.dataSource === 'draft') {
-            // Load draft data
-            const draftData = priorityData.data as DraftTimesheet;
-            
-            // Mark entries as drafts
-            const draftEntries = draftData.entries.map(entry => ({
-              ...entry,
-              isDraft: true,
-              draftId: draftData._id
-            }));
-            
-            // Replace empty entries with draft entries - Important fix here
-            setEntries(draftEntries.length > 0 ? draftEntries : getInitialEntries());
-            
-            // Set work description if available
-            if (draftData.workDescription && draftData.workDescription !== "Draft") {
-              setWorkDescription(draftData.workDescription);
-            }
-            
-            // Set day status if available
-            if (draftData.dayStatus && Object.keys(draftData.dayStatus).length > 0) {
-              setDayStatus(draftData.dayStatus);
-            } else {
-              initializeDefaultDayStatus();
-            }
-            
-            setHasDrafts(draftEntries.length > 0);
-            setHasTimesheetData(draftEntries.length > 0);
-            setCurrentTimesheetId("");
-            setTimesheetStatus("unapproved");
-            setIsWeekEditable(true);
-            
-            // Check if banner has been closed previously
-            const isBannerClosed = localStorage.getItem(`draft_banner_closed_${userData.username}_${weekStartStr}`);
-            if (!isBannerClosed && draftEntries.length > 0) {
-              // Show draft banner with message
-              setDraftBannerMessage("You have saved entries for this week. Continue updating and save your work until you're ready to submit.");
-              setDraftBannerKey(Date.now());
-              setShowDraftBanner(true);
-            }
-          }
-          else {
-            // No data, show default empty rows
-            resetToDefaultValues();
-          }
+          // Use a single source of truth for data fetching
+          await fetchTimesheetForCurrentWeek(userData, weekStartStr);
         } catch (error) {
           console.error("Error fetching initial data:", error);
           resetToDefaultValues();
@@ -701,7 +857,6 @@ const HomepageContent: React.FC = () => {
         setLoading(false);
       }
     };
-    
     loadUserAndPriorityData();
   }, []);
 
@@ -720,14 +875,14 @@ const HomepageContent: React.FC = () => {
 
   // Analytics calculation
   useEffect(() => {
-    if (entries.length > 0 && entries.some(entry => entry.project)) {
+    if (entries.length > 0 && entries.some(entry => entry.subject)) {
       setHasTimesheetData(true);
       calculateDailyHoursData();
-      calculateProjectHoursData();
+      calculateSubjectHoursData();
     } else {
       setHasTimesheetData(false);
     }
-  }, [entries, calculateDailyHoursData, calculateProjectHoursData]);
+  }, [entries, calculateDailyHoursData, calculateSubjectHoursData]);
 
   // Initialize day status
   useEffect(() => {
@@ -803,7 +958,32 @@ const HomepageContent: React.FC = () => {
 
   // Loading states
   if (loading) return <Loader />;
-  if (submitting) return <Loader message="Submitting timesheet..." />;
+if (submitting) return <Loader message="Submitting timesheet..." />;
+//if (calculatingHours) return <Loader message="Calculating allocated hours..." />;
+
+  // Check if field should be enabled based on the sequential validation rule
+  const isFieldEnabled = (entry: TimeEntry, field: 'subject' | 'project' | 'hours') => {
+    if (!isWeekEditable) return false;
+    
+    switch (field) {
+      case 'subject':
+        return !!entry.client;
+      case 'project':
+        return !!entry.client && !!entry.subject;
+      case 'hours':
+        return !!entry.client && !!entry.subject && !!entry.project;
+      default:
+        return true;
+    }
+  };
+
+  // Filter week dates based on weekend toggle
+  const visibleWeekDates = showWeekend 
+    ? weekDates 
+    : weekDates.filter(date => {
+        const day = date.getDay();
+        return day !== 0 && day !== 6; // Filter out Saturday (6) and Sunday (0)
+      });
 
   // Render component
   return (
@@ -851,70 +1031,163 @@ const HomepageContent: React.FC = () => {
           </div>
 
           <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Client</th>
-                  <th>Subject</th>
-                  <th>Projects</th>
-                  {weekDates.map((date) => (
-                    <th key={date.toISOString()} className={styles.weekColumn}>
-                      {TimesheetService.formatDate(date)}
-                    </th>
+            <div className={styles.toggleContainer}>
+              <button
+                className={styles.weekendToggleButton}
+                onClick={toggleWeekend}
+                title={showWeekend ? "Hide weekend" : "Show weekend"}
+              >
+                {showWeekend ? "- Weekend" : "+ Weekend"}
+              </button>
+            </div>
+            
+            <div className={styles.responsiveTableContainer}>
+              <table className={styles.table}>
+                <thead>
+                <StatusRow 
+          weekDates={visibleWeekDates}
+          dayStatus={dayStatus}
+          isWeekEditable={isWeekEditable}
+          handleStatusChange={handleStatusChange}
+        />
+                  <tr>
+                    <th>Client</th>
+                    <th>Subject</th>
+                    <th>Projects</th>
+                    {visibleWeekDates.map((date) => (
+                      <th key={date.toISOString()}>
+                        {TimesheetService.formatDate(date)}
+                      </th>
+                    ))}
+                    <th className={styles.totalColumn}>Total</th>
+                    <th className={styles.actionColumn}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.map((entry) => (
+                    <tr key={entry.id}>
+                      <td>
+                        <select
+                          className={`${styles.select} ${styles.clientSelect}`}
+                          value={entry.client || ""}
+                          onChange={(e) => handleClientChange(entry.id, e.target.value)}
+                          disabled={!isWeekEditable}
+                        >
+                          <option value="">Select</option>
+                          {filteredClients.map((client) => (
+                            <option key={client._id} value={client.name}>
+                              {client.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <select
+                          className={styles.select}
+                          value={entry.subject}
+                          onChange={(e) => handleSubjectChange(entry.id, e.target.value)}
+                          disabled={!isFieldEnabled(entry, 'subject')}
+                        >
+                          <option value="">Select</option>
+                          {filteredSubjects.map((subject) => (
+                            <option key={subject._id} value={subject.name}>
+                              {subject.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <select
+                          className={styles.select}
+                          value={entry.project}
+                          onChange={(e) => handleProjectChange(entry.id, e.target.value)}
+                          disabled={!isFieldEnabled(entry, 'project')}
+                        >
+                          <option value="">Select</option>
+                          {filteredProjects.map((project) => (
+                            <option key={project._id} value={project.name}>
+                              {project.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      {visibleWeekDates.map((date) => {
+                        const dayStr = date.toISOString().split("T")[0];
+                        return (
+                          <td key={dayStr}>
+                            <input
+                              type="number"
+                              min="0"
+                              max="24"
+                              step="0.5"
+                              value={entry.hours[dayStr] || ""}
+                              onChange={(e) => handleInputChange(entry.id, dayStr, e.target.value)}
+                              disabled={!isFieldEnabled(entry, 'hours')}
+                              className={styles.hourInput}
+                            />
+                          </td>
+                        );
+                      })}
+                      <td className={styles.totalCell}>{calculateRowTotal(entry).toFixed(2)}</td>
+                      <td>
+  <div className={styles.actionButtons}>
+    <button
+      onClick={() => saveRow(entry)}
+      className={`${styles.saveButton} ${entry.isDraft ? styles.saved : ''} ${isSaving[entry.id] ? styles.saving : ''}`}
+      disabled={!isWeekEditable || isSaving[entry.id]}
+      title="Save row"
+    >
+      <Save size={16} />
+    </button>
+    <button
+      onClick={() => deleteRow(entry.id)}
+      className={styles.deleteButton}
+      disabled={!isWeekEditable}
+      title="Delete row"
+    >
+      <Trash2 size={16} />
+    </button>
+  </div>
+</td>
+                    </tr>
                   ))}
-                  <th>Total</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry) => (
-                  <TimesheetRow
-                    key={entry.id}
-                    entry={entry}
-                    weekDates={weekDates}
-                    isWeekEditable={isWeekEditable}
-                    filteredClients={filteredClients}
-                    filteredProjects={filteredProjects}
-                    filteredSubjects={filteredSubjects}
-                    handleClientChange={handleClientChange}
-                    handleProjectChange={handleProjectChange}
-                    handleSubjectChange={handleSubjectChange}
-                    handleInputChange={handleInputChange}
-                    calculateRowTotal={calculateRowTotal}
-                    deleteRow={deleteRow}
-                    saveRow={saveRow}
-                    isSaving={isSaving}
-                  />
-                ))}
-
-                <tr className={styles.totalRow}>
-                  <td>
-                    <button onClick={addNewRow} className={styles.button} disabled={!isWeekEditable}>
-                      <Plus className={styles.buttonIcon} />
-                      Project
-                    </button>
-                  </td>
-                  <td></td>
-                  <td>Total</td>
-                  {weekDates.map((date) => (
-                    <td key={date.toISOString()} className={styles.totalCell}>
-                      {calculateDayTotal(date).toFixed(2)}
+                  <tr className={styles.totalRow}>
+                    <td colSpan={3}>Total</td>
+                    {visibleWeekDates.map((date) => (
+                      <td key={date.toISOString()}>
+                        {calculateDayTotal(date).toFixed(2)}
+                      </td>
+                    ))}
+                    <td>{calculateWeekTotal().toFixed(2)}</td>
+                    <td>
+                      {isWeekEditable && (
+                        <button
+                          onClick={addNewRow}
+                          className={styles.button}
+                          title="Add row"
+                        >
+                          <Plus size={16} className={styles.buttonIcon} />Project
+                        </button>
+                      )}
                     </td>
-                  ))}
-                  <td className={styles.totalCell}>{calculateWeekTotal().toFixed(2)}</td>
-                  <td></td>
-                </tr>
-
-                <StatusRow
-                  weekDates={weekDates}
-                  dayStatus={dayStatus}
-                  isWeekEditable={isWeekEditable}
-                  handleStatusChange={handleStatusChange}
-                />
-              </tbody>
-            </table>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
+
+        {/* Allocated Hours Section */}
+        <div className={styles.allocatedHoursContainer}>
+  <div className={styles.allocatedHoursWrapper}>
+    <span className={styles.allocatedHoursLabel}>Allocated Hours:</span>
+    <span className={styles.allocatedHoursValue}>{allocatedHours.toFixed(2)}</span>
+  </div>
+  {/* <div className={styles.allocatedHoursWrapper}>
+    <span className={styles.allocatedHoursLabel}>Total hours left:</span>
+    <span className={styles.hoursRemainingValue}>{hoursRemaining.toFixed(2)}</span>
+  </div> */}
+</div>
 
         <div className={styles.descriptionContainer}>
           <h3 className={styles.descriptionHeading}>Work Description *</h3>
@@ -951,9 +1224,9 @@ const HomepageContent: React.FC = () => {
           <button 
             className={styles.submitButton} 
             onClick={handleSubmit} 
-            disabled={!isWeekEditable}
+            disabled={!isWeekEditable || !hasCompleteRow || !workDescription.trim()}
           >
-            {timesheetStatus === "rejected" ? "Resubmit for approval" : "Submit for approval"}
+            {timesheetStatus === "rejected" ? "Resubmit" : "Submit"}
           </button>
         </div>
         
@@ -963,7 +1236,7 @@ const HomepageContent: React.FC = () => {
             <div className={styles.chartsContainer}>
               <BarChartComponent dailyHoursData={dailyHoursData} />
               <PieChartComponent 
-                projectHoursData={projectHoursData} 
+                subjectHoursData={subjectHoursData} 
                 formatHoursAndMinutes={formatHoursAndMinutes} 
               />
             </div>

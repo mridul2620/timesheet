@@ -163,46 +163,45 @@ class TimesheetService {
     return dateStrings.sort()[0];
   }
 
-  // New method to save a draft entry
-  async saveDraftEntry(
-    username: string,
-    weekStartDate: string,
-    entry: TimeEntry,
-    workDescription: string = "",
-    dayStatus: { [key: string]: string } = {}
-  ): Promise<DraftResponse> {
-    try {
-      const response = await axios.post(
-        process.env.NEXT_PUBLIC_DRAFT_SAVE_API as string,
-        {
-          username,
-          weekStartDate,
-          entry,
-          workDescription,
-          dayStatus
-        }
-      );
-
-      if (response.data.success) {
-        return {
-          success: true,
-          message: "Entry saved as draft.",
-          draftId: response.data.draftId
-        };
-      } else {
-        return {
-          success: false,
-          message: response.data.message || "Failed to save draft entry."
-        };
+async saveDraftEntry(
+  username: string,
+  weekStartDate: string,
+  entry: TimeEntry,
+  workDescription: string = "",
+  dayStatus: { [key: string]: string } = {}
+): Promise<DraftResponse> {
+  try {
+    const response = await axios.post(
+      process.env.NEXT_PUBLIC_DRAFT_SAVE_API as string,
+      {
+        username,
+        weekStartDate,
+        entry,
+        workDescription, // Make sure this is always included
+        dayStatus
       }
-    } catch (error) {
-      console.error("Error saving draft entry:", error);
+    );
+
+    if (response.data.success) {
+      return {
+        success: true,
+        message: "Entry saved as draft.",
+        draftId: response.data.draftId
+      };
+    } else {
       return {
         success: false,
-        message: "An error occurred while saving the draft entry."
+        message: response.data.message || "Failed to save draft entry."
       };
     }
+  } catch (error) {
+    console.error("Error saving draft entry:", error);
+    return {
+      success: false,
+      message: "An error occurred while saving the draft entry."
+    };
   }
+}
 
   // New method to delete a draft entry
   async deleteDraftEntry(
@@ -288,11 +287,24 @@ class TimesheetService {
 
   // Helper method to get the start date of the current week
   getWeekStartDate(date: Date): string {
-    const day = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const diff = date.getDate() - day; // Subtract the day of week to get to Sunday
-    const weekStart = new Date(date);
-    weekStart.setDate(diff);
-    return weekStart.toISOString().split('T')[0];
+    // Create a copy of the input date to avoid mutations
+    const selectedDate = new Date(date);
+    
+    // Reset the time to midnight to avoid time zone issues
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    // Get the day of the week (0 = Sunday, 1 = Monday, etc.)
+    const dayOfWeek = selectedDate.getDay();
+    
+    // Calculate the Sunday (start of the week)
+    const sunday = new Date(selectedDate);
+    sunday.setDate(selectedDate.getDate() - dayOfWeek);
+    
+    // Ensure we're working with midnight local time
+    sunday.setHours(0, 0, 0, 0);
+    
+    // Format to YYYY-MM-DD (ISO date string, but just the date part)
+    return sunday.toISOString().split('T')[0];
   }
 
   async fetchClients(): Promise<any[]> {
@@ -337,12 +349,14 @@ class TimesheetService {
   }
 
   getWeekDates(date: Date): Date[] {
-    const startDate = new Date(date);
-    startDate.setDate(date.getDate() - date.getDay() + 1);
+    const selectedDate = new Date(date);
+    const dayOfWeek = selectedDate.getDay();
+    const sunday = new Date(selectedDate);
+    sunday.setDate(selectedDate.getDate() - dayOfWeek);
     return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(startDate);
-      d.setDate(startDate.getDate() + i);
-      return d;
+      const day = new Date(sunday);
+      day.setDate(sunday.getDate() + i);
+      return day;
     });
   }
 
@@ -376,10 +390,149 @@ class TimesheetService {
     weekDates.forEach((date) => {
       const dayStr = date.toISOString().split("T")[0];
       const dayOfWeek = date.getDay();
-      newDayStatus[dayStr] = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
+      
+      // Set Saturday (6) and Sunday (0) as "not-working"
+      // All other days (including Friday which is 5) as "working" by default
+      newDayStatus[dayStr] = (dayOfWeek === 0 || dayOfWeek === 6) 
+        ? "not-working" 
+        : "working";
     });
     return newDayStatus;
   }
+  
+  getFinancialYear(date: Date): string {
+    const year = date.getFullYear();
+    const month = date.getMonth(); // 0-indexed, so 0 = January, 3 = April
+    
+    // If date is from January to March, it belongs to the previous financial year
+    if (month < 3) {
+      return (year - 1).toString();
+    }
+    
+    // If date is from April to December, it belongs to the current financial year
+    return year.toString();
+  }
+  
+  // Get the financial year start date (April 1st) for a given date
+  getFinancialYearStartDate(date: Date): string {
+    const financialYear = this.getFinancialYear(date);
+    return `${financialYear}-04-01`;
+  }
+  
+  // Get the financial year end date (March 31st) for a given date
+  getFinancialYearEndDate(date: Date): string {
+    const financialYear = this.getFinancialYear(date);
+    const endYear = parseInt(financialYear) + 1;
+    return `${endYear}-03-31`;
+  }
+  
+  // Get allocated hours for a specific date from the user data
+  getAllocatedHoursForDate(date: Date, userData: User): number {
+    if (!userData || !userData.allocatedHours || userData.allocatedHours.length === 0) {
+      return 0;
+    }
+  
+    const financialYear = this.getFinancialYear(date);
+    
+    // Find the allocated hours for the financial year
+    const allocatedHoursEntry = userData.allocatedHours.find(
+      entry => entry.year === financialYear
+    );
+    
+    if (allocatedHoursEntry) {
+      return parseFloat(allocatedHoursEntry.hours);
+    }
+    
+    return 0;
+  }
+  
+  // Fetch timesheets within a date range to calculate hours used
+  async fetchTimesheetsInDateRange(
+    username: string,
+    startDate: string,
+    endDate: string
+  ): Promise<Timesheet[]> {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_GET_TIMESHEET_API}/${username}`
+      );
+      
+      if (!response.data.success) {
+        return [];
+      }
+      
+      const timesheets = response.data.timesheets || [];
+      
+      // Filter timesheets within the date range
+      return timesheets.filter((timesheet: Timesheet) => {
+        // Skip rejected timesheets
+        if (timesheet.timesheetStatus === "rejected") {
+          return false;
+        }
+        
+        // Get the week end date (6 days after the start date)
+        const weekStartDate = new Date(timesheet.weekStartDate);
+        const weekEndDate = new Date(weekStartDate);
+        weekEndDate.setDate(weekStartDate.getDate() + 6);
+        
+        // Check if the timesheet falls within the date range
+        return (
+          weekStartDate >= new Date(startDate) && 
+          weekEndDate <= new Date(endDate)
+        ) || (
+          // Or if the timesheet overlaps with the date range
+          (weekStartDate <= new Date(endDate) && weekEndDate >= new Date(startDate))
+        );
+      });
+    } catch (error) {
+      console.error("Error fetching timesheets in date range:", error);
+      return [];
+    }
+  }
+  
+  // Calculate hours used in the current financial year
+  async calculateHoursUsedInFinancialYear(
+    username: string,
+    date: Date,
+    currentTimesheetId?: string
+  ): Promise<number> {
+    try {
+      const startDate = this.getFinancialYearStartDate(date);
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get all timesheets in the financial year up to today
+      const timesheets = await this.fetchTimesheetsInDateRange(username, startDate, today);
+      
+      let totalHours = 0;
+      
+      // Calculate total hours from all timesheets in the financial year
+      for (const timesheet of timesheets) {
+        // Skip the current timesheet we're viewing to avoid double-counting
+        if (currentTimesheetId && timesheet._id === currentTimesheetId) {
+          continue;
+        }
+        
+        // Only count approved and pending timesheets
+        if (timesheet.timesheetStatus === "approved" || timesheet.timesheetStatus === "unapproved") {
+          // Sum up hours from all entries
+          for (const entry of timesheet.entries) {
+            for (const hoursValue of Object.values(entry.hours)) {
+              const hours = Number.parseFloat(hoursValue || "0");
+              if (!isNaN(hours)) {
+                totalHours += hours;
+              }
+            }
+          }
+        }
+      }
+      
+      return totalHours;
+    } catch (error) {
+      console.error("Error calculating hours used in financial year:", error);
+      return 0;
+    }
+  }
+  
 }
 
 export default new TimesheetService();

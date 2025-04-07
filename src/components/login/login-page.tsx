@@ -66,7 +66,6 @@ const LoginPage: React.FC = () => {
 
       if (response.ok) {
         const result = await response.json();
-        console.log(result);
         localStorage.setItem("loginResponse", JSON.stringify(result));
         //router.push('home-page');
         window.location.href = '/home-page';

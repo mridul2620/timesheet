@@ -34,12 +34,76 @@
   flex-shrink: 0;
 }
 
+.toggleContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.45rem;
+}
+
+.weekendToggleButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.34rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.34rem;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease-in;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
+}
+
+.weekendToggleButton:hover {
+  background-color: var(--border-color);
+  border-color: var(--accent-color);
+}
+
+.weekendToggleButton .buttonIcon {
+  color: var(--accent-color);
+}
+
 .tableWrapper {
+  width: 100%;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.responsiveTableContainer {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   min-width: 0;
+  margin-top: 0.5rem;
+}
+
+.tableWrapper:not(.expandedTable) .responsiveTableContainer {
+  overflow-x: hidden;
+}
+
+.expandedTable .weekColumn {
+  width: 7.5%;
+  min-width: 60px;
+}
+
+.expandedTable .clientColumn,
+.expandedTable .subjectColumn,
+.expandedTable .projectColumn {
+  width: 12%;
+  min-width: 80px;
+}
+
+.headerControls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.2rem;
+  position: relative;
+  z-index: 5;
 }
 
 .table {
@@ -47,12 +111,15 @@
   border-collapse: collapse;
   font-size: 0.8rem; /* Reduced from 0.875rem */
   color: var(--text-primary);
-  min-width: 585px; /* Reduced from 650px by 10% */
+  table-layout: auto;
+  /* min-width: 585px;
+  margin-top: -2.5rem;  */
 }
 
 .table th {
   padding: 0.7rem; /* Reduced from 0.75rem */
   text-align: left;
+  position: relative;
   font-weight: 500;
   font-size: 0.72rem; /* Reduced from 0.8rem */
   color: var(--text-secondary);
@@ -73,8 +140,11 @@
 }
 
 .totalCell {
-  font-weight: 500;
-  text-align: center;
+  width: 9%;
+  min-width: 62px;
+  max-width: 68px;
+  text-align: start;
+  white-space: nowrap;
   color: var(--accent-color);
 }
 
@@ -83,36 +153,44 @@
   color: var(--accent-color);
 }
 
+.totalColumn {
+  width: 8%;
+  min-width: 55px;
+  text-align: center;
+}
+
+.actionColumn {
+  width: 8%;
+  min-width: 55px;
+  text-align: left; 
+}
+
 .totalRow td:first-child {
   text-align: left;
 }
 
-.select:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-  background-color: var(--bg-tertiary);
-  color: var(--text-disabled);
-  width: 100%;
-  padding: 2px;
-  border: 1px solid var(--border-color);
-  border-radius: 7px; /* Slightly reduced from 8px */
-  font-size: 11px; /* Reduced from 12px */
-}
-
+.select:disabled,
 .select {
   width: 100%;
   min-width: 80px; 
   padding: 1px;
   border: 1px solid var(--border-color);
-  border-radius: 7px; /* Slightly reduced from 8px */
+  border-radius: 7px;
   background: var(--bg-tertiary);
   color: var(--text-primary);
-  font-size: 10px; /* Reduced from 12px */
+  font-size: 10px;
   transition: all 0.3s ease-in-out;
   cursor: pointer;
   font-family: inherit;
   white-space: nowrap;
   overflow: hidden;
+  opacity: 1; /* Keep opacity consistent */
+}
+
+.select:disabled {
+  cursor: not-allowed;
+  background-color: var(--bg-tertiary);
+  color: var(--text-disabled);
 }
 
 .select:hover,
@@ -142,29 +220,27 @@
   animation: dropdownFade 0.3s ease-in-out;
 }
 
+.clientSelect:disabled,
+.clientSelect {
+  width: 80%; 
+  min-width: 59px;
+}
+
+.hourInput:disabled,
 .hourInput {
   width: 90%;
-  max-width: 2.8rem; /* Reduced from 3rem */
-  min-width: .5rem; /* Reduced from 2.5rem */
-  padding: 0.25rem; /* Reduced from 0.25rem */
+  max-width: 2.8rem;
+  min-width: .5rem;
+  padding: 0.25rem;
   border: 1px solid var(--border-color);
-  border-radius: 0.23rem; /* Reduced from 0.25rem */
+  border-radius: 0.23rem;
   text-align: start;
   background-color: var(--bg-tertiary);
-  color: var(--text-primary);
 }
 
 .hourInput:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
-  background-color: var(--bg-tertiary);
   color: var(--text-disabled);
-  width: 80%;
-  max-width: 2.7rem; /* Reduced from 3rem */
-  padding: 0.25rem; /* Slightly reduced from 0.275rem */
-  border: 1px solid var(--border-color);
-  border-radius: 0.23rem; /* Reduced from 0.25rem */
-  text-align: center;
 }
 
 .hourInput:focus {
@@ -180,14 +256,14 @@
   cursor: pointer;
   transition: color 0.3s ease-in;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: left;
+  justify-content: left;
 }
 
 .actionButtons {
   display: flex;
   gap: 0.2rem;
-  justify-content: flex-end;
+  justify-content: left;
   min-width: 3.6rem;
 }
 
@@ -199,8 +275,8 @@
   cursor: pointer;
   transition: color 0.3s ease-in;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: left;
+  justify-content: left;
 }
 
 .saveButton:disabled {
@@ -394,6 +470,45 @@
 .statusRow td:first-child {
   font-weight: 500;
   color: var(--text-secondary);
+}
+
+.statusRow td:last-child,
+.statusRow td:nth-last-child(2) {
+  position: relative;
+}
+
+.allocatedHoursContainer {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.9rem;
+  margin: 0.9rem 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  font-family: "Inter", sans-serif;
+}
+
+.allocatedHoursWrapper {
+  display: flex;
+  align-items: center;
+}
+
+.allocatedHoursLabel {
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-right: 0.45rem;
+  font-size: 0.9rem;
+}
+
+.allocatedHoursValue {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--accent-color);
+}
+
+.hoursRemainingValue {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
 }
 
 .descriptionContainer {
@@ -967,8 +1082,21 @@
 
   .calendarSection {
     width: 100%;
+     flex-shrink: 0;
     max-width: 315px; /* Reduced from 350px */
     margin: 0.45rem auto; /* Reduced from 0.5rem auto */
+  }
+
+  .expandedTable .weekColumn {
+    width: 7%;
+    min-width: 55px;
+  }
+  
+  .expandedTable .clientColumn,
+  .expandedTable .subjectColumn,
+  .expandedTable .projectColumn {
+    width: 11%;
+    min-width: 75px;
   }
 }
 
@@ -980,6 +1108,16 @@
   .calendarSection {
     width: 100%;
     margin: 0;
+  }
+
+  .clientColumn, 
+  .subjectColumn, 
+  .projectColumn {
+    min-width: 75px;
+  }
+  
+  .weekColumn {
+    min-width: 60px;
   }
 }
 
@@ -993,8 +1131,9 @@
   }
 
   .calendarSection {
-    width: 100%;
-    margin: 0;
+    width: 234px;
+    margin: 0.45rem 0.23rem;
+    flex-shrink: 0;
   }
 
   .tableContainer {
@@ -1014,6 +1153,26 @@
   .timesheetStatus {
     width: 100%;
   }
+
+  .clientColumn, 
+  .subjectColumn, 
+  .projectColumn {
+    min-width: 70px;
+  }
+  
+  .weekColumn {
+    min-width: 58px;
+  }
+  
+  .totalColumn,
+  .actionColumn {
+    min-width: 50px;
+  }
+  
+  .weekendToggleButton {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
 }
 
 @media (max-width: 576px) {
@@ -1025,6 +1184,7 @@
   .table td {
     padding: 0.7rem 0.45rem; /* Reduced from 0.75rem 0.5rem */
     white-space: nowrap;
+    text-align: left;
   }
 
   .table th:nth-child(1),
@@ -1033,6 +1193,10 @@
   width: 95px; /* Reduced from 110px */
   min-width: 95px; /* Reduced from 110px */
   max-width: 120px; /* Reduced from 140px */
+}
+
+.table td:last-child {
+  text-align: center;
 }
   
   .hourInput {

@@ -2,31 +2,31 @@ import React, { useState } from "react";
 import { PieChart } from "lucide-react";
 import styles from "./charts.module.css";
 
-type ProjectHours = {
-  project: string;
+type SubjectHours = {
+  subject: string;
   hours: number;
   color: string;
 };
 
 type PieChartProps = {
-  projectHoursData: ProjectHours[];
+  subjectHoursData: SubjectHours[];
   formatHoursAndMinutes: (hours: number) => string;
 };
 
 const PieChartComponent: React.FC<PieChartProps> = ({
-  projectHoursData,
+  subjectHoursData,
   formatHoursAndMinutes,
 }) => {
   const [hoveredSegment, setHoveredSegment] = useState<number | null>(null);
-  const totalHours = projectHoursData.reduce(
-    (sum, project) => sum + project.hours,
+  const totalHours = subjectHoursData.reduce(
+    (sum, subject) => sum + subject.hours,
     0
   );
-  const projectCount = projectHoursData.length;
+  const subjectCount = subjectHoursData.length;
 
   let cumulativePercentage = 0;
-  const segments = projectHoursData.map((project, index) => {
-    const percentage = (project.hours / totalHours) * 100;
+  const segments = subjectHoursData.map((subject, index) => {
+    const percentage = (subject.hours / totalHours) * 100;
     const startAngle = cumulativePercentage;
     cumulativePercentage += percentage;
     const endAngle = cumulativePercentage;
@@ -41,7 +41,7 @@ const PieChartComponent: React.FC<PieChartProps> = ({
     const largeArcFlag = percentage > 50 ? 1 : 0;
     const path = `M 50 50 L ${startX} ${startY} A 40 40 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
 
-    return { project, percentage, path };
+    return { subject, percentage, path };
   });
 
   const getTooltipPosition = (index: number) => {
@@ -64,7 +64,7 @@ const PieChartComponent: React.FC<PieChartProps> = ({
       <div className={styles.chartHeader}>
         <div className={styles.chartTitle}>
           <PieChart size={18} className={styles.chartIcon} />
-          <h3>Projects handled</h3>
+          <h3>Subjects handled</h3>
         </div>
       </div>
       <div className={styles.pieChartContainer}>
@@ -74,7 +74,7 @@ const PieChartComponent: React.FC<PieChartProps> = ({
               <path
                 key={index}
                 d={segment.path}
-                fill={segment.project.color}
+                fill={segment.subject.color}
                 onMouseEnter={() => setHoveredSegment(index)}
                 onMouseLeave={() => setHoveredSegment(null)}
                 className={styles.pieSegment}
@@ -88,7 +88,7 @@ const PieChartComponent: React.FC<PieChartProps> = ({
               fontSize="36"
               fontWeight="bold"
             >
-              {projectCount}
+              {subjectCount}
             </text>
           </svg>
 
@@ -97,12 +97,12 @@ const PieChartComponent: React.FC<PieChartProps> = ({
               className={styles.segmentTooltip}
               style={getTooltipPosition(hoveredSegment)}
             >
-              {projectHoursData[hoveredSegment].project}
+              {subjectHoursData[hoveredSegment].subject}
             </div>
           )}
         </div>
         <div className={styles.pieChartLegend}>
-          {projectHoursData.map((project, index) => (
+          {subjectHoursData.map((subject, index) => (
             <div
               key={index}
               className={styles.legendItem}
@@ -111,12 +111,12 @@ const PieChartComponent: React.FC<PieChartProps> = ({
             >
               <div
                 className={styles.legendColor}
-                style={{ backgroundColor: project.color }}
+                style={{ backgroundColor: subject.color }}
               ></div>
               <div className={styles.legendText}>
-                <div className={styles.legendTitle}>{project.project}</div>
+                <div className={styles.legendTitle}>{subject.subject}</div>
                 <div className={styles.legendValue}>
-                  {formatHoursAndMinutes(project.hours)}
+                  {formatHoursAndMinutes(subject.hours)}
                 </div>
               </div>
             </div>
