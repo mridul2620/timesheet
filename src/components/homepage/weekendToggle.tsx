@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Plus, Minus } from "lucide-react";
 import styles from "./homepage.module.css";
 import { TimeEntry, User, Project, Subject, DailyHours, ProjectHours, DialogData, Client, DraftTimesheet, Timesheet } from "./timesheetTypes";
-import TimesheetRow from "./timesheetRow";
 import StatusRow from "./timesheetStatus";
+import TimesheetRow from "./timesheetRow";
 
 interface WeekendToggleTimesheetProps {
   weekDates: Date[];
