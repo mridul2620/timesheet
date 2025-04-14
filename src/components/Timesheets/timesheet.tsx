@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { BarChart3, PieChart, X } from "lucide-react";
+import { BarChart3, PieChart, X, Calendar as CalendarIcon } from "lucide-react";
 import styles from "./timesheet.module.css";
 import Header from "../Header/header";
 import Loader from "../Loader/loader";
@@ -9,7 +9,7 @@ import Calendar from "../Calender";
 import { useParams } from 'next/navigation';
 
 interface TimeEntry {
-  client: string; // Added client field
+  client: string;
   project: string;
   subject: string;
   hours: { [key: string]: string };
@@ -58,6 +58,7 @@ const EmployeeTimesheet = () => {
   const [projectHoursData, setProjectHoursData] = useState<ProjectHours[]>([]);
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [notification, setNotification] = useState<NotificationState>({ show: false, message: "" });
+  const [showTimesheet, setShowTimesheet] = useState(false);
 
   const projectColors = [
     "#3b82f6", "#22d3ee", "#f97316", "#a855f7", "#06b6d4", 
@@ -214,7 +215,7 @@ const EmployeeTimesheet = () => {
             setEntries(
               relevantTimesheet.entries.map((entry: any) => ({
                 ...entry,
-                client: entry.client || "", // Ensure client field is set
+                client: entry.client || "",
                 hours: entry.hours || {},
               }))
             );
@@ -224,7 +225,7 @@ const EmployeeTimesheet = () => {
             setRelevantTimesheetId(relevantTimesheet._id || null);
           } else {
             setEntries([{
-              client: "", // Initialize with empty client
+              client: "",
               project: "",
               subject: "",
               hours: {}
@@ -274,6 +275,9 @@ const EmployeeTimesheet = () => {
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(new Date(date));
+    if (!showTimesheet) {
+      setShowTimesheet(true);
+    }
   };
 
   const sendEmailNotification = async (status: string) => {
@@ -528,172 +532,188 @@ const EmployeeTimesheet = () => {
         user={adminUser}
       />
       {notification.show && <NotificationDialog />}
-      <div className={styles.tableContainer}>
-        <div className={styles.gridContainer}>
-          <div className={styles.calendarSection}>
+
+      {!showTimesheet ? (
+        <div className={styles.initialCalendarView}>
+          <div className={styles.calendarWrapper}>
             <Calendar 
               selectedDate={selectedDate}
               onChange={handleDateChange}
             />
+            <div className={styles.calendarPrompt}>
+              <CalendarIcon size={24} className={styles.calendarPromptIcon} />
+              <p>Select a date to view the timesheet details</p>
+            </div>
           </div>
+        </div>
+      ) : (
+        <div className={`${styles.tableContainer} ${styles.fadeIn}`}>
+          <div className={styles.gridContainer}>
+            <div className={styles.calendarSection}>
+              <Calendar 
+                selectedDate={selectedDate}
+                onChange={handleDateChange}
+              />
+            </div>
 
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Client</th>
-                <th>Subject</th>
-                <th>Projects</th>
-                {weekDates.map((date) => (
-                  <th key={date.toISOString()}>{formatDate(date)}</th>
-                ))}
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-            {entries.map((entry, index) => (
-  <tr key={index}>
-    <td>
-      <div style={{ position: 'relative' }}>
-        <input
-          type="text"
-          value={entry.client}
-          className={styles.readOnlyInput}
-          readOnly
-          title={entry.client} // Native HTML tooltip
-        />
-        {entry.client && (
-          <div className={styles.tooltipWrapper}>
-            <span className={styles.tooltipText}>{entry.client}</span>
-          </div>
-        )}
-      </div>
-    </td>
-    <td>
-      <div style={{ position: 'relative' }}>
-        <input
-          type="text"
-          value={entry.subject}
-          className={styles.readOnlyInput}
-          readOnly
-          title={entry.subject} // Native HTML tooltip
-        />
-        {entry.subject && (
-          <div className={styles.tooltipWrapper}>
-            <span className={styles.tooltipText}>{entry.subject}</span>
-          </div>
-        )}
-      </div>
-    </td>
-    <td>
-      <div style={{ position: 'relative' }}>
-        <input
-          type="text"
-          value={entry.project}
-          className={styles.readOnlyInput}
-          readOnly
-          title={entry.project} // Native HTML tooltip
-        />
-        {entry.project && (
-          <div className={styles.tooltipWrapper}>
-            <span className={styles.tooltipText}>{entry.project}</span>
-          </div>
-        )}
-      </div>
-    </td>
-    {weekDates.map((date) => {
-      const dayStr = date.toISOString().split("T")[0];
-      return (
-        <td key={dayStr}>
-          <input
-            type="text"
-            value={entry.hours[dayStr] || ""}
-            className={styles.readOnlyHourInput}
-            readOnly
-          />
-        </td>
-      );
-    })}
-    <td className={styles.totalCell}>
-      {calculateRowTotal(entry).toFixed(2)}
-    </td>
-  </tr>
-))}
-
-              <tr className={styles.totalRow}>
-                <td colSpan={3}>Total</td>
-                {weekDates.map((date) => (
-                  <td key={date.toISOString()} className={styles.totalCell}>
-                    {calculateDayTotal(date).toFixed(2)}
-                  </td>
-                ))}
-                <td className={styles.totalCell}>{calculateWeekTotal().toFixed(2)}</td>
-              </tr>
-
-              <tr className={styles.statusRow}>
-                <td colSpan={3}>Status</td>
-                {weekDates.map((date) => {
-                  const dayStr = date.toISOString().split("T")[0];
-                  return (
-                    <td key={dayStr}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Client</th>
+                  <th>Subject</th>
+                  <th>Projects</th>
+                  {weekDates.map((date) => (
+                    <th key={date.toISOString()}>{formatDate(date)}</th>
+                  ))}
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+              {entries.map((entry, index) => (
+                <tr key={index}>
+                  <td>
+                    <div style={{ position: 'relative' }}>
                       <input
                         type="text"
-                        value={dayStatus[dayStr] || ""}
+                        value={entry.client}
                         className={styles.readOnlyInput}
                         readOnly
+                        title={entry.client}
                       />
+                      {entry.client && (
+                        <div className={styles.tooltipWrapper}>
+                          <span className={styles.tooltipText}>{entry.client}</span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={entry.subject}
+                        className={styles.readOnlyInput}
+                        readOnly
+                        title={entry.subject}
+                      />
+                      {entry.subject && (
+                        <div className={styles.tooltipWrapper}>
+                          <span className={styles.tooltipText}>{entry.subject}</span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={entry.project}
+                        className={styles.readOnlyInput}
+                        readOnly
+                        title={entry.project}
+                      />
+                      {entry.project && (
+                        <div className={styles.tooltipWrapper}>
+                          <span className={styles.tooltipText}>{entry.project}</span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  {weekDates.map((date) => {
+                    const dayStr = date.toISOString().split("T")[0];
+                    return (
+                      <td key={dayStr}>
+                        <input
+                          type="text"
+                          value={entry.hours[dayStr] || ""}
+                          className={styles.readOnlyHourInput}
+                          readOnly
+                        />
+                      </td>
+                    );
+                  })}
+                  <td className={styles.totalCell}>
+                    {calculateRowTotal(entry).toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+
+                <tr className={styles.totalRow}>
+                  <td colSpan={3}>Total</td>
+                  {weekDates.map((date) => (
+                    <td key={date.toISOString()} className={styles.totalCell}>
+                      {calculateDayTotal(date).toFixed(2)}
                     </td>
-                  );
-                })}
-                <td></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div className={styles.descriptionContainer}>
-          <h3 className={styles.descriptionHeading}>Work Description</h3>
-          <textarea
-            className={styles.descriptionTextarea}
-            value={workDescription}
-            readOnly
-            rows={4}
-          />
-          <div className={styles.statusActionsRow}>
-            <div className={styles.timesheetStatus}>
-              <span className={styles.statusLabel}>Status:</span>
-              <span className={`${styles.statusValue} ${styles[timesheetStatus]}`}>
-                {timesheetStatus === "approved" ? "APPROVED" : 
-                timesheetStatus === "rejected" ? "REJECTED" : "UNAPPROVED"}
-              </span>
-            </div>
-            <div className={styles.approvalActions}>
-            <button 
-                className={`${styles.actionButton} ${styles.rejectButton}`}
-                onClick={handleReject}
-                disabled={updatingStatus || timesheetStatus === 'rejected'}
-              >
-                Reject
-              </button>
+                  ))}
+                  <td className={styles.totalCell}>{calculateWeekTotal().toFixed(2)}</td>
+                </tr>
+
+                <tr className={styles.statusRow}>
+                  <td colSpan={3}>Status</td>
+                  {weekDates.map((date) => {
+                    const dayStr = date.toISOString().split("T")[0];
+                    return (
+                      <td key={dayStr}>
+                        <input
+                          type="text"
+                          value={dayStatus[dayStr] || ""}
+                          className={styles.readOnlyInput}
+                          readOnly
+                        />
+                      </td>
+                    );
+                  })}
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className={styles.descriptionContainer}>
+            <h3 className={styles.descriptionHeading}>Work Description</h3>
+            <textarea
+              className={styles.descriptionTextarea}
+              value={workDescription}
+              readOnly
+              rows={4}
+            />
+            <div className={styles.statusActionsRow}>
+              <div className={styles.timesheetStatus}>
+                <span className={styles.statusLabel}>Status:</span>
+                <span className={`${styles.statusValue} ${styles[timesheetStatus]}`}>
+                  {timesheetStatus === "approved" ? "APPROVED" : 
+                  timesheetStatus === "rejected" ? "REJECTED" : "UNAPPROVED"}
+                </span>
+              </div>
+              <div className={styles.approvalActions}>
               <button 
-                className={`${styles.actionButton} ${styles.approveButton}`}
-                onClick={handleApprove}
-                disabled={updatingStatus || timesheetStatus === 'approved'}
-              >
-                Approve
-              </button>
+                  className={`${styles.actionButton} ${styles.rejectButton}`}
+                  onClick={handleReject}
+                  disabled={updatingStatus || timesheetStatus === 'rejected'}
+                >
+                  Reject
+                </button>
+                <button 
+                  className={`${styles.actionButton} ${styles.approveButton}`}
+                  onClick={handleApprove}
+                  disabled={updatingStatus || timesheetStatus === 'approved'}
+                >
+                  Approve
+                </button>
+              </div>
             </div>
           </div>
+          
+          {hasTimesheetData && (
+            <div className={styles.analyticsSection}>
+              <h3 className={styles.analyticsTitle}>Analytics for the week</h3>
+              <div className={styles.chartsContainer}>
+                <BarChartComponent />
+                <PieChartComponent />
+              </div>
+            </div>
+          )}
         </div>
-        
-        {hasTimesheetData && (
-          <div className={styles.analyticsSection}>
-            <h3 className={styles.analyticsTitle}>Analytics for the week</h3>
-            <div className={styles.chartsContainer}>
-              <BarChartComponent />
-              <PieChartComponent />
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };

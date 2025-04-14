@@ -287,25 +287,28 @@ async saveDraftEntry(
 
   // Helper method to get the start date of the current week
   getWeekStartDate(date: Date): string {
-    // Create a copy of the input date to avoid mutations
-    const selectedDate = new Date(date);
-    
-    // Reset the time to midnight to avoid time zone issues
-    selectedDate.setHours(0, 0, 0, 0);
-    
-    // Get the day of the week (0 = Sunday, 1 = Monday, etc.)
-    const dayOfWeek = selectedDate.getDay();
-    
-    // Calculate the Sunday (start of the week)
-    const sunday = new Date(selectedDate);
-    sunday.setDate(selectedDate.getDate() - dayOfWeek);
-    
-    // Ensure we're working with midnight local time
-    sunday.setHours(0, 0, 0, 0);
-    
-    // Format to YYYY-MM-DD (ISO date string, but just the date part)
-    return sunday.toISOString().split('T')[0];
-  }
+  // Create a copy of the input date to avoid mutations
+  const selectedDate = new Date(date);
+  
+  // Reset the time to midnight to avoid time zone issues
+  selectedDate.setHours(0, 0, 0, 0);
+  
+  // Get the day of the week (0 = Sunday, 1 = Monday, etc.)
+  const dayOfWeek = selectedDate.getDay();
+  
+  // Calculate the Monday (start of the week)
+  // If today is Sunday (0), we need to go back by 6 days
+  // Otherwise, we go back by (dayOfWeek - 1) days
+  const monday = new Date(selectedDate);
+  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  monday.setDate(selectedDate.getDate() - daysToSubtract);
+  
+  // Ensure we're working with midnight local time
+  monday.setHours(0, 0, 0, 0);
+  
+  // Format to YYYY-MM-DD (ISO date string, but just the date part)
+  return monday.toISOString().split('T')[0];
+}
 
   async fetchClients(): Promise<any[]> {
     try {

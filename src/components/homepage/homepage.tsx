@@ -81,8 +81,7 @@ const HomepageContent: React.FC = () => {
   const [draftBannerMessage, setDraftBannerMessage] = useState("");
   const [draftBannerKey, setDraftBannerKey] = useState(0);
 
-  // Get week dates based on selected date
-  const getCorrectWeekDates = (date: Date): Date[] => {
+  const getWeekDatesStartingMonday = (date: Date): Date[] => {
     // Create a copy of the date to avoid mutating the original
     const inputDate = new Date(date.getTime());
     
@@ -92,14 +91,17 @@ const HomepageContent: React.FC = () => {
     // Get the current day of the week (0 = Sunday, 1 = Monday, etc.)
     const dayOfWeek = inputDate.getDay();
     
-    // Calculate the start date (Sunday) of the week containing the selected date
+    // Calculate the start date (Monday) of the week containing the selected date
+    // If today is Sunday (0), we need to go back by 6 days to get to the previous Monday
+    // Otherwise, we go back by (dayOfWeek - 1) days
     const startDate = new Date(inputDate);
-    startDate.setDate(inputDate.getDate() - dayOfWeek);
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    startDate.setDate(inputDate.getDate() - daysToSubtract);
     
     // Set to midnight to ensure consistency
     startDate.setHours(0, 0, 0, 0);
     
-    // Create an array of all 7 days in the week, starting from Sunday
+    // Create an array of all 7 days in the week, starting from Monday
     return Array.from({ length: 7 }, (_, i) => {
       const day = new Date(startDate);
       day.setDate(startDate.getDate() + i);
@@ -108,8 +110,14 @@ const HomepageContent: React.FC = () => {
     });
   };
 
+  // Get week dates based on selected date
+  const getCorrectWeekDates = (date: Date): Date[] => {
+    return getWeekDatesStartingMonday(date);
+  };
+  
+
   const weekDates = useMemo(() => 
-    getCorrectWeekDates(selectedDate), 
+    getWeekDatesStartingMonday(selectedDate), 
     [selectedDate]
   );
   
@@ -151,34 +159,27 @@ const HomepageContent: React.FC = () => {
     setShowWeekend(!showWeekend);
   };
 
-  // Analytics calculations
   const calculateDailyHoursData = useCallback(() => {
-    // Updated day names and abbreviations to start from Monday
-    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    const abbreviations = ["M", "T", "W", "T", "F", "S", "S"];
-    
-    // Create a new array of weekDates sorted to start from Monday
-    const mondayFirstWeekDates = [
-      ...weekDates.slice(1),  // Move Sunday to the end
-      weekDates[0]            // Put Sunday at the end of the array
-    ];
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const abbreviations = ["M", "T", "W", "T", "F", "S", "S"];
+  
+  // Since weekDates now starts with Monday, we can map directly
+  const dailyData: DailyHours[] = weekDates.map((date, index) => {
+    const dayStr = date.toISOString().split("T")[0];
+    const dayHours = entries.reduce((total, entry) => {
+      const hours = Number.parseFloat(entry.hours[dayStr] || "0");
+      return total + hours;
+    }, 0);
 
-    const dailyData: DailyHours[] = mondayFirstWeekDates.map((date, index) => {
-      const dayStr = date.toISOString().split("T")[0];
-      const dayHours = entries.reduce((total, entry) => {
-        const hours = Number.parseFloat(entry.hours[dayStr] || "0");
-        return total + hours;
-      }, 0);
+    return {
+      day: days[index],
+      abbreviation: abbreviations[index],
+      hours: dayHours
+    };
+  });
 
-      return {
-        day: days[index],
-        abbreviation: abbreviations[index],
-        hours: dayHours
-      };
-    });
-
-    setDailyHoursData(dailyData);
-  }, [weekDates, entries]);
+  setDailyHoursData(dailyData);
+}, [weekDates, entries]);
 
   const calculateSubjectHoursData = useCallback(() => {
     const subjectDataMap = new Map<string, { hours: number, color: string }>();
