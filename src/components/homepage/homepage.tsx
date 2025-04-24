@@ -454,7 +454,7 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     
     // Check if entry has any data worth saving
     const hasClientOrProject = entry.client || entry.project || entry.subject;
-    const hasHours = Object.values(entry.hours).some(h => h && parseFloat(h) > 0);
+    const hasHours = Object.values(entry.hours).some(h => h && parseFloat(h) >= 0);
     
     if (!hasClientOrProject && !hasHours) {
       showDialog("Error", "Entry has no data to save", true);
