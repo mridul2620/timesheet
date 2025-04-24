@@ -244,7 +244,7 @@ const HomepageContent: React.FC = () => {
   // Validate if a row has all required fields filled
   const isRowComplete = useCallback((entry: TimeEntry) => {
     const hasBasicInfo = entry.client && entry.subject && entry.project;
-    const hasHours = Object.values(entry.hours).some(h => h && parseFloat(h) > 0);
+    const hasHours = Object.values(entry.hours).some(h => h && parseFloat(h) >= 0);
     return hasBasicInfo && hasHours;
   }, []);
   
