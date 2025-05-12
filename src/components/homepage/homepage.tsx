@@ -13,14 +13,13 @@ import TimesheetService from "./timesheetservive";
 import { TimeEntry, User, Project, Subject, DailyHours, DialogData, Client, DraftTimesheet, Timesheet } from "./timesheetTypes";
 import axios from "axios";
 import StatusRow from "./timesheetStatus";
+import TimesheetRow from "./timesheetRow";
 
 const HomepageContent: React.FC = () => {
   const subjectColors = [
     "#3b82f6", "#22d3ee", "#f97316", "#a855f7", "#06b6d4", 
     "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"
   ];
-  
-  // Helper function to initialize empty timesheet rows
   const getInitialEntries = (): TimeEntry[] => {
     return Array(2).fill(null).map((_, index) => ({
       id: String(index + 1),
@@ -30,23 +29,19 @@ const HomepageContent: React.FC = () => {
       hours: {},
     }));
   };
-  
-  // State for timesheet entries and data
+
   const [entries, setEntries] = useState<TimeEntry[]>(getInitialEntries());
   const [user, setUser] = useState<User | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workDescription, setWorkDescription] = useState("");
   const [dayStatus, setDayStatus] = useState<{ [key: string]: string }>({});
   const [showWeekend, setShowWeekend] = useState(false);
-  // Master data and filtered data for dropdowns
   const [clients, setClients] = useState<Client[]>([]);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([]);
-  
-  // UI state management
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isWeekEditable, setIsWeekEditable] = useState(true);
@@ -55,25 +50,20 @@ const HomepageContent: React.FC = () => {
   const [weekStartDate, setWeekStartDate] = useState<string>("");
   const [hasTimesheetData, setHasTimesheetData] = useState(false);
   const [dataNotFound, setDataNotFound] = useState(false);
-  
-  // Allocated hours tracking
   const [allocatedHours, setAllocatedHours] = useState<number>(0);
   const [hoursRemaining, setHoursRemaining] = useState<number>(0);
-  const [calculatingHours, setCalculatingHours] = useState<boolean>(false);
-  const [previousSubmittedHours, setPreviousSubmittedHours] = useState<number>(0);
-  
-  // Analytics data
   const [dailyHoursData, setDailyHoursData] = useState<DailyHours[]>([]);
-  
-  // Dialog popup state
+  const [subjectHoursData, setSubjectHoursData] = useState<{
+    subject: string;
+    hours: number;
+    color: string;
+  }[]>([]);
   const [dialogData, setDialogData] = useState<DialogData>({
     show: false,
     title: "",
     message: "",
     isError: false,
   });
-  
-  // Draft-related state
   const [isSaving, setIsSaving] = useState<{ [key: string]: boolean }>({});
   const [hasDrafts, setHasDrafts] = useState(false);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
@@ -82,46 +72,26 @@ const HomepageContent: React.FC = () => {
   const [draftBannerKey, setDraftBannerKey] = useState(0);
 
   const getWeekDatesStartingMonday = (date: Date): Date[] => {
-    // Create a copy of the date to avoid mutating the original
     const inputDate = new Date(date.getTime());
-    
-    // Set to midnight to ensure consistent behavior
     inputDate.setHours(0, 0, 0, 0);
-    
-    // Get the current day of the week (0 = Sunday, 1 = Monday, etc.)
     const dayOfWeek = inputDate.getDay();
-    
-    // Calculate the start date (Monday) of the week containing the selected date
-    // If today is Sunday (0), we need to go back by 6 days to get to the previous Monday
-    // Otherwise, we go back by (dayOfWeek - 1) days
     const startDate = new Date(inputDate);
     const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     startDate.setDate(inputDate.getDate() - daysToSubtract);
-    
-    // Set to midnight to ensure consistency
     startDate.setHours(0, 0, 0, 0);
-    
-    // Create an array of all 7 days in the week, starting from Monday
     return Array.from({ length: 7 }, (_, i) => {
       const day = new Date(startDate);
       day.setDate(startDate.getDate() + i);
-      day.setHours(0, 0, 0, 0); // Ensure consistent time for each date
+      day.setHours(0, 0, 0, 0);
       return day;
     });
   };
-
-  // Get week dates based on selected date
-  const getCorrectWeekDates = (date: Date): Date[] => {
-    return getWeekDatesStartingMonday(date);
-  };
-  
 
   const weekDates = useMemo(() => 
     getWeekDatesStartingMonday(selectedDate), 
     [selectedDate]
   );
-  
-  // Helper functions
+
   const formatHoursAndMinutes = (hours: number) => {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
@@ -137,7 +107,15 @@ const HomepageContent: React.FC = () => {
   };
 
   const initializeDefaultDayStatus = useCallback(() => {
-    setDayStatus(TimesheetService.initializeDayStatus(weekDates));
+    const newDayStatus: { [key: string]: string } = {};
+    weekDates.forEach((date) => {
+      const dayStr = date.toISOString().split("T")[0];
+      const dayOfWeek = date.getDay();
+      newDayStatus[dayStr] = (dayOfWeek === 0 || dayOfWeek === 6) 
+        ? "not-working" 
+        : "working";
+    });
+    setDayStatus(newDayStatus);
   }, [weekDates]);
 
   const resetToDefaultValues = useCallback(() => {
@@ -154,32 +132,69 @@ const HomepageContent: React.FC = () => {
     setShowPersistentBanner(false);
   }, [initializeDefaultDayStatus]);
 
-  // Weekend toggle handler
   const toggleWeekend = () => {
     setShowWeekend(!showWeekend);
   };
 
-  const calculateDailyHoursData = useCallback(() => {
-  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const abbreviations = ["M", "T", "W", "T", "F", "S", "S"];
+  const updateRemainingHours = async (newRemainingHours: number) => {
+    try {
+      if (!user?.username) {
+        console.error("Cannot update remaining hours: No user found");
+        return false;
+      }
+      setHoursRemaining(newRemainingHours);
+      const response = await axios.post(
+        process.env.NEXT_PUBLIC_EDIT_USER_API || "/api/edituser",
+        {
+          username: user.username,
+          remainingHours: newRemainingHours
+        }
+      );
   
-  // Since weekDates now starts with Monday, we can map directly
-  const dailyData: DailyHours[] = weekDates.map((date, index) => {
-    const dayStr = date.toISOString().split("T")[0];
-    const dayHours = entries.reduce((total, entry) => {
-      const hours = Number.parseFloat(entry.hours[dayStr] || "0");
-      return total + hours;
-    }, 0);
+      if (response.data.success) {
+        try {
+          const storedData = localStorage.getItem("loginResponse");
+          if (storedData) {
+            const parsedData = JSON.parse(storedData);
+            if (parsedData.success && parsedData.user) {
+              parsedData.user.remainingHours = newRemainingHours;
+              localStorage.setItem("loginResponse", JSON.stringify(parsedData));
+            }
+          }
+        } catch (error) {
+          console.error("Error updating localStorage:", error);
+        }
+        
+        return true;
+      } else {
+        console.error("Failed to update remaining hours:", response.data.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error updating remaining hours:", error);
+      return false;
+    }
+  };
 
-    return {
-      day: days[index],
-      abbreviation: abbreviations[index],
-      hours: dayHours
-    };
-  });
+  const calculateDailyHoursData = useCallback(() => {
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const abbreviations = ["M", "T", "W", "T", "F", "S", "S"];
+    const dailyData: DailyHours[] = weekDates.map((date, index) => {
+      const dayStr = date.toISOString().split("T")[0];
+      const dayHours = entries.reduce((total, entry) => {
+        const hours = Number.parseFloat(entry.hours[dayStr] || "0");
+        return total + hours;
+      }, 0);
 
-  setDailyHoursData(dailyData);
-}, [weekDates, entries]);
+      return {
+        day: days[index],
+        abbreviation: abbreviations[index],
+        hours: dayHours
+      };
+    });
+
+    setDailyHoursData(dailyData);
+  }, [weekDates, entries]);
 
   const calculateSubjectHoursData = useCallback(() => {
     const subjectDataMap = new Map<string, { hours: number, color: string }>();
@@ -192,7 +207,6 @@ const HomepageContent: React.FC = () => {
   
         if (subjectHours > 0) {
           if (!subjectDataMap.has(entry.subject)) {
-            // Assign a unique color to each subject
             const color = subjectColors[subjectDataMap.size % subjectColors.length];
             subjectDataMap.set(entry.subject, { hours: subjectHours, color });
           } else {
@@ -213,13 +227,7 @@ const HomepageContent: React.FC = () => {
     }));
   
     setSubjectHoursData(subjectData);
-  }, [entries]);
-
-  const [subjectHoursData, setSubjectHoursData] = useState<{
-    subject: string;
-    hours: number;
-    color: string;
-  }[]>([]);
+  }, [entries, subjectColors]);
 
   const calculateDayTotal = useCallback((date: Date) => {
     const dayStr = date.toISOString().split("T")[0];
@@ -240,86 +248,17 @@ const HomepageContent: React.FC = () => {
       return total + calculateRowTotal(entry);
     }, 0);
   }, [entries, calculateRowTotal]);
-  
-  // Validate if a row has all required fields filled
+
   const isRowComplete = useCallback((entry: TimeEntry) => {
     const hasBasicInfo = entry.client && entry.subject && entry.project;
-    const hasHours = Object.values(entry.hours).some(h => h && parseFloat(h) > 0);
+    const hasHours = Object.values(entry.hours).some(h => h && parseFloat(h) >= 0);
     return hasBasicInfo && hasHours;
   }, []);
-  
-  // Check if any row is complete for submit button validation
+
   const hasCompleteRow = useMemo(() => {
     return entries.some(entry => isRowComplete(entry));
   }, [entries, isRowComplete]);
 
- // Add these functions to your HomepageContent component
-
-// Calculate total hours used across all timesheets
-const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
-  try {
-    setCalculatingHours(true);
-    
-    // Get the financial year for the selected date
-    const financialYear = TimesheetService.getFinancialYear(selectedDate);
-    
-    // Get allocated hours for the selected date's financial year
-    let allocatedHoursForYear = 0;
-    
-    try {
-      const storedData = localStorage.getItem("loginResponse");
-      if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        if (parsedData.success && parsedData.user && parsedData.user.allocatedHours) {
-          // Find the allocated hours for the financial year
-          const allocatedHoursEntry = parsedData.user.allocatedHours.find(
-            (entry: { year: string; hours: string }) => entry.year === financialYear
-          );
-          
-          if (allocatedHoursEntry) {
-            allocatedHoursForYear = parseFloat(allocatedHoursEntry.hours);
-            setAllocatedHours(allocatedHoursForYear);
-          } else {
-            setAllocatedHours(0);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error getting allocated hours:", error);
-      setAllocatedHours(0);
-    }
-    
-    // Calculate hours used in the current financial year
-    const hoursUsed = await TimesheetService.calculateHoursUsedInFinancialYear(
-      username,
-      selectedDate,
-      currentTimesheetId
-    );
-    
-    setPreviousSubmittedHours(hoursUsed);
-    
-    // Only calculate current week hours if we're not viewing an already submitted timesheet
-    if (!currentTimesheetId || timesheetStatus === "rejected") {
-      // Calculate current week hours
-      const currentWeekHours = calculateWeekTotal();
-      
-      // Calculate and set remaining hours
-      setHoursRemaining(allocatedHoursForYear - hoursUsed - currentWeekHours);
-    } else {
-      // For submitted timesheets that we're viewing, don't double-count
-      setHoursRemaining(allocatedHoursForYear - hoursUsed);
-    }
-    
-    return hoursUsed;
-  } catch (error) {
-    console.error("Error fetching previous timesheet hours:", error);
-    return 0;
-  } finally {
-    setCalculatingHours(false);
-  }
-}, [selectedDate, calculateWeekTotal, currentTimesheetId, timesheetStatus]);
-
-  // Event handlers
   const handleClientChange = (entryId: string, value: string) => {
     setEntries((prev) =>
       prev.map((entry) =>
@@ -346,23 +285,19 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
 
   const handleInputChange = (entryId: string, day: string, value: string) => {
     setEntries((prev) => {
+      const oldEntry = prev.find(entry => entry.id === entryId);
+      const oldHourValue = oldEntry ? Number.parseFloat(oldEntry.hours[day] || "0") : 0;
+      const newHourValue = Number.parseFloat(value || "0");
+      const hoursDifference = newHourValue - oldHourValue;
+      
       const updatedEntries = prev.map((entry) =>
         entry.id === entryId
           ? { ...entry, hours: { ...entry.hours, [day]: value }, isDraft: entry.isDraft }
           : entry
       );
-      
-      // Recalculate hours remaining when hours are updated
-      if (!currentTimesheetId || timesheetStatus === "rejected") {
-        // Recalculate hours remaining when hours are updated
-        const weekTotal = updatedEntries.reduce((total, entry) => {
-          return total + Object.values(entry.hours).reduce((rowTotal, hours) => {
-            return rowTotal + Number.parseFloat(hours || "0");
-          }, 0);
-        }, 0);
-        
-        // Update hours remaining
-        setHoursRemaining(allocatedHours - previousSubmittedHours - weekTotal);
+
+      if (isWeekEditable) {
+        setHoursRemaining(prevHours => prevHours - hoursDifference);
       }
       
       return updatedEntries;
@@ -391,24 +326,26 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     ]);
   };
 
-  // Banner handling
   const closeDraftBanner = () => {
     setShowDraftBanner(false);
   };
   
   const closePersistentBanner = () => {
     setShowPersistentBanner(false);
-    // Store in localStorage to prevent showing on page reload
     if (user?.username && weekStartDate) {
       localStorage.setItem(`draft_banner_closed_${user.username}_${weekStartDate}`, "true");
     }
   };
 
-  // Row operations
   const deleteRow = async (entryId: string) => {
     const entry = entries.find(e => e.id === entryId);
-    
-    // If this is a draft entry, delete it from the server first
+    let rowTotalHours = 0;
+    if (entry) {
+      rowTotalHours = Object.values(entry.hours).reduce((total, hours) => {
+        return total + Number.parseFloat(hours || "0");
+      }, 0);
+    }
+
     if (entry?.isDraft && user?.username && weekStartDate) {
       try {
         const response = await TimesheetService.deleteDraftEntry(
@@ -427,23 +364,14 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
         return;
       }
     }
-    
-    // Then remove it from the UI
-    setEntries((prev) => {
-      const updatedEntries = prev.filter((entry) => entry.id !== entryId);
-      
-      // Recalculate hours remaining
-      const weekTotal = updatedEntries.reduce((total, entry) => {
-        return total + Object.values(entry.hours).reduce((rowTotal, hours) => {
-          return rowTotal + Number.parseFloat(hours || "0");
-        }, 0);
-      }, 0);
-      
-      // Update hours remaining
-      setHoursRemaining(allocatedHours - previousSubmittedHours - weekTotal);
-      
-      return updatedEntries;
-    });
+    setEntries((prev) => prev.filter((entry) => entry.id !== entryId));
+    if (isWeekEditable) {
+      const updatedRemainingHours = hoursRemaining + rowTotalHours;
+      setHoursRemaining(updatedRemainingHours);
+      if (user?.username) {
+        await updateRemainingHours(updatedRemainingHours);
+      }
+    }
   };
 
   const saveRow = async (entry: TimeEntry) => {
@@ -451,32 +379,28 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
       showDialog("Error", "User information is missing or week not selected", true);
       return;
     }
-    
-    // Check if entry has any data worth saving
+
     const hasClientOrProject = entry.client || entry.project || entry.subject;
-    const hasHours = Object.values(entry.hours).some(h => h && parseFloat(h) > 0);
+    const hasHours = Object.values(entry.hours).some(h => h && parseFloat(h) >= 0);
     
     if (!hasClientOrProject && !hasHours) {
       showDialog("Error", "Entry has no data to save", true);
       return;
     }
-    
-    // Set loading state for this specific row
+
     setIsSaving(prev => ({ ...prev, [entry.id]: true }));
     
     try {
-      // Always include the current workDescription in the save request
-      // This ensures the description is saved even when updating a row
+      await updateRemainingHours(hoursRemaining);
       const response = await TimesheetService.saveDraftEntry(
         user.username,
         weekStartDate,
         entry,
-        workDescription, // Always send the current workDescription
+        workDescription,
         dayStatus
       );
       
       if (response.success) {
-        // Update entry to show it's saved
         setEntries(prev => 
           prev.map(e => 
             e.id === entry.id 
@@ -485,13 +409,8 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
           )
         );
         setHasDrafts(true);
-        
-        // Hide persistent banner if it's showing
         setShowPersistentBanner(false);
-        
-        // Show temporary success banner
         setDraftBannerMessage("Entry saved successfully. Continue updating and save your work until you're ready to submit.");
-        // Force banner to re-render with new key to reset timer
         setDraftBannerKey(prevKey => prevKey + 1);
         setShowDraftBanner(true);
       } else {
@@ -505,7 +424,6 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     }
   };
   
-  // Submit timesheet
   const handleSubmit = async () => {
     try {
       if (!user?.username) {
@@ -521,14 +439,13 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
         showDialog("Error", "Please add at least one time entry", true);
         return;
       }
-      
-      // Validate work description
       if (!workDescription || workDescription.trim() === '') {
         showDialog("Error", "Please add a work description", true);
         return;
       }
   
       setSubmitting(true);
+      await updateRemainingHours(hoursRemaining);
   
       const updatedDayStatus = { ...dayStatus };
       weekDates.forEach((date) => {
@@ -544,7 +461,6 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
         entries: entries.filter((entry) =>
           Object.values(entry.hours).some((h) => h !== "")
         ).map(entry => {
-          // Remove isDraft and draftId properties
           const { isDraft, draftId, ...cleanEntry } = entry;
           return cleanEntry;
         }),
@@ -565,11 +481,6 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
           setShowDraftBanner(false);
           setShowPersistentBanner(false);
           await fetchTimesheetForCurrentWeek();
-          
-          // Update previous submitted hours after submitting
-          if (user?.username) {
-            fetchPreviousSubmittedHours(user.username);
-          }
         } else {
           showDialog("Error", response.message, true);
         }
@@ -590,11 +501,6 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
           setShowDraftBanner(false);
           setShowPersistentBanner(false);
           await fetchTimesheetForCurrentWeek();
-          
-          // Update previous submitted hours after submitting
-          if (user?.username) {
-            fetchPreviousSubmittedHours(user.username);
-          }
         } else {
           showDialog("Error", response.message, true);
         }
@@ -606,61 +512,9 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     }
   };
 
-  // Data fetching
-  const fetchDraftsForCurrentWeek = useCallback(async () => {
-    if (!user?.username || !weekStartDate) return;
-    
-    try {
-      const response = await TimesheetService.getDraftsForWeek(user.username, weekStartDate);
-      
-      if (response.success && response.draft) {
-        const draftData = response.draft as DraftTimesheet;
-        
-        // Mark entries as drafts
-        const draftEntries = draftData.entries.map(entry => ({
-          ...entry,
-          isDraft: true,
-          draftId: draftData._id
-        }));
-        
-        setEntries(prev => {
-          // Filter out initial empty entries if we have drafts
-          const filtered = draftEntries.length > 0 
-            ? prev.filter(entry => entry.client || entry.project || entry.subject || 
-                Object.values(entry.hours).some(h => h && h !== "0"))
-            : prev;
-          
-          // Combine with drafts
-          return [...filtered, ...draftEntries];
-        });
-        
-        // If draft has work description, use it
-        if (draftData.workDescription && draftData.workDescription !== "Draft") {
-          setWorkDescription(draftData.workDescription);
-        }
-        
-        // Set day status if available
-        if (draftData.dayStatus && Object.keys(draftData.dayStatus).length > 0) {
-          setDayStatus(draftData.dayStatus);
-        }
-        
-        setHasDrafts(true);
-        setHasTimesheetData(true);
-        
-        // Check if banner has been closed previously
-        const isBannerClosed = localStorage.getItem(`draft_banner_closed_${user.username}_${weekStartDate}`);
-        if (!isBannerClosed) {
-          setShowPersistentBanner(true);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching draft data:", error);
-    }
-  }, [user?.username, weekStartDate]);
-
   const fetchTimesheetForCurrentWeek = useCallback(async (userData?: User | null, 
     specifiedWeekStartDate?: string) => {
-    if (!user?.username) return;
+    if (!user?.username && !userData?.username) return;
   
     try {
       setLoading(true);
@@ -669,15 +523,12 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
       const username = userData?.username || user?.username;
       const weekStartDateStr = specifiedWeekStartDate || TimesheetService.getWeekStartDate(selectedDate);
       setWeekStartDate(weekStartDateStr);
-      
-      // Use priority logic to determine what data to show
       const priorityData = await TimesheetService.getPriorityDataForWeek(
-        username, 
+        username!, 
         weekStartDateStr
       );
       
       if (priorityData.dataSource === 'timesheet') {
-        // Load timesheet data
         const timesheet = priorityData.data as Timesheet;
         setCurrentTimesheetId(timesheet._id);
         setIsWeekEditable(timesheet.timesheetStatus === "rejected");
@@ -699,8 +550,7 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
         setTimesheetStatus(timesheet.timesheetStatus || "unapproved");
         setHasTimesheetData(true);
         setHasDrafts(false);
-        
-        // If rejected, show a banner
+
         if (timesheet.timesheetStatus === "rejected") {
           setDraftBannerMessage("This timesheet was rejected. Please make the necessary corrections and resubmit.");
           setDraftBannerKey(Date.now());
@@ -708,17 +558,12 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
         }
       } 
       else if (priorityData.dataSource === 'draft') {
-        // Load draft data
         const draftData = priorityData.data as DraftTimesheet;
-        
-        // Mark entries as drafts
         const draftEntries = draftData.entries.map(entry => ({
           ...entry,
           isDraft: true,
           draftId: draftData._id
         }));
-        
-        // Only replace entries if we have draft entries
         if (draftEntries.length > 0) {
           setEntries(draftEntries);
           setHasDrafts(true);
@@ -728,15 +573,11 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
           setHasDrafts(false);
           setHasTimesheetData(false);
         }
-        
-        // Set work description if available
         if (draftData.workDescription && draftData.workDescription !== "Draft") {
           setWorkDescription(draftData.workDescription);
         } else {
           setWorkDescription("");
         }
-        
-        // Set day status if available
         if (draftData.dayStatus && Object.keys(draftData.dayStatus).length > 0) {
           setDayStatus(draftData.dayStatus);
         } else {
@@ -746,18 +587,15 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
         setCurrentTimesheetId("");
         setTimesheetStatus("unapproved");
         setIsWeekEditable(true);
-        
-        // Check if banner has been closed previously
-        const isBannerClosed = localStorage.getItem(`draft_banner_closed_${user.username}_${weekStartDateStr}`);
+
+        const isBannerClosed = localStorage.getItem(`draft_banner_closed_${user?.username}_${weekStartDateStr}`);
         if (!isBannerClosed && draftEntries.length > 0) {
-          // Show draft banner with message
           setDraftBannerMessage("You have saved entries for this week. Continue updating and save your work until you're ready to submit.");
           setDraftBannerKey(Date.now());
           setShowDraftBanner(true);
         }
       }
       else {
-        // No data, show default empty rows
         resetToDefaultValues();
       }
     } catch (error) {
@@ -768,61 +606,43 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     }
   }, [user?.username, selectedDate, initializeDefaultDayStatus, resetToDefaultValues]);
 
-  // Effects
-  
-  // Get allocated hours from localStorage and setup calculations
   useEffect(() => {
-    // Get allocated hours from localStorage
     try {
       const storedData = localStorage.getItem("loginResponse");
       if (storedData) {
         const parsedData = JSON.parse(storedData);
-        if (parsedData.success && parsedData.user && parsedData.user.allocatedHours) {
+        if (parsedData.success && parsedData.user) {
           const financialYear = TimesheetService.getFinancialYear(selectedDate);
-          
-          // Find the allocated hours for the financial year
-          const allocatedHoursEntry = parsedData.user.allocatedHours.find(
-            (entry: { year: string; hours: string }) => entry.year === financialYear
-          );
-          
-          if (allocatedHoursEntry) {
-            const allocatedHoursValue = parseFloat(allocatedHoursEntry.hours);
-            setAllocatedHours(allocatedHoursValue);
+          if (parsedData.user.allocatedHours) {
+            const allocatedHoursEntry = parsedData.user.allocatedHours.find(
+              (entry: { year: string; hours: string }) => entry.year === financialYear
+            );
             
-            // Initialize with allocated hours, but show loading until we calculate properly
-            setHoursRemaining(allocatedHoursValue);
-            setCalculatingHours(true);
-          } else {
-            setAllocatedHours(0);
-            setHoursRemaining(0);
+            if (allocatedHoursEntry) {
+              const allocatedHoursValue = parseFloat(allocatedHoursEntry.hours);
+              setAllocatedHours(allocatedHoursValue);
+            }
+          }
+
+          if (parsedData.user.remainingHours !== undefined) {
+            setHoursRemaining(Number(parsedData.user.remainingHours));
           }
         }
       }
     } catch (error) {
-      console.error("Error getting allocated hours:", error);
+      console.error("Error getting hours data from localStorage:", error);
     }
   }, [selectedDate]);
-  
-  
-  // Calculate hours used when user data or entries change
+ 
   useEffect(() => {
-    if (user?.username && allocatedHours > 0) {
-      fetchPreviousSubmittedHours(user.username);
-    }
-  }, [user?.username, allocatedHours, fetchPreviousSubmittedHours, currentTimesheetId, timesheetStatus]);
-  
-  // Initial load - check for drafts and set up user data
-  useEffect(() => {
-    const loadUserAndPriorityData = async () => {
+    const loadUserAndTimesheetData = async () => {
       const userData = TimesheetService.getUserFromLocalStorage();
       if (userData) {
         setUser(userData);
-        
-        // Get the current date and its financial year
+
         const today = new Date();
         const financialYear = TimesheetService.getFinancialYear(today);
-        
-        // Get allocated hours for the current financial year
+
         if (userData.allocatedHours) {
           const allocatedHoursEntry = userData.allocatedHours.find(
             (entry: { year: string; hours: string }) => entry.year === financialYear
@@ -831,22 +651,19 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
           if (allocatedHoursEntry) {
             const allocatedHoursValue = parseFloat(allocatedHoursEntry.hours);
             setAllocatedHours(allocatedHoursValue);
-            setHoursRemaining(allocatedHoursValue);
-          } else {
-            setAllocatedHours(0);
-            setHoursRemaining(0);
           }
         }
-        
-        // Only proceed if we have a valid user
+
+        if (userData.remainingHours !== undefined) {
+          setHoursRemaining(Number(userData.remainingHours));
+        }
+
         const weekStartStr = TimesheetService.getWeekStartDate(today);
         
         try {
           setLoading(true);
           setWeekStartDate(weekStartStr);
           setSelectedDate(today);
-          
-          // Use a single source of truth for data fetching
           await fetchTimesheetForCurrentWeek(userData, weekStartStr);
         } catch (error) {
           console.error("Error fetching initial data:", error);
@@ -858,10 +675,9 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
         setLoading(false);
       }
     };
-    loadUserAndPriorityData();
+    loadUserAndTimesheetData();
   }, []);
 
-  // Critical fix: Ensure sidebar links work
   useEffect(() => {
     const ensureSidebarNavigationWorks = () => {
       document.querySelectorAll('a, button').forEach(element => {
@@ -874,7 +690,6 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     return () => clearInterval(interval);
   }, [hasTimesheetData]);
 
-  // Analytics calculation
   useEffect(() => {
     if (entries.length > 0 && entries.some(entry => entry.subject)) {
       setHasTimesheetData(true);
@@ -885,14 +700,12 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     }
   }, [entries, calculateDailyHoursData, calculateSubjectHoursData]);
 
-  // Initialize day status
   useEffect(() => {
     if (Object.keys(dayStatus).length === 0) {
       initializeDefaultDayStatus();
     }
   }, [weekDates, dayStatus, initializeDefaultDayStatus]);
 
-  // Filter clients
   useEffect(() => {
     if (user && clients.length > 0) {
       const filtered = clients.filter(client => 
@@ -902,7 +715,6 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     }
   }, [user, clients]);
 
-  // Filter projects
   useEffect(() => {
     if (user && projects.length > 0) {
       const filtered = projects.filter(project => 
@@ -912,7 +724,6 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     }
   }, [user, projects]);
 
-  // Filter subjects
   useEffect(() => {
     if (user && subjects.length > 0) {
       const filtered = subjects.filter(subject => 
@@ -924,7 +735,6 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     }
   }, [user, subjects]);
 
-  // Fetch master data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -948,7 +758,6 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     fetchData();
   }, []);
 
-  // Fetch timesheet data when date changes
   useEffect(() => {
     if (user?.username) {
       fetchTimesheetForCurrentWeek();
@@ -957,12 +766,9 @@ const fetchPreviousSubmittedHours = useCallback(async (username: string) => {
     }
   }, [selectedDate, user?.username, fetchTimesheetForCurrentWeek]);
 
-  // Loading states
   if (loading) return <Loader />;
-if (submitting) return <Loader message="Submitting timesheet..." />;
-//if (calculatingHours) return <Loader message="Calculating allocated hours..." />;
+  if (submitting) return <Loader message="Submitting timesheet..." />;
 
-  // Check if field should be enabled based on the sequential validation rule
   const isFieldEnabled = (entry: TimeEntry, field: 'subject' | 'project' | 'hours') => {
     if (!isWeekEditable) return false;
     
@@ -978,15 +784,13 @@ if (submitting) return <Loader message="Submitting timesheet..." />;
     }
   };
 
-  // Filter week dates based on weekend toggle
   const visibleWeekDates = showWeekend 
     ? weekDates 
     : weekDates.filter(date => {
         const day = date.getDay();
-        return day !== 0 && day !== 6; // Filter out Saturday (6) and Sunday (0)
+        return day !== 0 && day !== 6;
       });
 
-  // Render component
   return (
     <div className={styles.container}>
       <Header title="Timesheet" user={user} />
@@ -1046,11 +850,11 @@ if (submitting) return <Loader message="Submitting timesheet..." />;
               <table className={styles.table}>
                 <thead>
                 <StatusRow 
-          weekDates={visibleWeekDates}
-          dayStatus={dayStatus}
-          isWeekEditable={isWeekEditable}
-          handleStatusChange={handleStatusChange}
-        />
+                  weekDates={visibleWeekDates}
+                  dayStatus={dayStatus}
+                  isWeekEditable={isWeekEditable}
+                  handleStatusChange={handleStatusChange}
+                />
                   <tr>
                     <th>Client</th>
                     <th>Subject</th>
@@ -1066,91 +870,24 @@ if (submitting) return <Loader message="Submitting timesheet..." />;
                 </thead>
                 <tbody>
                   {entries.map((entry) => (
-                    <tr key={entry.id}>
-                      <td>
-                        <select
-                          className={`${styles.select} ${styles.clientSelect}`}
-                          value={entry.client || ""}
-                          onChange={(e) => handleClientChange(entry.id, e.target.value)}
-                          disabled={!isWeekEditable}
-                        >
-                          <option value="">Select</option>
-                          {filteredClients.map((client) => (
-                            <option key={client._id} value={client.name}>
-                              {client.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <select
-                          className={styles.select}
-                          value={entry.subject}
-                          onChange={(e) => handleSubjectChange(entry.id, e.target.value)}
-                          disabled={!isFieldEnabled(entry, 'subject')}
-                        >
-                          <option value="">Select</option>
-                          {filteredSubjects.map((subject) => (
-                            <option key={subject._id} value={subject.name}>
-                              {subject.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <select
-                          className={styles.select}
-                          value={entry.project}
-                          onChange={(e) => handleProjectChange(entry.id, e.target.value)}
-                          disabled={!isFieldEnabled(entry, 'project')}
-                        >
-                          <option value="">Select</option>
-                          {filteredProjects.map((project) => (
-                            <option key={project._id} value={project.name}>
-                              {project.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      {visibleWeekDates.map((date) => {
-                        const dayStr = date.toISOString().split("T")[0];
-                        return (
-                          <td key={dayStr}>
-                            <input
-                              type="number"
-                              min="0"
-                              max="24"
-                              step="0.5"
-                              value={entry.hours[dayStr] || ""}
-                              onChange={(e) => handleInputChange(entry.id, dayStr, e.target.value)}
-                              disabled={!isFieldEnabled(entry, 'hours')}
-                              className={styles.hourInput}
-                            />
-                          </td>
-                        );
-                      })}
-                      <td className={styles.totalCell}>{calculateRowTotal(entry).toFixed(2)}</td>
-                      <td>
-  <div className={styles.actionButtons}>
-    <button
-      onClick={() => saveRow(entry)}
-      className={`${styles.saveButton} ${entry.isDraft ? styles.saved : ''} ${isSaving[entry.id] ? styles.saving : ''}`}
-      disabled={!isWeekEditable || isSaving[entry.id]}
-      title="Save row"
-    >
-      <Save size={16} />
-    </button>
-    <button
-      onClick={() => deleteRow(entry.id)}
-      className={styles.deleteButton}
-      disabled={!isWeekEditable}
-      title="Delete row"
-    >
-      <Trash2 size={16} />
-    </button>
-  </div>
-</td>
-                    </tr>
+                    <TimesheetRow
+                      key={entry.id}
+                      entry={entry}
+                      weekDates={visibleWeekDates}
+                      isWeekEditable={isWeekEditable}
+                      filteredClients={filteredClients}
+                      filteredProjects={filteredProjects}
+                      filteredSubjects={filteredSubjects}
+                      handleClientChange={handleClientChange}
+                      handleProjectChange={handleProjectChange}
+                      handleSubjectChange={handleSubjectChange}
+                      handleInputChange={handleInputChange}
+                      calculateRowTotal={calculateRowTotal}
+                      deleteRow={deleteRow}
+                      saveRow={saveRow}
+                      isSaving={isSaving}
+                      isFieldEnabled={isFieldEnabled}
+                    />
                   ))}
                   <tr className={styles.totalRow}>
                     <td colSpan={3}>Total</td>
@@ -1178,17 +915,16 @@ if (submitting) return <Loader message="Submitting timesheet..." />;
           </div>
         </div>
 
-        {/* Allocated Hours Section */}
         <div className={styles.allocatedHoursContainer}>
-  <div className={styles.allocatedHoursWrapper}>
-    <span className={styles.allocatedHoursLabel}>Allocated Hours:</span>
-    <span className={styles.allocatedHoursValue}>{allocatedHours.toFixed(2)}</span>
-  </div>
-  {/* <div className={styles.allocatedHoursWrapper}>
-    <span className={styles.allocatedHoursLabel}>Total hours left:</span>
-    <span className={styles.hoursRemainingValue}>{hoursRemaining.toFixed(2)}</span>
-  </div> */}
-</div>
+          <div className={styles.allocatedHoursWrapper}>
+            <span className={styles.allocatedHoursLabel}>Allocated Hours:</span>
+            <span className={styles.allocatedHoursValue}>{allocatedHours.toFixed(2)}</span>
+          </div>
+          <div className={styles.allocatedHoursWrapper}>
+            <span className={styles.allocatedHoursLabel}>Hours Remaining:</span>
+            <span className={styles.hoursRemainingValue}>{hoursRemaining.toFixed(2)}</span>
+          </div>
+        </div>
 
         <div className={styles.descriptionContainer}>
           <h3 className={styles.descriptionHeading}>Work Description *</h3>

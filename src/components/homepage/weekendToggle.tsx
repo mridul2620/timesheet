@@ -25,6 +25,7 @@ interface WeekendToggleTimesheetProps {
   saveRow: (entry: TimeEntry) => void;
   addNewRow: () => void;
   isSaving: { [key: string]: boolean };
+  isFieldEnabled: (entry: TimeEntry, field: 'subject' | 'project' | 'hours') => boolean;
 }
 
 const WeekendToggleTimesheet: React.FC<WeekendToggleTimesheetProps> = ({
@@ -46,36 +47,32 @@ const WeekendToggleTimesheet: React.FC<WeekendToggleTimesheetProps> = ({
   deleteRow,
   saveRow,
   addNewRow,
-  isSaving
+  isSaving,
+  isFieldEnabled
 }) => {
   const [showWeekend, setShowWeekend] = useState(false);
-  
-  // Format date as "Day, Mon Day"
   const formatDate = (date: Date): string => {
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
   };
 
-  // Helper function to get default day status
   const getDefaultDayStatus = (date: Date): string => {
     const dayOfWeek = date.getDay();
     return (dayOfWeek === 0 || dayOfWeek === 6) ? "not-working" : "working";
   };
 
-  // Filter weekDates based on showWeekend state
   const visibleDates = useMemo(() => {
     if (showWeekend) {
       return weekDates;
     } else {
       return weekDates.filter(date => {
         const day = date.getDay();
-        return day !== 0 && day !== 6; // Filter out Saturday (6) and Sunday (0)
+        return day !== 0 && day !== 6;
       });
     }
   }, [weekDates, showWeekend]);
 
-  // Toggle weekend columns
   const toggleWeekend = () => {
     setShowWeekend(prev => !prev);
   };
@@ -146,6 +143,7 @@ const WeekendToggleTimesheet: React.FC<WeekendToggleTimesheetProps> = ({
                 deleteRow={deleteRow}
                 saveRow={saveRow}
                 isSaving={isSaving}
+                isFieldEnabled={isFieldEnabled}
               />
             ))}
 

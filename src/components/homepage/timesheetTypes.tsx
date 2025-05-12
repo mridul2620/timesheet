@@ -29,6 +29,7 @@ export type User = {
     year: string;
     hours: string;
   }>;
+  remainingHours?: number;
 };
 
 export type DialogData = {

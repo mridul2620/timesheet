@@ -17,12 +17,10 @@ class TimesheetService {
         return null;
       }
 
-      // First try to find a timesheet that exactly matches the week start date
       let relevantTimesheet = timesheets.find(
         (timesheet: Timesheet) => timesheet.weekStartDate === weekStartDate
       );
 
-      // If no exact match, try to find a timesheet that has entries for any day in the week
       if (!relevantTimesheet) {
         const weekDaysArray = this.generateWeekDays(weekStartDate);
         relevantTimesheet = timesheets.find((timesheet: Timesheet) => {
@@ -40,43 +38,28 @@ class TimesheetService {
       return null;
     }
   }
-
-  // New method that implements priority logic for getting the correct data for a week
   async getPriorityDataForWeek(username: string, weekStartDate: string): Promise<{
     dataSource: 'timesheet' | 'draft' | 'empty';
     data: Timesheet | DraftTimesheet | null;
   }> {
     try {
-      // First get the submitted timesheet, if any
       const timesheet = await this.getTimesheetForWeek(username, weekStartDate);
-      
-      // Get drafts for this week
       const draftsResponse = await this.getDraftsForWeek(username, weekStartDate);
       const draftData = draftsResponse.success ? draftsResponse.draft : null;
-      
-      // Priority logic
+
       if (timesheet) {
-        // Case 1: Timesheet exists with "rejected" status
+
         if (timesheet.timesheetStatus === "rejected") {
-          // If there are drafts, assume they are newer or corrections to the rejected timesheet
           if (draftData) {
             return { dataSource: 'draft', data: draftData };
           }
-          // Otherwise use the rejected timesheet
           return { dataSource: 'timesheet', data: timesheet };
         }
-        
-        // Case 2: Timesheet exists with "approved" or "unapproved" (pending) status
-        // Always use the submitted timesheet in these cases
         return { dataSource: 'timesheet', data: timesheet };
       }
-      
-      // Case 3: No timesheet, but drafts exist
       if (draftData) {
         return { dataSource: 'draft', data: draftData };
       }
-      
-      // Case 4: No timesheet or drafts
       return { dataSource: 'empty', data: null };
     } catch (error) {
       console.error("Error fetching priority data:", error);
@@ -86,7 +69,6 @@ class TimesheetService {
 
   async submitTimesheet(timesheetData: any): Promise<{ success: boolean; message: string }> {
     try {
-      // Pre-submission validation for work description
       if (!timesheetData.workDescription || timesheetData.workDescription.trim() === '') {
         return { success: false, message: "Please add a work description." };
       }
@@ -97,7 +79,6 @@ class TimesheetService {
       );
 
       if (response.data.message === "Timesheet submitted successfully") {
-        // After successful submission, delete all draft entries for this week
         await this.clearDraftsForWeek(timesheetData.username, timesheetData.weekStartDate);
         return { success: true, message: "Timesheet submitted successfully!" };
       } else {
@@ -105,7 +86,6 @@ class TimesheetService {
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        // Return the specific error from the server if available
         return {
           success: false,
           message: error.response?.data?.message || "An unknown error occurred"
@@ -120,7 +100,6 @@ class TimesheetService {
     timesheetData: any
   ): Promise<{ success: boolean; message: string }> {
     try {
-      // Pre-submission validation for work description
       if (!timesheetData.workDescription || timesheetData.workDescription.trim() === '') {
         return { success: false, message: "Please add a work description." };
       }
@@ -131,7 +110,6 @@ class TimesheetService {
       );
 
       if (response.data.success) {
-        // After successful submission, delete all draft entries for this week
         await this.clearDraftsForWeek(timesheetData.username, 
           this.weekStartDateFromEntries(timesheetData.entries));
         return { success: true, message: "Timesheet updated and resubmitted successfully!" };
@@ -140,7 +118,6 @@ class TimesheetService {
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        // Return the specific error from the server if available
         return {
           success: false,
           message: error.response?.data?.message || "An unknown error occurred"
@@ -150,60 +127,53 @@ class TimesheetService {
     }
   }
 
-  // Helper method to get week start date from entries
   weekStartDateFromEntries(entries: TimeEntry[]): string {
     if (!entries || entries.length === 0 || !entries[0].hours) return "";
-    
-    // Get all date strings from the hours object
-    const dateStrings = entries.flatMap(entry => Object.keys(entry.hours));
-    
+    const dateStrings = entries.flatMap(entry => Object.keys(entry.hours)); 
     if (dateStrings.length === 0) return "";
-    
-    // Sort dates and return the earliest one
     return dateStrings.sort()[0];
   }
 
-async saveDraftEntry(
-  username: string,
-  weekStartDate: string,
-  entry: TimeEntry,
-  workDescription: string = "",
-  dayStatus: { [key: string]: string } = {}
-): Promise<DraftResponse> {
-  try {
-    const response = await axios.post(
-      process.env.NEXT_PUBLIC_DRAFT_SAVE_API as string,
-      {
-        username,
-        weekStartDate,
-        entry,
-        workDescription, // Make sure this is always included
-        dayStatus
-      }
-    );
+  async saveDraftEntry(
+    username: string,
+    weekStartDate: string,
+    entry: TimeEntry,
+    workDescription: string = "",
+    dayStatus: { [key: string]: string } = {}
+  ): Promise<DraftResponse> {
+    try {
+      const response = await axios.post(
+        process.env.NEXT_PUBLIC_DRAFT_SAVE_API as string,
+        {
+          username,
+          weekStartDate,
+          entry,
+          workDescription,
+          dayStatus
+        }
+      );
 
-    if (response.data.success) {
-      return {
-        success: true,
-        message: "Entry saved as draft.",
-        draftId: response.data.draftId
-      };
-    } else {
+      if (response.data.success) {
+        return {
+          success: true,
+          message: "Entry saved as draft.",
+          draftId: response.data.draftId
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || "Failed to save draft entry."
+        };
+      }
+    } catch (error) {
+      console.error("Error saving draft entry:", error);
       return {
         success: false,
-        message: response.data.message || "Failed to save draft entry."
+        message: "An error occurred while saving the draft entry."
       };
     }
-  } catch (error) {
-    console.error("Error saving draft entry:", error);
-    return {
-      success: false,
-      message: "An error occurred while saving the draft entry."
-    };
   }
-}
 
-  // New method to delete a draft entry
   async deleteDraftEntry(
     username: string,
     weekStartDate: string,
@@ -235,7 +205,6 @@ async saveDraftEntry(
     }
   }
 
-  // New method to fetch all draft entries for a week
   async getDraftsForWeek(
     username: string,
     weekStartDate: string
@@ -250,7 +219,6 @@ async saveDraftEntry(
         draft: response.data.draft
       };
     } catch (error) {
-      // Don't log error for 404s (no drafts found is normal)
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         return { success: false };
       }
@@ -260,20 +228,17 @@ async saveDraftEntry(
     }
   }
 
-  // New method to clear all drafts for a week
   async clearDraftsForWeek(
     username: string,
     weekStartDate: string
   ): Promise<boolean> {
     try {
-      // First get all drafts for the week
       const draftsResponse = await this.getDraftsForWeek(username, weekStartDate);
       
       if (!draftsResponse.success || !draftsResponse.draft) {
-        return true; // No drafts to clear
+        return true; 
       }
-      
-      // Delete each entry
+
       for (const entry of draftsResponse.draft.entries) {
         await this.deleteDraftEntry(username, weekStartDate, entry.id);
       }
@@ -285,30 +250,16 @@ async saveDraftEntry(
     }
   }
 
-  // Helper method to get the start date of the current week
   getWeekStartDate(date: Date): string {
-  // Create a copy of the input date to avoid mutations
-  const selectedDate = new Date(date);
-  
-  // Reset the time to midnight to avoid time zone issues
-  selectedDate.setHours(0, 0, 0, 0);
-  
-  // Get the day of the week (0 = Sunday, 1 = Monday, etc.)
-  const dayOfWeek = selectedDate.getDay();
-  
-  // Calculate the Monday (start of the week)
-  // If today is Sunday (0), we need to go back by 6 days
-  // Otherwise, we go back by (dayOfWeek - 1) days
-  const monday = new Date(selectedDate);
-  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  monday.setDate(selectedDate.getDate() - daysToSubtract);
-  
-  // Ensure we're working with midnight local time
-  monday.setHours(0, 0, 0, 0);
-  
-  // Format to YYYY-MM-DD (ISO date string, but just the date part)
-  return monday.toISOString().split('T')[0];
-}
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+    const dayOfWeek = selectedDate.getDay();
+    const monday = new Date(selectedDate);
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    monday.setDate(selectedDate.getDate() - daysToSubtract);
+    monday.setHours(0, 0, 0, 0);
+    return monday.toISOString().split('T')[0];
+  }
 
   async fetchClients(): Promise<any[]> {
     try {
@@ -393,9 +344,6 @@ async saveDraftEntry(
     weekDates.forEach((date) => {
       const dayStr = date.toISOString().split("T")[0];
       const dayOfWeek = date.getDay();
-      
-      // Set Saturday (6) and Sunday (0) as "not-working"
-      // All other days (including Friday which is 5) as "working" by default
       newDayStatus[dayStr] = (dayOfWeek === 0 || dayOfWeek === 6) 
         ? "not-working" 
         : "working";
@@ -405,39 +353,30 @@ async saveDraftEntry(
   
   getFinancialYear(date: Date): string {
     const year = date.getFullYear();
-    const month = date.getMonth(); // 0-indexed, so 0 = January, 3 = April
-    
-    // If date is from January to March, it belongs to the previous financial year
+    const month = date.getMonth();
     if (month < 3) {
       return (year - 1).toString();
     }
-    
-    // If date is from April to December, it belongs to the current financial year
     return year.toString();
   }
-  
-  // Get the financial year start date (April 1st) for a given date
+
   getFinancialYearStartDate(date: Date): string {
     const financialYear = this.getFinancialYear(date);
     return `${financialYear}-04-01`;
   }
-  
-  // Get the financial year end date (March 31st) for a given date
+
   getFinancialYearEndDate(date: Date): string {
     const financialYear = this.getFinancialYear(date);
     const endYear = parseInt(financialYear) + 1;
     return `${endYear}-03-31`;
   }
-  
-  // Get allocated hours for a specific date from the user data
+
   getAllocatedHoursForDate(date: Date, userData: User): number {
     if (!userData || !userData.allocatedHours || userData.allocatedHours.length === 0) {
       return 0;
     }
   
     const financialYear = this.getFinancialYear(date);
-    
-    // Find the allocated hours for the financial year
     const allocatedHoursEntry = userData.allocatedHours.find(
       entry => entry.year === financialYear
     );
@@ -448,94 +387,6 @@ async saveDraftEntry(
     
     return 0;
   }
-  
-  // Fetch timesheets within a date range to calculate hours used
-  async fetchTimesheetsInDateRange(
-    username: string,
-    startDate: string,
-    endDate: string
-  ): Promise<Timesheet[]> {
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_GET_TIMESHEET_API}/${username}`
-      );
-      
-      if (!response.data.success) {
-        return [];
-      }
-      
-      const timesheets = response.data.timesheets || [];
-      
-      // Filter timesheets within the date range
-      return timesheets.filter((timesheet: Timesheet) => {
-        // Skip rejected timesheets
-        if (timesheet.timesheetStatus === "rejected") {
-          return false;
-        }
-        
-        // Get the week end date (6 days after the start date)
-        const weekStartDate = new Date(timesheet.weekStartDate);
-        const weekEndDate = new Date(weekStartDate);
-        weekEndDate.setDate(weekStartDate.getDate() + 6);
-        
-        // Check if the timesheet falls within the date range
-        return (
-          weekStartDate >= new Date(startDate) && 
-          weekEndDate <= new Date(endDate)
-        ) || (
-          // Or if the timesheet overlaps with the date range
-          (weekStartDate <= new Date(endDate) && weekEndDate >= new Date(startDate))
-        );
-      });
-    } catch (error) {
-      console.error("Error fetching timesheets in date range:", error);
-      return [];
-    }
-  }
-  
-  // Calculate hours used in the current financial year
-  async calculateHoursUsedInFinancialYear(
-    username: string,
-    date: Date,
-    currentTimesheetId?: string
-  ): Promise<number> {
-    try {
-      const startDate = this.getFinancialYearStartDate(date);
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Get all timesheets in the financial year up to today
-      const timesheets = await this.fetchTimesheetsInDateRange(username, startDate, today);
-      
-      let totalHours = 0;
-      
-      // Calculate total hours from all timesheets in the financial year
-      for (const timesheet of timesheets) {
-        // Skip the current timesheet we're viewing to avoid double-counting
-        if (currentTimesheetId && timesheet._id === currentTimesheetId) {
-          continue;
-        }
-        
-        // Only count approved and pending timesheets
-        if (timesheet.timesheetStatus === "approved" || timesheet.timesheetStatus === "unapproved") {
-          // Sum up hours from all entries
-          for (const entry of timesheet.entries) {
-            for (const hoursValue of Object.values(entry.hours)) {
-              const hours = Number.parseFloat(hoursValue || "0");
-              if (!isNaN(hours)) {
-                totalHours += hours;
-              }
-            }
-          }
-        }
-      }
-      
-      return totalHours;
-    } catch (error) {
-      console.error("Error calculating hours used in financial year:", error);
-      return 0;
-    }
-  }
-  
 }
 
 export default new TimesheetService();

@@ -14,7 +14,7 @@ const StatusRow: React.FC<StatusRowProps> = ({
   isWeekEditable,
   handleStatusChange,
 }) => {
-  // Helper function to get default day status
+
   const getDefaultDayStatus = (date: Date): string => {
     const dayOfWeek = date.getDay();
     return (dayOfWeek === 0 || dayOfWeek === 6) ? "not-working" : "working";

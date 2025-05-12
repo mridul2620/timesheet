@@ -18,6 +18,7 @@ type TimesheetRowProps = {
   deleteRow: (entryId: string) => void;
   saveRow: (entry: TimeEntry) => void;
   isSaving: { [key: string]: boolean };
+  isFieldEnabled: (entry: TimeEntry, field: 'subject' | 'project' | 'hours') => boolean;
 };
 
 const TimesheetRow: React.FC<TimesheetRowProps> = ({
@@ -35,6 +36,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
   deleteRow,
   saveRow,
   isSaving,
+  isFieldEnabled,
 }) => {
   return (
     <tr key={entry.id}>
@@ -56,9 +58,9 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
       <td>
         <select
           className={styles.select}
-          value={entry.subject}
+          value={entry.subject || ""}
           onChange={(e) => handleSubjectChange(entry.id, e.target.value)}
-          disabled={!isWeekEditable}
+          disabled={!isFieldEnabled(entry, 'subject')}
         >
           <option value="">Select</option>
           {filteredSubjects.map((subject) => (
@@ -71,9 +73,9 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
       <td>
         <select
           className={styles.select}
-          value={entry.project}
+          value={entry.project || ""}
           onChange={(e) => handleProjectChange(entry.id, e.target.value)}
-          disabled={!isWeekEditable}
+          disabled={!isFieldEnabled(entry, 'project')}
         >
           <option value="">Select</option>
           {filteredProjects.map((project) => (
@@ -94,7 +96,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
               step="0.5"
               value={entry.hours[dayStr] || ""}
               onChange={(e) => handleInputChange(entry.id, dayStr, e.target.value)}
-              disabled={!isWeekEditable}
+              disabled={!isFieldEnabled(entry, 'hours')}
               className={styles.hourInput}
             />
           </td>
