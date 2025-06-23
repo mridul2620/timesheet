@@ -16,6 +16,7 @@ export type Timesheet = {
   workDescription: string;
   timesheetStatus?: string;
   dayStatus?: { [key: string]: string };
+  rejectionReason?: string;
 };
 
 export type User = {

@@ -59,6 +59,9 @@ const EmployeeTimesheet = () => {
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [notification, setNotification] = useState<NotificationState>({ show: false, message: "" });
   const [showTimesheet, setShowTimesheet] = useState(false);
+  const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isSubmittingRejection, setIsSubmittingRejection] = useState(false);
 
   const projectColors = [
     "#3b82f6", "#22d3ee", "#f97316", "#a855f7", "#06b6d4", 
@@ -280,7 +283,7 @@ const EmployeeTimesheet = () => {
     }
   };
 
-  const sendEmailNotification = async (status: string) => {
+  const sendEmailNotification = async (status: string, rejectionReason?: string) => {
     if (!selectedEmployee?.email) {
       showNotification("Unable to send notification: Email address not found");
       return;
@@ -290,7 +293,8 @@ const EmployeeTimesheet = () => {
       entries: entries,
       weekDates: weekDates.map(date => date.toISOString()),
       dayStatus: dayStatus,
-      workDescription: workDescription
+      workDescription: workDescription,
+      rejectionReason: rejectionReason || null
     };
 
     try {
@@ -301,7 +305,8 @@ const EmployeeTimesheet = () => {
         startDate: weekDates[0].toISOString(),
         endDate: weekDates[6].toISOString(),
         timesheetData: timesheetData,
-        adminName: adminUser?.name || 'Admin'
+        adminName: adminUser?.name || 'Admin',
+        rejectionReason: rejectionReason || null
       };
       
       const emailApiUrl = process.env.NEXT_PUBLIC_EMAIL_API_URL as string;
@@ -323,7 +328,7 @@ const EmployeeTimesheet = () => {
     }
   };
 
-  const updateTimesheetStatus = async (status: string) => {
+  const updateTimesheetStatus = async (status: string, rejectionReason?: string) => {
     if (!relevantTimesheetId || !username) {
       showNotification("Cannot update status: Missing timesheet ID or username");
       return;
@@ -331,17 +336,23 @@ const EmployeeTimesheet = () => {
     
     setUpdatingStatus(true);
     try {
+      const requestData: any = {
+        timesheetId: relevantTimesheetId,
+        status
+      };
+
+      if (status === "rejected" && rejectionReason) {
+        requestData.rejectionReason = rejectionReason;
+      }
+
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_TIMESHEET_STATUS}${username}/status`, 
-        {
-          timesheetId: relevantTimesheetId,
-          status
-        }
+        requestData
       );
       
       if (response.data.success) {
         setTimesheetStatus(status);
-        await sendEmailNotification(status);
+        await sendEmailNotification(status, rejectionReason);
         showNotification(`Timesheet ${status} successfully`);
       }
     } catch (error) {
@@ -353,7 +364,36 @@ const EmployeeTimesheet = () => {
   };
 
   const handleApprove = () => updateTimesheetStatus("approved");
-  const handleReject = () => updateTimesheetStatus("rejected");
+
+  const handleReject = () => {
+    setIsRejectionDialogOpen(true);
+    setRejectionReason("");
+  };
+
+  const handleCloseRejectionDialog = () => {
+    setIsRejectionDialogOpen(false);
+    setRejectionReason("");
+  };
+
+  const handleRejectionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!rejectionReason.trim()) {
+      showNotification("Please provide a reason for rejection");
+      return;
+    }
+
+    setIsSubmittingRejection(true);
+    
+    try {
+      await updateTimesheetStatus("rejected", rejectionReason.trim());
+      handleCloseRejectionDialog();
+    } catch (error) {
+      // Error handling is done in updateTimesheetStatus
+    } finally {
+      setIsSubmittingRejection(false);
+    }
+  };
 
   const showNotification = (message: string) => {
     setNotification({
@@ -398,6 +438,8 @@ const EmployeeTimesheet = () => {
       </div>
     );
   };
+
+
 
   const BarChartComponent = () => {
     const maxHours = Math.max(...dailyHoursData.map(day => day.hours), 10);
@@ -532,6 +574,59 @@ const EmployeeTimesheet = () => {
         user={adminUser}
       />
       {notification.show && <NotificationDialog />}
+      {isRejectionDialogOpen && (
+        <div className={styles.dialogBackdrop} onClick={(e) => {
+          if (e.target === e.currentTarget) handleCloseRejectionDialog();
+        }}>
+          <div className={styles.rejectionDialog}>
+            <div className={styles.dialogHeader}>
+              <h2>Reject Timesheet</h2>
+              <button 
+                className={styles.closeButton} 
+                onClick={handleCloseRejectionDialog} 
+                aria-label="Close dialog"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            {isSubmittingRejection ? (
+              <div className={styles.loaderContainer}>
+                <div className={styles.rejectionLoader}>Rejecting timesheet...</div>
+              </div>
+            ) : (
+              <form onSubmit={handleRejectionSubmit} className={styles.form}>
+                <div className={styles.rejectionFormLayout}>
+                  <div className={styles.rejectionDialogText}>
+                    Please provide a reason for rejecting this timesheet:
+                  </div>
+                  
+                  <div className={styles.formGroup}>
+                    <textarea
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Enter rejection reason..."
+                      rows={4}
+                      className={styles.rejectionTextarea}
+                      autoFocus
+                    />
+                  </div>
+                  
+                  <div className={styles.rejectionDialogActions}>
+                    <button 
+                      type="submit"
+                      className={`${styles.rejectionDialogButton} ${styles.rejectDialogButton}`}
+                      disabled={!rejectionReason.trim()}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {!showTimesheet ? (
         <div className={styles.initialCalendarView}>

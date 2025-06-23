@@ -70,6 +70,7 @@ const HomepageContent: React.FC = () => {
   const [showPersistentBanner, setShowPersistentBanner] = useState(false);
   const [draftBannerMessage, setDraftBannerMessage] = useState("");
   const [draftBannerKey, setDraftBannerKey] = useState(0);
+  const [rejectionReason, setRejectionReason] = useState<string>("");
 
   const getWeekDatesStartingMonday = (date: Date): Date[] => {
     const inputDate = new Date(date.getTime());
@@ -130,6 +131,7 @@ const HomepageContent: React.FC = () => {
     setHasDrafts(false);
     setShowDraftBanner(false);
     setShowPersistentBanner(false);
+    setRejectionReason("");
   }, [initializeDefaultDayStatus]);
 
   const toggleWeekend = () => {
@@ -548,14 +550,15 @@ const HomepageContent: React.FC = () => {
         }
         
         setTimesheetStatus(timesheet.timesheetStatus || "unapproved");
+        setRejectionReason(timesheet.rejectionReason || "");
         setHasTimesheetData(true);
         setHasDrafts(false);
 
-        if (timesheet.timesheetStatus === "rejected") {
-          setDraftBannerMessage("This timesheet was rejected. Please make the necessary corrections and resubmit.");
-          setDraftBannerKey(Date.now());
-          setShowDraftBanner(true);
-        }
+        // if (timesheet.timesheetStatus === "rejected") {
+        //   // setDraftBannerMessage("This timesheet was rejected. Please make the necessary corrections and resubmit. Rewason");
+        //   setDraftBannerKey(Date.now());
+        //   setShowDraftBanner(true);
+        // }
       } 
       else if (priorityData.dataSource === 'draft') {
         const draftData = priorityData.data as DraftTimesheet;
@@ -804,14 +807,16 @@ const HomepageContent: React.FC = () => {
       />
       
       <div className={styles.tableContainer}>
-        {timesheetStatus === "rejected" && (
-          <div className={styles.rejectionBanner}>
-            <span>This timesheet was rejected. Please make the necessary corrections and resubmit.</span>
-            {currentTimesheetId && (
-              <span className={styles.timesheetId}>ID: {currentTimesheetId}</span>
-            )}
-          </div>
-        )}
+      {timesheetStatus === "rejected" && (
+      <div className={styles.rejectionBanner}>
+      <div>This timesheet was rejected. Please make the necessary corrections and resubmit.</div>
+      {rejectionReason && (
+        <div className={styles.rejectionReasonText}>
+        <strong>Reason:</strong> {rejectionReason}
+        </div>
+      )}
+      </div>
+    )}
         
         {showDraftBanner && (
           <DraftBanner 
