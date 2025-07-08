@@ -52,6 +52,10 @@
     flex: 1;
     max-width: 350px;
   }
+
+  .infoMessage {
+    padding: 1rem;
+  }
   
   .dateRangeInfo {
     margin-top: 1rem;

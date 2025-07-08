@@ -1,0 +1,653 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+/* ===== BASE STYLES ===== */
+.pageContainer {
+  font-family: "Inter", sans-serif;
+  background-color: #0c1e35;
+  color: #fff;
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.errorMessage {
+  text-align: center;
+  padding: 2rem;
+  color: #ef4444;
+  font-size: 1.125rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 0.5rem;
+  margin: 2rem auto;
+  max-width: 600px;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 2.5rem;
+  margin-bottom: 3rem;
+  align-items: start;
+}
+
+.leftSection {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  height: 650px;
+}
+
+.rightSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  height: 650px;
+  overflow: hidden;
+}
+
+.calendarWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.calendarContainer {
+  flex: 1;
+  min-height: 320px;
+}
+
+.bankHolidaysSection {
+  background-color: #121f3a;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  height: 330px;
+}
+
+.bankHolidaysTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bankHolidayIndicator {
+  width: 10px;
+  height: 10px;
+  background-color: #f97316;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.noBankHolidays {
+  color: #94a3b8;
+  font-style: italic;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.875rem;
+}
+
+.bankHolidaysList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  height: 240px;
+  overflow: hidden;
+}
+
+.bankHolidayItem {
+  padding: 0.5rem;
+  transition: all 0.5s ease;
+}
+
+.bankHolidayItem:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 0.25rem;
+}
+
+.bankHolidayName {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 0.2rem;
+  line-height: 1.3;
+}
+
+.bankHolidayNote {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 400;
+  margin-left: 0.3rem;
+}
+
+.bankHolidayDate {
+  font-size: 0.7rem;
+  color: #b9c1d9;
+  line-height: 1.2;
+}
+
+/* ===== FORM SECTION ===== */
+.formSection {
+  background-color: #121f3a;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: 450px;
+}
+
+.sectionTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.formGroup {
+  margin-bottom: 0.75rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+  color: #b9c1d9;
+  font-weight: 500;
+}
+
+/* ===== FORM CONTROLS ===== */
+.select {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #2a3654;
+  background-color: #1a2b4a;
+  color: #fff;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #f97316;
+}
+
+.dateRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.dateInput {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #2a3654;
+  background-color: #1a2b4a;
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dateInput:focus {
+  outline: none;
+  border-color: #f97316;
+}
+
+.textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #2a3654;
+  background-color: #1a2b4a;
+  color: #fff;
+  font-size: 0.8rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  transition: all 0.2s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #f97316;
+}
+
+.textarea::placeholder {
+  color: #6b7a99;
+}
+
+/* ===== BUTTONS ===== */
+.buttonGroup {
+  display: flex;
+  gap: 0.75rem;
+  
+  padding-top: 1rem;
+}
+
+.cancelButton {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  background-color: transparent;
+  color: #fff;
+  border: 1px solid #475569;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+}
+
+.cancelButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.submitButton {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  background-color: #f97316;
+  color: #fff;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+}
+
+.submitButton:hover:not(.disabled) {
+  background-color: #ea580c;
+}
+
+.submitButton.disabled {
+  background-color: #6b7280;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ===== DASHBOARD SECTION ===== */
+.dashboardSection {
+  background-color: #121f3a;
+  border-radius: 0.5rem;
+  padding: 0.875rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  max-height: 250px;
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.dashboardCard {
+  background-color: #1a2b4a;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  border: 1px solid #2a3654;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  height: 100px;
+}
+
+.dashboardCard:hover {
+  background-color: #1f3147;
+  border-color: #f97316;
+  transform: translateY(-2px);
+}
+
+.dashboardCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #f97316, #ea580c);
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.dashboardCardIcon {
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  opacity: 0.8;
+}
+
+.requestsIcon {
+  color: #3b82f6;
+}
+
+.daysIcon {
+  color: #10b981;
+}
+
+.dashboardCardValue {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.1rem;
+  line-height: 1;
+}
+
+.dashboardCardLabel {
+  font-size: 0.625rem;
+  color: #b9c1d9;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dashboardCardSubtext {
+  font-size: 0.55rem;
+  color: #94a3b8;
+  margin-top: 0.05rem;
+  font-style: italic;
+}
+
+.leaveRequestsSection {
+  background-color: #121f3a;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  margin-top: 1.5rem;
+}
+
+.noRequests {
+  text-align: center;
+  padding: 2rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.tableContainer {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid #2a3654;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  color: #fff;
+}
+
+.table th {
+  text-align: left;
+  padding: 1rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #b9c1d9;
+  background-color: #1a2b4a;
+  border-bottom: 1px solid #2a3654;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 1rem 1.25rem;
+  font-size: 0.875rem;
+  color: #fff;
+  border-bottom: 1px solid #2a3654;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.tableRow {
+  transition: background-color 0.2s ease;
+}
+
+.tableRow:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.leaveType {
+  font-weight: 500;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.actionButtons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 80px;
+  height: 40px;
+}
+
+.editButton,
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  padding: 0;
+  margin: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.editButton {
+  color: #3b82f6;
+}
+
+.editButton:hover:not(.disabledButton) {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+  transform: scale(1.1);
+}
+
+.editButton.disabledButton {
+  color: #6b7280;
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.deleteButton {
+  color: #ef4444;
+}
+
+.deleteButton:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  transform: scale(1.1);
+}
+
+.editButton:active:not(.disabledButton),
+.deleteButton:active {
+  transform: scale(0.95);
+}
+
+.status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.statusPending {
+  background-color: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.statusApproved {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.statusRejected {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 1rem;
+  }
+
+  .content {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    align-items: stretch;
+  }
+
+  .leftSection {
+    height: auto;
+  }
+
+  .rightSection {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    order: -1;
+    gap: 1.25rem;
+  }
+
+  .formSection {
+    height: auto;
+  }
+
+  .dashboardCard {
+    height: 100px;
+  }
+
+  .calendarWrapper {
+    height: auto;
+    justify-content: flex-start;
+  }
+
+  .dateRow {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .buttonGroup {
+    flex-direction: column;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .table {
+    font-size: 0.8125rem;
+  }
+
+  /* Bank holidays responsive updates */
+  .bankHolidaysSection {
+    height: 180px;
+    padding: 0.75rem;
+  }
+  
+  .bankHolidaysList {
+    grid-template-columns: 1fr;
+    height: 120px;
+  }
+  
+  .bankHolidayItem {
+    padding: 0.4rem;
+  }
+  
+  .bankHolidaysTitle {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .calendarWrapper {
+    gap: 0.75rem;
+  }
+  
+  .bankHolidayName {
+    font-size: 0.75rem;
+  }
+  
+  .bankHolidayDate {
+    font-size: 0.65rem;
+  }
+
+  /* Dashboard responsive */
+  .dashboardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboardCardValue {
+    font-size: 1.75rem;
+  }
+
+  .dashboardCardIcon {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageContainer {
+    padding: 0.5rem;
+  }
+
+  .leftSection,
+  .leaveRequestsSection {
+    padding: 1rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem;
+  }
+
+  .dashboardCard {
+    padding: 1rem;
+  }
+
+  .dashboardCardValue {
+    font-size: 1.5rem;
+  }
+}
