@@ -571,7 +571,7 @@ const AdminLeaveRequests: React.FC = () => {
             <div className={styles.dialogBody}>
               <div className={styles.rejectionInfo}>
                 <p className={styles.rejectionMessage}>
-                  You are about to reject <strong>{rejectionDialog.request.username}'s</strong> leave request for <strong>{rejectionDialog.request.leaveType}</strong>.
+                  You are about to reject <strong>{rejectionDialog.request.username}&apos;s</strong> leave request for <strong>{rejectionDialog.request.leaveType}</strong>.
                 </p>
                 <p className={styles.rejectionSubMessage}>
                   Please provide a reason for rejection:
