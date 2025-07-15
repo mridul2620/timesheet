@@ -54,7 +54,6 @@ const AdminLeaveRequests: React.FC = () => {
     reason: "" 
   });
   
-  // Loading states for individual buttons
   const [loadingStates, setLoadingStates] = useState<LoadingState>({});
   const [isRejectionSubmitting, setIsRejectionSubmitting] = useState(false);
 
@@ -66,12 +65,10 @@ const AdminLeaveRequests: React.FC = () => {
   useEffect(() => {
     let filtered = requests;
 
-    // Filter by status
     if (statusFilter !== "all") {
       filtered = filtered.filter(request => request.status === statusFilter);
     }
 
-    // Filter by search term (username)
     if (searchTerm) {
       filtered = filtered.filter(request => 
         request.username.toLowerCase().includes(searchTerm.toLowerCase())
@@ -183,11 +180,9 @@ const AdminLeaveRequests: React.FC = () => {
       });
 
       if (response.ok) {
-        // Find the request to get user details for email
         const updatedRequest = requests.find(req => req._id === requestId);
         
         if (updatedRequest) {
-          // Send email notification to user
           try {
             const emailData = {
               userEmail: updatedRequest.email,
@@ -219,11 +214,9 @@ const AdminLeaveRequests: React.FC = () => {
             }
           } catch (emailError) {
             console.error("Error sending user notification email:", emailError);
-            // Don't fail the main request if email fails
           }
         }
 
-        // Update local state
         setRequests(prev => prev.map(req => 
           req._id === requestId ? { 
             ...req, 
@@ -300,7 +293,6 @@ const AdminLeaveRequests: React.FC = () => {
             />
           </div>
 
-          {/* Status Filter */}
           <div className={styles.filterContainer}>
             <Filter className={styles.filterIcon} size={20} />
             <select
@@ -316,7 +308,6 @@ const AdminLeaveRequests: React.FC = () => {
           </div>
         </div>
 
-        {/* Results Count */}
         <div className={styles.resultsCount}>
           <p className={styles.resultsText}>
             Showing {filteredRequests.length} request{filteredRequests.length !== 1 ? 's' : ''}
@@ -325,7 +316,6 @@ const AdminLeaveRequests: React.FC = () => {
           </p>
         </div>
 
-        {/* Request Cards */}
         <div className={styles.cardsGrid}>
           {filteredRequests.map((request) => (
             <div key={request._id} className={styles.requestCard}>
@@ -343,14 +333,12 @@ const AdminLeaveRequests: React.FC = () => {
                 </div>
               </div>
 
-              {/* Leave Type */}
               <div className={styles.leaveTypeContainer}>
                 <span className={`${styles.leaveTypeBadge} ${getLeaveTypeColor(request.leaveType)}`}>
                   {request.leaveType.charAt(0).toUpperCase() + request.leaveType.slice(1)}
                 </span>
               </div>
 
-              {/* Dates */}
               <div className={styles.datesContainer}>
                 <div className={styles.dateRange}>
                   <Calendar size={16} />
@@ -362,14 +350,12 @@ const AdminLeaveRequests: React.FC = () => {
                 </div>
               </div>
 
-              {/* Status */}
               <div className={styles.statusContainer}>
                 <span className={`${styles.statusBadge} ${getStatusColor(request.status)}`}>
                   {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                 </span>
               </div>
 
-              {/* Actions */}
               <div className={styles.cardActions}>
                 <button
                   onClick={() => showDetails(request)}
@@ -413,7 +399,6 @@ const AdminLeaveRequests: React.FC = () => {
           ))}
         </div>
 
-        {/* Empty State */}
         {filteredRequests.length === 0 && (
           <div className={styles.emptyState}>
             <FileText className={styles.emptyIcon} size={48} />
@@ -428,7 +413,6 @@ const AdminLeaveRequests: React.FC = () => {
         )}
       </div>
 
-      {/* Details Dialog */}
       {dialog.show && dialog.request && (
         <div className={styles.dialogOverlay}>
           <div className={styles.dialogContent}>
@@ -550,7 +534,6 @@ const AdminLeaveRequests: React.FC = () => {
         </div>
       )}
 
-      {/* Rejection Reason Dialog */}
       {rejectionDialog.show && rejectionDialog.request && (
         <div className={styles.dialogOverlay}>
           <div className={styles.rejectionDialogContent}>
