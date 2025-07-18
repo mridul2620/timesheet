@@ -112,13 +112,26 @@ const EmployeeTimesheet = () => {
     fetchUserData();
   }, [username]);
 
+  // Fixed getWeekDates function - now properly calculates Monday-Sunday week
   const getWeekDates = (date: Date) => {
-    const startDate = new Date(date);
-    startDate.setDate(date.getDate() - date.getDay() + 1);
+    const currentDate = new Date(date);
+    const currentDay = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Calculate days to subtract to get to Monday
+    // If currentDay is 0 (Sunday), we need to go back 6 days to get Monday
+    // If currentDay is 1 (Monday), we need to go back 0 days
+    // If currentDay is 2 (Tuesday), we need to go back 1 day, etc.
+    const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
+    
+    // Get Monday of the current week
+    const monday = new Date(currentDate);
+    monday.setDate(currentDate.getDate() - daysToMonday);
+    
+    // Generate array of 7 dates starting from Monday
     return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(startDate);
-      d.setDate(startDate.getDate() + i);
-      return d;
+      const weekDate = new Date(monday);
+      weekDate.setDate(monday.getDate() + i);
+      return weekDate;
     });
   };
 
@@ -141,10 +154,10 @@ const EmployeeTimesheet = () => {
   }, [entries]);
 
   const calculateDailyHoursData = () => {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const abbreviations = ["S", "M", "T", "W", "T", "F", "S"];
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const abbreviations = ["M", "T", "W", "T", "F", "S", "S"];
     
-    const dailyData: DailyHours[] = weekDates.map((date) => {
+    const dailyData: DailyHours[] = weekDates.map((date, index) => {
       const dayStr = date.toISOString().split("T")[0];
       const dayHours = entries.reduce((total, entry) => {
         const hours = Number.parseFloat(entry.hours[dayStr] || "0");
@@ -152,8 +165,8 @@ const EmployeeTimesheet = () => {
       }, 0);
 
       return {
-        day: days[date.getDay()],
-        abbreviation: abbreviations[date.getDay()],
+        day: days[index], // Use index since weekDates now starts with Monday
+        abbreviation: abbreviations[index],
         hours: dayHours
       };
     });
@@ -203,18 +216,23 @@ const EmployeeTimesheet = () => {
         );
 
         if (response.data.success) {
+          const currentWeekDates = getWeekDates(selectedDate);
+          const weekStartStr = currentWeekDates[0].toISOString().split("T")[0];
+          const weekEndStr = currentWeekDates[6].toISOString().split("T")[0];
+
+          console.log(`Looking for timesheet data between ${weekStartStr} and ${weekEndStr}`);
+
           const relevantTimesheet = response.data.timesheets.find((timesheet: any) => {
+            // Check if this timesheet has any entries for the current week
             return timesheet.entries.some((entry: any) => {
-              return Object.keys(entry.hours).some((date) => {
-                const entryDate = new Date(date);
-                const weekStart = getWeekDates(selectedDate)[0];
-                const weekEnd = getWeekDates(selectedDate)[6];
-                return entryDate >= weekStart && entryDate <= weekEnd;
+              return Object.keys(entry.hours).some((dateStr) => {
+                return dateStr >= weekStartStr && dateStr <= weekEndStr;
               });
             });
           });
 
           if (relevantTimesheet) {
+            console.log("Found relevant timesheet:", relevantTimesheet);
             setEntries(
               relevantTimesheet.entries.map((entry: any) => ({
                 ...entry,
@@ -227,6 +245,7 @@ const EmployeeTimesheet = () => {
             setTimesheetStatus(relevantTimesheet.timesheetStatus || "unapproved");
             setRelevantTimesheetId(relevantTimesheet._id || null);
           } else {
+            console.log("No timesheet found for the selected week");
             setEntries([{
               client: "",
               project: "",
@@ -237,11 +256,13 @@ const EmployeeTimesheet = () => {
             setTimesheetStatus("unapproved");
             setRelevantTimesheetId(null);
        
+            // Initialize day status for the week (Monday to Sunday)
             const newDayStatus: { [key: string]: string } = {};
-            weekDates.forEach((date) => {
+            currentWeekDates.forEach((date, index) => {
               const dayStr = date.toISOString().split("T")[0];
-              const dayOfWeek = date.getDay();
-              newDayStatus[dayStr] = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
+              // Monday = 0, Tuesday = 1, ..., Saturday = 5, Sunday = 6
+              const isWeekend = index === 5 || index === 6; // Saturday or Sunday
+              newDayStatus[dayStr] = isWeekend ? "holiday" : "working";
             });
             setDayStatus(newDayStatus);
           }
@@ -438,8 +459,6 @@ const EmployeeTimesheet = () => {
       </div>
     );
   };
-
-
 
   const BarChartComponent = () => {
     const maxHours = Math.max(...dailyHoursData.map(day => day.hours), 10);
