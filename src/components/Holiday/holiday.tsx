@@ -240,7 +240,7 @@ const Dashboard = ({ metrics }: { metrics: DashboardMetrics }) => {
             {metrics.approvedWorkingDays}
           </div>
           <div className={styles.dashboardCardLabel}>
-            Working Days
+            Working Days Off
           </div>
           <div className={styles.dashboardCardSubtext}>
             Approved Only
@@ -725,7 +725,7 @@ export default function HolidayApproval() {
                       className={styles.select}
                     >
                       <option value="">Select leave type</option>
-                      <option value="casual leave">Casual Leave</option>
+                      <option value="holiday">Holiday</option>
                       <option value="sick leave">Sick Leave</option>
                       <option value="half day">Half Day</option>
                       <option value="work from home">Work From Home</option>
