@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
-/* ===== BASE STYLES ===== */
 .pageContainer {
   font-family: "Inter", sans-serif;
   background-color: #0c1e35;
@@ -38,7 +37,8 @@
   grid-template-columns: 380px 1fr;
   gap: 2.5rem;
   margin-bottom: 3rem;
-  align-items: start;
+  align-items: stretch;
+  height: 100%;
 }
 
 .leftSection {
@@ -46,14 +46,14 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
-  height: 600px;
+  height: 100%;
 }
 
 .rightSection {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  height: 650px;
+  height: 100%; 
   overflow: hidden;
 }
 
@@ -62,8 +62,8 @@
   flex-direction: column;
   gap: 0.75rem;
   width: 100%;
-  height: 100%;
-  justify-content: space-between;
+  flex: 1 1 auto;
+  justify-content: flex-start;
 }
 
 .calendarContainer {
@@ -76,7 +76,9 @@
   border-radius: 0.5rem;
   padding: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  height: 330px;
+  max-height: 330px;
+  display: flex;
+  flex-direction: column;
 }
 
 .bankHolidaysTitle {
@@ -109,8 +111,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
-  height: 240px;
-  overflow: hidden;
+  max-height: 240px;
+  overflow-y: auto;
 }
 
 .bankHolidayItem {
@@ -144,7 +146,6 @@
   line-height: 1.2;
 }
 
-/* ===== FORM SECTION ===== */
 .formSection {
   background-color: #121f3a;
   border-radius: 0.5rem;
@@ -176,7 +177,6 @@
   font-weight: 500;
 }
 
-/* ===== FORM CONTROLS ===== */
 .select {
   width: 100%;
   padding: 0.5rem;
@@ -239,7 +239,6 @@
   color: #6b7a99;
 }
 
-/* ===== BUTTONS ===== */
 .buttonGroup {
   display: flex;
   gap: 0.75rem;
@@ -287,7 +286,6 @@
   opacity: 0.6;
 }
 
-/* ===== DASHBOARD SECTION ===== */
 .dashboardSection {
   background-color: #121f3a;
   border-radius: 0.5rem;
@@ -299,6 +297,7 @@
   min-height: 0;
   overflow: hidden;
   max-height: 250px;
+  justify-content: center;
 }
 
 .dashboardGrid {
@@ -306,6 +305,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
   flex: 1;
+  align-items: center;
 }
 
 .dashboardCard {
@@ -440,7 +440,6 @@
   font-weight: 500;
 }
 
-/* ===== ACTION BUTTONS ===== */
 .actionButtons {
   display: flex;
   flex-direction: row;
@@ -523,7 +522,6 @@
   color: #ef4444;
 }
 
-/* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 768px) {
   .pageContainer {
     padding: 1rem;
@@ -582,7 +580,6 @@
     font-size: 0.8125rem;
   }
 
-  /* Bank holidays responsive updates */
   .bankHolidaysSection {
     height: 180px;
     padding: 0.75rem;
@@ -614,7 +611,6 @@
     font-size: 0.65rem;
   }
 
-  /* Dashboard responsive */
   .dashboardGrid {
     grid-template-columns: 1fr;
   }
