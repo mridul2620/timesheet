@@ -514,93 +514,65 @@ const HomepageContent: React.FC = () => {
     }
   };
 
-  const fetchTimesheetForCurrentWeek = useCallback(async (userData?: User | null, 
-    specifiedWeekStartDate?: string) => {
+  const fetchTimesheetForCurrentWeek = useCallback(async (userData?: User | null, specifiedWeekStartDate?: string) => {
     if (!user?.username && !userData?.username) return;
-  
+
     try {
       setLoading(true);
       setDataNotFound(false);
-      
+
       const username = userData?.username || user?.username;
       const weekStartDateStr = specifiedWeekStartDate || TimesheetService.getWeekStartDate(selectedDate);
       setWeekStartDate(weekStartDateStr);
-      const priorityData = await TimesheetService.getPriorityDataForWeek(
-        username!, 
-        weekStartDateStr
-      );
-      
-      if (priorityData.dataSource === 'timesheet') {
+
+      const priorityData = await TimesheetService.getPriorityDataForWeek(username!, weekStartDateStr);
+
+    
+      if (priorityData.dataSource === 'timesheet' && priorityData.data) {
         const timesheet = priorityData.data as Timesheet;
         setCurrentTimesheetId(timesheet._id);
         setIsWeekEditable(timesheet.timesheetStatus === "rejected");
-        
-        setEntries(
-          timesheet.entries.map((entry: TimeEntry) => ({
-            ...entry,
-            hours: entry.hours || {},
-          }))
-        );
+        setEntries(timesheet.entries.map((entry: TimeEntry) => ({
+          ...entry,
+          hours: entry.hours || {},
+        })));
         setWorkDescription(timesheet.workDescription || "");
-        
-        if (timesheet.dayStatus) {
-          setDayStatus(timesheet.dayStatus);
-        } else {
-          initializeDefaultDayStatus();
-        }
-        
+        setDayStatus(timesheet.dayStatus || {});
         setTimesheetStatus(timesheet.timesheetStatus || "unapproved");
         setRejectionReason(timesheet.rejectionReason || "");
         setHasTimesheetData(true);
         setHasDrafts(false);
-
-        // if (timesheet.timesheetStatus === "rejected") {
-        //   // setDraftBannerMessage("This timesheet was rejected. Please make the necessary corrections and resubmit. Rewason");
-        //   setDraftBannerKey(Date.now());
-        //   setShowDraftBanner(true);
-        // }
-      } 
-      else if (priorityData.dataSource === 'draft') {
+        // Optionally, clear any draft banner
+        setShowDraftBanner(false);
+        setShowPersistentBanner(false);
+      } else if (priorityData.dataSource === 'draft' && priorityData.data) {
+        // Only use draft if there is no timesheet for this week
         const draftData = priorityData.data as DraftTimesheet;
         const draftEntries = draftData.entries.map(entry => ({
           ...entry,
           isDraft: true,
           draftId: draftData._id
         }));
-        if (draftEntries.length > 0) {
-          setEntries(draftEntries);
-          setHasDrafts(true);
-          setHasTimesheetData(true);
-        } else {
-          setEntries(getInitialEntries());
-          setHasDrafts(false);
-          setHasTimesheetData(false);
-        }
-        if (draftData.workDescription && draftData.workDescription !== "Draft") {
-          setWorkDescription(draftData.workDescription);
-        } else {
-          setWorkDescription("");
-        }
-        if (draftData.dayStatus && Object.keys(draftData.dayStatus).length > 0) {
-          setDayStatus(draftData.dayStatus);
-        } else {
-          initializeDefaultDayStatus();
-        }
-        
-        setCurrentTimesheetId("");
+        setEntries(draftEntries.length > 0 ? draftEntries : getInitialEntries());
+        setHasDrafts(draftEntries.length > 0);
+        setHasTimesheetData(draftEntries.length > 0);
+        setWorkDescription(draftData.workDescription && draftData.workDescription !== "Draft" ? draftData.workDescription : "");
+        setDayStatus(draftData.dayStatus && Object.keys(draftData.dayStatus).length > 0 ? draftData.dayStatus : {});
+        setCurrentTimesheetId(""); // No real timesheet
         setTimesheetStatus("unapproved");
         setIsWeekEditable(true);
 
+        // Show draft banner if needed
         const isBannerClosed = localStorage.getItem(`draft_banner_closed_${user?.username}_${weekStartDateStr}`);
         if (!isBannerClosed && draftEntries.length > 0) {
           setDraftBannerMessage("You have saved entries for this week. Continue updating and save your work until you're ready to submit.");
           setDraftBannerKey(Date.now());
           setShowDraftBanner(true);
         }
-      }
-      else {
+      } else {
         resetToDefaultValues();
       }
+
     } catch (error) {
       console.error("Error fetching timesheet data:", error);
       resetToDefaultValues();

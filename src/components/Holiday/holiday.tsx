@@ -12,7 +12,6 @@ interface User {
   email: string;
   name: string;
   designation: string;
-  // Add other user properties as needed
 }
 
 interface LeaveRequest {
@@ -268,7 +267,6 @@ export default function HolidayApproval() {
     approvedWorkingDays: 0
   });
   
-  // Dialog state
   const [dialog, setDialog] = useState<DialogState>({
     show: false,
     title: "",
@@ -276,7 +274,6 @@ export default function HolidayApproval() {
     isError: false
   });
 
-  // Edit dialog state
   const [editDialog, setEditDialog] = useState<EditDialogState>({
     show: false,
     request: null
@@ -294,37 +291,38 @@ export default function HolidayApproval() {
   }, [user]);
 
   useEffect(() => {
-    // Calculate dashboard metrics whenever leave requests change
     calculateDashboardMetrics();
   }, [leaveRequests]);
 
-  // Calculate dashboard metrics for current year
-  const calculateDashboardMetrics = () => {
-    const currentYear = new Date().getFullYear();
-    const currentYearRequests = leaveRequests.filter(request => {
-      const requestYear = new Date(request.createdAt).getFullYear();
-      return requestYear === currentYear;
-    });
+ const calculateDashboardMetrics = () => {
+  const currentYear = new Date().getFullYear();
+  const currentYearRequests = leaveRequests.filter(request => {
+    const requestYear = new Date(request.createdAt).getFullYear();
+    return requestYear === currentYear;
+  });
 
-    const totalRequests = currentYearRequests.length;
-    
-    const approvedWorkingDays = currentYearRequests
-      .filter(request => request.status === 'approved')
-      .reduce((total, request) => {
-        // Handle half day as 0.5
-        if (request.leaveType.toLowerCase() === 'half day') {
-          return total + 0.5;
-        }
-        return total + (request.workingDays || 0);
-      }, 0);
+  const totalRequests = currentYearRequests.length;
+  
+  const approvedWorkingDays = currentYearRequests
+    .filter(request => 
+      request.status === 'approved' && 
+      request.leaveType.toLowerCase() !== 'work from home'
+    )
+    .reduce((total, request) => {
+      
+      if (request.leaveType.toLowerCase() === 'half day') {
+        return total + 0.5;
+      }
+      return total + (request.workingDays || 0);
+    }, 0);
 
-    setDashboardMetrics({
-      totalRequests,
-      approvedWorkingDays
-    });
-  };
+  setDashboardMetrics({
+    totalRequests,
+    approvedWorkingDays
+  });
+};
 
-  // Dialog helper functions
+  
   const showDialog = (title: string, message: string, isError: boolean = false) => {
     setDialog({
       show: true,
@@ -353,7 +351,6 @@ export default function HolidayApproval() {
     });
   };
 
-  // Function to calculate working days excluding weekends and bank holidays
   const calculateWorkingDays = (startDate: Date, endDate: Date | null) => {
     const start = new Date(startDate);
     const end = endDate || startDate;
@@ -363,44 +360,34 @@ export default function HolidayApproval() {
     
     while (currentDate <= end) {
       const dayOfWeek = currentDate.getDay();
-      const dateString = currentDate.toISOString().split('T')[0];
-      
-      // Check if it's not a weekend (Saturday = 6, Sunday = 0)
+      const dateString = currentDate.toISOString().split('T')[0];     
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      
-      // Check if it's a bank holiday
       const isBankHoliday = bankHolidays.some(holiday => holiday.date === dateString);
-      
-      // If it's not a weekend and not a bank holiday, count it as a working day
+
       if (!isWeekend && !isBankHoliday) {
         workingDays++;
       }
       
-      // Move to next day
       currentDate.setDate(currentDate.getDate() + 1);
     }
     
     return workingDays;
   };
 
-  // Calculate working days for the selected date range
   const workingDays = calculateWorkingDays(selectedDate, endDate);
 
   const fetchBankHolidays = async () => {
     setIsLoadingHolidays(true);
     try {
-      // Using UK Government's official bank holidays API
       const response = await fetch('https://www.gov.uk/bank-holidays.json');
       if (response.ok) {
         const data = await response.json();
-        // Extract England and Wales bank holidays (includes data from 2019-2027)
         setBankHolidays(data['england-and-wales']?.events || []);
       } else {
         throw new Error('Failed to fetch bank holidays');
       }
     } catch (error) {
       console.error("Error fetching bank holidays:", error);
-      // Only show error message, no fallback data
       setBankHolidays([]);
     } finally {
       setIsLoadingHolidays(false);
@@ -424,7 +411,6 @@ export default function HolidayApproval() {
     }
   };
 
-  // Check if form is valid
   const isFormValid = leaveType && reason.trim() && selectedDate;
 
   const fetchLeaveRequests = async () => {
