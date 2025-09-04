@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Trash2, Edit, FileText, Calendar1 } from "lucide-react";
+import { Trash2, Edit, FileText, Calendar1, CalendarDays } from "lucide-react";
 import styles from "./holiday.module.css";
 import Header from "../Header/header";
 import Loader from "../Loader/loader";
 import Calendar from "../payroll/calender";
 import Dialog from "../homepage/dialog";
 import EditLeaveDialog from "./editBox";
+import HolidayPlannerCalendar from "./HolidayPlanner";
 
 interface User {
   username: string;
@@ -16,6 +17,7 @@ interface User {
 
 interface LeaveRequest {
   _id: string;
+  username?: string;
   leaveType: string;
   from: string;
   to: string;
@@ -49,7 +51,6 @@ interface DashboardMetrics {
   approvedWorkingDays: number;
 }
 
-// Enhanced Calendar wrapper to add bank holiday styling
 const EnhancedCalendar = ({ selectedDate, endDate, onChange, isDateRange, bankHolidays }: {
   selectedDate: Date;
   endDate: Date | null;
@@ -58,7 +59,6 @@ const EnhancedCalendar = ({ selectedDate, endDate, onChange, isDateRange, bankHo
   bankHolidays: BankHoliday[];
 }) => {
   useEffect(() => {
-    // Add custom styles for bank holidays after calendar renders
     const addBankHolidayStyles = () => {
       const style = document.getElementById('bank-holiday-styles');
       if (style) return;
@@ -72,7 +72,7 @@ const EnhancedCalendar = ({ selectedDate, endDate, onChange, isDateRange, bankHo
           position: relative;
         }
         .bank-holiday-day::after {
-          content: "🏦";
+          content: "🏛";
           position: absolute;
           top: 2px;
           right: 2px;
@@ -88,7 +88,6 @@ const EnhancedCalendar = ({ selectedDate, endDate, onChange, isDateRange, bankHo
 
     addBankHolidayStyles();
 
-    // Apply bank holiday classes to calendar days
     const applyBankHolidayClasses = () => {
       const calendarDays = document.querySelectorAll('.day');
       calendarDays.forEach((dayElement) => {
@@ -96,28 +95,8 @@ const EnhancedCalendar = ({ selectedDate, endDate, onChange, isDateRange, bankHo
         if (dayText && !isNaN(Number(dayText))) {
           const dayNumber = parseInt(dayText);
           
-          // Get the current month/year being displayed in the calendar
-          // We need to get this from the calendar's current state
-          const calendarContainer = dayElement.closest('.calendar');
-          const monthYearElement = calendarContainer?.querySelector('.monthYear');
-          
           let currentMonth = selectedDate.getMonth();
           let currentYear = selectedDate.getFullYear();
-          
-          // Try to parse the month/year from the calendar display if available
-          if (monthYearElement?.textContent) {
-            const monthYearText = monthYearElement.textContent.trim();
-            const [monthName, yearStr] = monthYearText.split(' ');
-            const monthNames = [
-              "January", "February", "March", "April", "May", "June",
-              "July", "August", "September", "October", "November", "December"
-            ];
-            const monthIndex = monthNames.indexOf(monthName);
-            if (monthIndex !== -1 && yearStr) {
-              currentMonth = monthIndex;
-              currentYear = parseInt(yearStr);
-            }
-          }
           
           const dayDate = new Date(currentYear, currentMonth, dayNumber);
           const dateString = dayDate.toISOString().split('T')[0];
@@ -136,10 +115,7 @@ const EnhancedCalendar = ({ selectedDate, endDate, onChange, isDateRange, bankHo
       });
     };
 
-    // Apply classes after a short delay to ensure DOM is ready
     const timeoutId = setTimeout(applyBankHolidayClasses, 100);
-    
-    // Also apply when the calendar changes (for navigation)
     const intervalId = setInterval(applyBankHolidayClasses, 500);
 
     return () => {
@@ -156,15 +132,12 @@ const EnhancedCalendar = ({ selectedDate, endDate, onChange, isDateRange, bankHo
   />;
 };
 
-// Bank Holidays List Component
 const BankHolidaysList = ({ bankHolidays, selectedDate }: {
   bankHolidays: BankHoliday[];
   selectedDate: Date;
 }) => {
-  // Get the year from the currently selected date instead of current year
   const displayYear = selectedDate.getFullYear();
   
-  // Filter holidays for the selected year
   const yearHolidays = bankHolidays.filter(holiday => 
     new Date(holiday.date).getFullYear() === displayYear
   );
@@ -210,7 +183,6 @@ const BankHolidaysList = ({ bankHolidays, selectedDate }: {
   );
 };
 
-// Dashboard Component
 const Dashboard = ({ metrics }: { metrics: DashboardMetrics }) => {
   return (
     <div className={styles.dashboardSection}>
@@ -256,12 +228,14 @@ export default function HolidayApproval() {
   const [leaveType, setLeaveType] = useState("");
   const [reason, setReason] = useState("");
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [allLeaveRequests, setAllLeaveRequests] = useState<LeaveRequest[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingRequests, setIsFetchingRequests] = useState(false);
   const [bankHolidays, setBankHolidays] = useState<BankHoliday[]>([]);
   const [isLoadingHolidays, setIsLoadingHolidays] = useState(false);
+  const [activeTab, setActiveTab] = useState<'leave' | 'planner'>('leave');
   const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics>({
     totalRequests: 0,
     approvedWorkingDays: 0
@@ -287,6 +261,7 @@ export default function HolidayApproval() {
   useEffect(() => {
     if (user) {
       fetchLeaveRequests();
+      fetchAllLeaveRequests();
     }
   }, [user]);
 
@@ -294,35 +269,34 @@ export default function HolidayApproval() {
     calculateDashboardMetrics();
   }, [leaveRequests]);
 
- const calculateDashboardMetrics = () => {
-  const currentYear = new Date().getFullYear();
-  const currentYearRequests = leaveRequests.filter(request => {
-    const requestYear = new Date(request.createdAt).getFullYear();
-    return requestYear === currentYear;
-  });
+  const calculateDashboardMetrics = () => {
+    const currentYear = new Date().getFullYear();
+    const currentYearRequests = leaveRequests.filter(request => {
+      const requestYear = new Date(request.createdAt).getFullYear();
+      return requestYear === currentYear;
+    });
 
-  const totalRequests = currentYearRequests.length;
-  
-  const approvedWorkingDays = currentYearRequests
-    .filter(request => 
-      request.status === 'approved' && 
-      request.leaveType.toLowerCase() !== 'work from home'
-    )
-    .reduce((total, request) => {
-      
-      if (request.leaveType.toLowerCase() === 'half day') {
-        return total + 0.5;
-      }
-      return total + (request.workingDays || 0);
-    }, 0);
+    const totalRequests = currentYearRequests.length;
+    
+    const approvedWorkingDays = currentYearRequests
+      .filter(request => 
+        request.status === 'approved' && 
+        request.leaveType.toLowerCase() !== 'work from home' &&
+        request.leaveType.toLowerCase() !== 'bank holiday'
+      )
+      .reduce((total, request) => {
+        if (request.leaveType.toLowerCase() === 'half day') {
+          return total + 0.5;
+        }
+        return total + (request.workingDays || 0);
+      }, 0);
 
-  setDashboardMetrics({
-    totalRequests,
-    approvedWorkingDays
-  });
-};
+    setDashboardMetrics({
+      totalRequests,
+      approvedWorkingDays
+    });
+  };
 
-  
   const showDialog = (title: string, message: string, isError: boolean = false) => {
     setDialog({
       show: true,
@@ -336,7 +310,6 @@ export default function HolidayApproval() {
     setDialog(prev => ({ ...prev, show: false }));
   };
 
-  // Edit dialog helper functions
   const showEditDialog = (request: LeaveRequest) => {
     setEditDialog({
       show: true,
@@ -374,7 +347,14 @@ export default function HolidayApproval() {
     return workingDays;
   };
 
-  const workingDays = calculateWorkingDays(selectedDate, endDate);
+  const calculateDaysForLeaveType = (leaveType: string, startDate: Date, endDate: Date | null) => {
+    if (leaveType.toLowerCase() === 'bank holiday') {
+      return 1;
+    }
+    return calculateWorkingDays(startDate, endDate);
+  };
+
+  const workingDays = calculateDaysForLeaveType(leaveType, selectedDate, endDate);
 
   const fetchBankHolidays = async () => {
     setIsLoadingHolidays(true);
@@ -411,6 +391,25 @@ export default function HolidayApproval() {
     }
   };
 
+  const fetchAllLeaveRequests = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_HOLIDAY_ALL_API;
+      if (!apiUrl) {
+        console.error("API URL not configured");
+        return;
+      }
+      
+      const response = await fetch(apiUrl);
+      if (response.ok) {
+        const data = await response.json();
+        setAllLeaveRequests(data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching all leave requests:", error);
+      setAllLeaveRequests([]);
+    }
+  };
+
   const isFormValid = leaveType && reason.trim() && selectedDate;
 
   const fetchLeaveRequests = async () => {
@@ -442,7 +441,6 @@ export default function HolidayApproval() {
 
   const handleLeaveTypeChange = (type: string) => {
     setLeaveType(type);
-    // Reset dates when changing leave type
     setSelectedDate(new Date());
     setEndDate(null);
   };
@@ -465,7 +463,7 @@ export default function HolidayApproval() {
         from: formatDateForAPI(selectedDate),
         to: formatDateForAPI(endDate || selectedDate), 
         reason,
-        workingDays: workingDays // Include working days in the request
+        workingDays: workingDays
       };
 
       const apiUrl = process.env.NEXT_PUBLIC_HOLIDAY_API;
@@ -478,7 +476,6 @@ export default function HolidayApproval() {
       });
 
       if (response.ok) {
-        // Send email notification to admin
         try {
           const emailData = {
             userEmail: Array.isArray(user.email) ? user.email[0] : user.email,
@@ -507,19 +504,16 @@ export default function HolidayApproval() {
           }
         } catch (emailError) {
           console.error("Error sending admin notification email:", emailError);
-          // Don't fail the main request if email fails
         }
 
-        // Reset form
         setLeaveType("");
         setReason("");
         setSelectedDate(new Date());
         setEndDate(null);
         
-        // Refresh leave requests
         fetchLeaveRequests();
+        fetchAllLeaveRequests();
         
-        // Show success dialog
         showDialog(
           "Success",
           "Your leave request has been submitted successfully! You will receive a notification once it's reviewed.",
@@ -581,6 +575,7 @@ export default function HolidayApproval() {
       if (response.ok) {
         hideEditDialog();
         fetchLeaveRequests();
+        fetchAllLeaveRequests();
         showDialog(
           "Success",
           "Your leave request has been updated successfully!",
@@ -605,7 +600,6 @@ export default function HolidayApproval() {
   };
 
   const handleDelete = async (id: string) => {
-    // Show confirmation dialog instead of confirm()
     const confirmDelete = confirm("Are you sure you want to delete this leave request?");
     if (!confirmDelete) return;
 
@@ -618,6 +612,7 @@ export default function HolidayApproval() {
 
       if (response.ok) {
         fetchLeaveRequests();
+        fetchAllLeaveRequests();
         showDialog(
           "Success",
           "Leave request deleted successfully!",
@@ -650,7 +645,10 @@ export default function HolidayApproval() {
     });
   };
 
-  const calculateDays = (from: string, to: string) => {
+  const calculateDays = (from: string, to: string, leaveType: string) => {
+    if (leaveType.toLowerCase() === 'bank holiday') {
+      return 1;
+    }
     const startDate = new Date(from);
     const endDate = new Date(to);
     return calculateWorkingDays(startDate, endDate);
@@ -668,6 +666,69 @@ export default function HolidayApproval() {
     <div className={styles.pageContainer}>
       <Header title="Holiday Requests" user={user} />
       
+      <div className={styles.container}>
+        <div className="bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-2xl border border-gray-600/50 overflow-hidden mb-6">
+          <div className="border-b border-gray-600/50 bg-gradient-to-r from-gray-800/80 to-gray-700/80">
+            <nav className="flex relative">
+              <div 
+                className="absolute bottom-0 h-1 bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-500 ease-out rounded-t-full"
+                style={{
+                  left: activeTab === 'leave' ? '0%' : '50%',
+                  width: '50%'
+                }}
+              />
+              <button
+                onClick={() => setActiveTab('leave')}
+                className={`flex-1 px-6 py-4 text-sm font-semibold border-r border-gray-600/50 transition-all duration-300 ease-out relative overflow-hidden group ${
+                  activeTab === 'leave'
+                    ? 'bg-gradient-to-r from-orange-500/20 to-orange-600/20 text-orange-300 shadow-lg'
+                    : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700/50'
+                }`}
+              >
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  Apply for Leave
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-orange-600/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+              </button>
+              <button
+                onClick={() => setActiveTab('planner')}
+                className={`flex-1 px-6 py-4 text-sm font-semibold transition-all duration-300 ease-out relative overflow-hidden group ${
+                  activeTab === 'planner'
+                    ? 'bg-gradient-to-r from-orange-500/20 to-orange-600/20 text-orange-300 shadow-lg'
+                    : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700/50'
+                }`}
+              >
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                  Team Holiday Planner
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-orange-600/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+              </button>
+            </nav>
+          </div>
+          
+          <div className="bg-gray-900/95 backdrop-blur-sm">
+            <div className={`transition-all duration-500 ease-out ${
+              activeTab === 'planner' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 hidden'
+            }`}>
+              {activeTab === 'planner' && (
+                <div className="p-0 h-[calc(100vh-200px)] overflow-hidden">
+                  <HolidayPlannerCalendar
+                    allLeaveRequests={allLeaveRequests as any}
+                    user={user}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      
       {isLoading ? (
         <Loader message="Loading user data..." />
       ) : !user ? (
@@ -676,175 +737,184 @@ export default function HolidayApproval() {
         </div>
       ) : (
         <>
-          <div className={styles.container}>
-            <div className={styles.content}>
-              <div className={styles.leftSection}>
-                <div className={styles.calendarWrapper}>
-                  <EnhancedCalendar 
-                    selectedDate={selectedDate}
-                    endDate={endDate}
-                    onChange={handleDateSelect}
-                    isDateRange={true}
-                    bankHolidays={bankHolidays}
-                  />
-                  
-                  {isLoadingHolidays ? (
-                    <Loader message="Loading bank holidays..." fullScreen={false} />
-                  ) : (
-                    <BankHolidaysList 
-                      bankHolidays={bankHolidays} 
+          {activeTab === 'leave' && (
+            <div className={styles.container}>
+              <div className={styles.content}>
+                <div className={styles.leftSection}>
+                  <div className={styles.calendarWrapper}>
+                    <EnhancedCalendar 
                       selectedDate={selectedDate}
+                      endDate={endDate}
+                      onChange={handleDateSelect}
+                      isDateRange={true}
+                      bankHolidays={bankHolidays}
                     />
-                  )}
-                </div>
-              </div>
-
-              <div className={styles.rightSection}>
-                <div className={styles.formSection}>
-                  <h2 className={styles.sectionTitle}>Apply for Leave</h2>
-              
-                  <div className={styles.formGroup}>
-                    <label>Leave Type</label>
-                    <select 
-                      value={leaveType} 
-                      onChange={(e) => handleLeaveTypeChange(e.target.value)}
-                      className={styles.select}
-                    >
-                      <option value="">Select leave type</option>
-                      <option value="holiday">Holiday</option>
-                      <option value="sick leave">Sick Leave</option>
-                      <option value="half day">Half Day</option>
-                      <option value="work from home">Work From Home</option>
-                    </select>
-                  </div>
-
-                  <div className={styles.dateRow}>
-                    <div className={styles.formGroup}>
-                      <label>From</label>
-                      <input 
-                        type="text"
-                        value={selectedDate.toLocaleDateString()}
-                        readOnly
-                        className={styles.dateInput}
-                      />
-                    </div>
                     
-                    <div className={styles.formGroup}>
-                      <label>To</label>
-                      <input 
-                        type="text"
-                        value={endDate ? endDate.toLocaleDateString() : selectedDate.toLocaleDateString()}
-                        readOnly
-                        className={styles.dateInput}
+                    {isLoadingHolidays ? (
+                      <Loader message="Loading bank holidays..." fullScreen={false} />
+                    ) : (
+                      <BankHolidaysList 
+                        bankHolidays={bankHolidays} 
+                        selectedDate={selectedDate}
                       />
+                    )}
+                  </div>
+                </div>
+
+                <div className={styles.rightSection}>
+                  <div className={styles.formSection}>
+                    <h2 className={styles.sectionTitle}>Apply for Leave</h2>
+                
+                    <div className={styles.formGroup}>
+                      <label>Leave Type</label>
+                      <select 
+                        value={leaveType} 
+                        onChange={(e) => handleLeaveTypeChange(e.target.value)}
+                        className={styles.select}
+                      >
+                        <option value="">Select leave type</option>
+                        <option value="holiday">Holiday</option>
+                        <option value="sick leave">Sick Leave</option>
+                        <option value="half day">Half Day</option>
+                        <option value="work from home">Work From Home</option>
+                        <option value="bank holiday">Bank Holiday</option>
+                      </select>
+                    </div>
+
+                    <div className={styles.dateRow}>
+                      <div className={styles.formGroup}>
+                        <label>From</label>
+                        <input 
+                          type="text"
+                          value={selectedDate.toLocaleDateString()}
+                          readOnly
+                          className={styles.dateInput}
+                        />
+                      </div>
+                      
+                      <div className={styles.formGroup}>
+                        <label>To</label>
+                        <input 
+                          type="text"
+                          value={endDate ? endDate.toLocaleDateString() : selectedDate.toLocaleDateString()}
+                          readOnly
+                          className={styles.dateInput}
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.formGroup}>
+                      <label>
+                        {leaveType.toLowerCase() === 'bank holiday' ? 'Days requested' : 'Number of working days'}
+                      </label>
+                      <p style={{ color: '#fff', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+                        {workingDays} {leaveType.toLowerCase() === 'bank holiday' ? 'day' : 'working day'}{workingDays !== 1 ? 's' : ''}
+                        {leaveType.toLowerCase() === 'bank holiday' && (
+                          <span style={{ color: '#f97316', marginLeft: '8px' }}>
+                            (Bank holidays don't count as working days off)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+
+                    <div className={styles.formGroup}>
+                      <label>Reason</label>
+                      <textarea 
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder="Enter the reason for the leave"
+                        className={styles.textarea}
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className={styles.buttonGroup}>
+                      <button 
+                        onClick={handleCancel}
+                        className={styles.cancelButton}
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handleSubmit}
+                        disabled={!isFormValid || isSubmitting}
+                        className={`${styles.submitButton} ${!isFormValid ? styles.disabled : ''}`}
+                      >
+                        {isSubmitting ? "Submitting..." : "Submit"}
+                      </button>
                     </div>
                   </div>
 
-                  <div className={styles.formGroup}>
-                    <label>Number of working days</label>
-                    <p style={{ color: '#fff', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
-                      {workingDays} working day{workingDays !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label>Reason</label>
-                    <textarea 
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                      placeholder="Enter the reason for the leave"
-                      className={styles.textarea}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className={styles.buttonGroup}>
-                    <button 
-                      onClick={handleCancel}
-                      className={styles.cancelButton}
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      onClick={handleSubmit}
-                      disabled={!isFormValid || isSubmitting}
-                      className={`${styles.submitButton} ${!isFormValid ? styles.disabled : ''}`}
-                    >
-                      {isSubmitting ? "Submitting..." : "Submit"}
-                    </button>
-                  </div>
+                  <Dashboard metrics={dashboardMetrics} />
                 </div>
+              </div>
 
-                <Dashboard metrics={dashboardMetrics} />
+              <div className={styles.leaveRequestsSection}>
+                <h2 className={styles.sectionTitle}>My Leave Requests</h2>
+                
+                {isFetchingRequests ? (
+                  <Loader message="Loading leave requests..." fullScreen={false} />
+                ) : leaveRequests.length === 0 ? (
+                  <div className={styles.noRequests}>No leave requests found</div>
+                ) : (
+                  <div className={styles.tableContainer}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>Leave Type</th>
+                          <th>From</th>
+                          <th>To</th>
+                          <th>Days</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leaveRequests.map((request) => (
+                          <tr key={request._id} className={styles.tableRow}>
+                            <td className={styles.leaveType}>
+                              {request.leaveType.charAt(0).toUpperCase() + request.leaveType.slice(1)}
+                            </td>
+                            <td>{formatDate(request.from)}</td>
+                            <td>{formatDate(request.to)}</td>
+                            <td>{calculateDays(request.from, request.to, request.leaveType)}</td>
+                            <td>
+                              <span className={`${styles.status} ${getStatusColor(request.status)}`}>
+                                {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                              </span>
+                            </td>
+                            <td>
+                              <div className={styles.actionButtons}>
+                                <button 
+                                  onClick={() => handleEdit(request)}
+                                  className={`${styles.editButton} ${request.status === 'approved' ? styles.disabledButton : ''}`}
+                                  title={request.status === 'approved' ? "Cannot edit approved request" : "Edit leave request"}
+                                >
+                                  <Edit size={16} />
+                                </button>
+                                {request.status === 'pending' && (
+                                  <button 
+                                    onClick={() => handleDelete(request._id)}
+                                    className={styles.deleteButton}
+                                    title="Delete leave request"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
-
-            <div className={styles.leaveRequestsSection}>
-              <h2 className={styles.sectionTitle}>My Leave Requests</h2>
-              
-              {isFetchingRequests ? (
-                <Loader message="Loading leave requests..." fullScreen={false} />
-              ) : leaveRequests.length === 0 ? (
-                <div className={styles.noRequests}>No leave requests found</div>
-              ) : (
-                <div className={styles.tableContainer}>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>Leave Type</th>
-                        <th>From</th>
-                        <th>To</th>
-                        <th>Days</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {leaveRequests.map((request) => (
-                        <tr key={request._id} className={styles.tableRow}>
-                          <td className={styles.leaveType}>
-                            {request.leaveType.charAt(0).toUpperCase() + request.leaveType.slice(1)}
-                          </td>
-                          <td>{formatDate(request.from)}</td>
-                          <td>{formatDate(request.to)}</td>
-                          <td>{calculateDays(request.from, request.to)}</td>
-                          <td>
-                            <span className={`${styles.status} ${getStatusColor(request.status)}`}>
-                              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                            </span>
-                          </td>
-                          <td>
-                            <div className={styles.actionButtons}>
-                              <button 
-                                onClick={() => handleEdit(request)}
-                                className={`${styles.editButton} ${request.status === 'approved' ? styles.disabledButton : ''}`}
-                                title={request.status === 'approved' ? "Cannot edit approved request" : "Edit leave request"}
-                              >
-                                <Edit size={16} />
-                              </button>
-                              {request.status === 'pending' && (
-                                <button 
-                                  onClick={() => handleDelete(request._id)}
-                                  className={styles.deleteButton}
-                                  title="Delete leave request"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </>
       )}
       
-      {/* Dialog Component */}
       <Dialog
         show={dialog.show}
         title={dialog.title}
@@ -853,7 +923,6 @@ export default function HolidayApproval() {
         onClose={hideDialog}
       />
 
-      {/* Edit Leave Dialog */}
       <EditLeaveDialog
         show={editDialog.show}
         request={editDialog.request}

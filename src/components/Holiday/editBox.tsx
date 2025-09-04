@@ -64,16 +64,34 @@ const EditLeaveDialog: React.FC<EditLeaveDialogProps> = ({
     if (formData.from && formData.to) {
       const startDate = new Date(formData.from);
       const endDate = new Date(formData.to);
-      const days = calculateWorkingDays(startDate, endDate);
-      setWorkingDays(days);
+      
+      // Special handling for bank holiday leave type
+      if (formData.leaveType.toLowerCase() === 'bank holiday') {
+        setWorkingDays(1); // Bank holidays are always 1 day
+      } else {
+        const days = calculateWorkingDays(startDate, endDate);
+        setWorkingDays(days);
+      }
     }
-  }, [formData.from, formData.to, calculateWorkingDays]);
+  }, [formData.from, formData.to, formData.leaveType, calculateWorkingDays]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleLeaveTypeChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      leaveType: value
+    }));
+    
+    // If changing to bank holiday, recalculate working days
+    if (value.toLowerCase() === 'bank holiday') {
+      setWorkingDays(1);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,6 +114,20 @@ const EditLeaveDialog: React.FC<EditLeaveDialogProps> = ({
 
   const isFormValid = formData.leaveType && formData.from && formData.to && formData.reason.trim();
 
+  const getWorkingDaysLabel = () => {
+    if (formData.leaveType.toLowerCase() === 'bank holiday') {
+      return 'Days requested';
+    }
+    return 'Working days';
+  };
+
+  const getWorkingDaysNote = () => {
+    if (formData.leaveType.toLowerCase() === 'bank holiday') {
+      return "(Bank holidays don't count as working days off)";
+    }
+    return "";
+  };
+
   if (!show || !request) return null;
 
   return (
@@ -116,15 +148,16 @@ const EditLeaveDialog: React.FC<EditLeaveDialogProps> = ({
             <label className={styles.label}>Leave Type</label>
             <select
               value={formData.leaveType}
-              onChange={(e) => handleInputChange('leaveType', e.target.value)}
+              onChange={(e) => handleLeaveTypeChange(e.target.value)}
               className={styles.select}
               required
             >
               <option value="">Select leave type</option>
-              <option value="casual leave">Casual Leave</option>
+              <option value="holiday">Holiday</option>
               <option value="sick leave">Sick Leave</option>
               <option value="half day">Half Day</option>
               <option value="work from home">Work From Home</option>
+              <option value="bank holiday">Bank Holiday</option>
             </select>
           </div>
 
@@ -154,7 +187,16 @@ const EditLeaveDialog: React.FC<EditLeaveDialogProps> = ({
 
           <div className={styles.workingDaysInfo}>
             <Clock size={16} className={styles.clockIcon} />
-            <span>{workingDays} working day{workingDays !== 1 ? 's' : ''}</span>
+            <div className={styles.workingDaysText}>
+              <span>
+                {workingDays} {getWorkingDaysLabel().toLowerCase()}{workingDays !== 1 ? 's' : ''}
+              </span>
+              {getWorkingDaysNote() && (
+                <div className={styles.bankHolidayNote}>
+                  {getWorkingDaysNote()}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className={styles.formGroup}>
