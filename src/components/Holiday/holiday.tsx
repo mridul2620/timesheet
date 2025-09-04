@@ -516,7 +516,7 @@ export default function HolidayApproval() {
         
         showDialog(
           "Success",
-          "Your leave request has been submitted successfully! You will receive a notification once it's reviewed.",
+          "Your leave request has been submitted successfully! You will receive a notification once it&apos;s reviewed.",
           false
         );
       } else {

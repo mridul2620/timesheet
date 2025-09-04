@@ -42,7 +42,8 @@ const LEAVE_TYPE_COLORS = {
   'work from home': { bg: 'bg-gradient-to-r from-green-500 to-green-600', text: 'text-green-100', border: 'border-green-400/30' },
   'casual leave': { bg: 'bg-gradient-to-r from-purple-500 to-purple-600', text: 'text-purple-100', border: 'border-purple-400/30' },
   'sick leave': { bg: 'bg-gradient-to-r from-red-500 to-red-600', text: 'text-red-100', border: 'border-red-400/30' },
-  'half day': { bg: 'bg-gradient-to-r from-orange-500 to-orange-600', text: 'text-orange-100', border: 'border-orange-400/30' }
+  'half day': { bg: 'bg-gradient-to-r from-orange-500 to-orange-600', text: 'text-orange-100', border: 'border-orange-400/30' },
+  'bank holiday': { bg: 'bg-gradient-to-r from-yellow-500 to-yellow-600', text: 'text-yellow-100', border: 'border-yellow-400/30' }
 } as const;
 
 const MONTH_NAMES = [
@@ -224,13 +225,13 @@ const LeaveTooltip: React.FC<{ tooltip: TooltipData; onClose: () => void }> = ({
             
             {request.reason && (
               <div className="text-gray-400 text-xs italic bg-gray-800/40 rounded p-2 border-l-2 border-orange-400/50">
-                "{request.reason}"
+                &quot;{request.reason}&quot;
               </div>
             )}
           </div>
         ))}
         {tooltip.content.length > 1 && (
-        <div className="text-gray-400 text-xs italic text-center mt-2">+{tooltip.content.length - 1} more…</div>
+          <div className="text-gray-400 text-xs italic text-center mt-2">+{tooltip.content.length - 1} more&hellip;</div>
         )}
       </div>
     </div>
@@ -242,7 +243,6 @@ const CalendarDay: React.FC<{
   onDayHover: (event: React.MouseEvent, day: CalendarDay) => void;
   onDayClick: (day: CalendarDay) => void; 
 }> = React.memo(({ day, onDayHover, onDayClick }) => {
-
   const isToday = useMemo(() => {
     const today = new Date();
     return day.date.toDateString() === today.toDateString();
@@ -261,15 +261,15 @@ const CalendarDay: React.FC<{
 
   return (
     <div
-    className={`
-      relative h-full p-1 border border-gray-600/40 cursor-pointer transition-all duration-200 group
-      ${day.isCurrentMonth ? 'bg-gray-800/60 hover:bg-gray-700/60' : 'bg-gray-900/60 opacity-50 hover:opacity-70'}
-      ${isToday ? 'ring-1 ring-orange-500/70 bg-orange-500/10' : ''}
-      ${hasLeaveRequests ? 'hover:shadow-sm hover:shadow-black/20' : ''}
-    `}
-    onMouseEnter={(e) => onDayHover(e, day)}
-    onClick={() => onDayClick(day)}  
-  >
+      className={`
+        relative h-full p-1 border border-gray-600/40 cursor-pointer transition-all duration-200 group
+        ${day.isCurrentMonth ? 'bg-gray-800/60 hover:bg-gray-700/60' : 'bg-gray-900/60 opacity-50 hover:opacity-70'}
+        ${isToday ? 'ring-1 ring-orange-500/70 bg-orange-500/10' : ''}
+        ${hasLeaveRequests ? 'hover:shadow-sm hover:shadow-black/20' : ''}
+      `}
+      onMouseEnter={(e) => onDayHover(e, day)}
+      onClick={() => onDayClick(day)}  
+    >
       <div className={`
         text-xs font-bold mb-0.5 transition-colors
         ${day.isCurrentMonth ? 'text-white' : 'text-gray-500'}
@@ -313,6 +313,9 @@ const CalendarDay: React.FC<{
   );
 });
 
+// Add display name to fix ESLint warning
+CalendarDay.displayName = 'CalendarDay';
+
 const LeaveDetailsModal: React.FC<{ 
   show: boolean; 
   onClose: () => void; 
@@ -353,10 +356,10 @@ const LeaveDetailsModal: React.FC<{
                 </span>
               </div>
               <p className="text-gray-300 text-xs">
-                {formatDisplayDate(req.from)} → {formatDisplayDate(req.to)} ({req.workingDays} day{req.workingDays !== 1 ? 's' : ''})
+                {formatDisplayDate(req.from)} &rarr; {formatDisplayDate(req.to)} ({req.workingDays} day{req.workingDays !== 1 ? 's' : ''})
               </p>
               {req.reason && (
-                <p className="text-gray-400 text-xs italic mt-2">“{req.reason}”</p>
+                <p className="text-gray-400 text-xs italic mt-2">&quot;{req.reason}&quot;</p>
               )}
             </div>
           ))}
@@ -366,7 +369,6 @@ const LeaveDetailsModal: React.FC<{
     document.body
   );
 };
-
 
 const HolidayPlannerCalendar: React.FC<{ 
   allLeaveRequests: LeaveRequest[];
@@ -417,18 +419,16 @@ const HolidayPlannerCalendar: React.FC<{
   }, []);
 
   const [modal, setModal] = useState<{ show: boolean; date: Date | null; requests: LeaveRequest[] }>({
-  show: false,
-  date: null,
-  requests: []
-});
+    show: false,
+    date: null,
+    requests: []
+  });
 
-const handleDayClick = (day: CalendarDay) => {
-  if (day.leaveRequests.length > 0) {
-    setModal({ show: true, date: day.date, requests: day.leaveRequests });
-  }
-};
-
-
+  const handleDayClick = (day: CalendarDay) => {
+    if (day.leaveRequests.length > 0) {
+      setModal({ show: true, date: day.date, requests: day.leaveRequests });
+    }
+  };
 
   const monthStats = useMemo(() => {
     const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -531,52 +531,30 @@ const handleDayClick = (day: CalendarDay) => {
           style={{ gridTemplateRows: 'repeat(6, 1fr)' }}
         >
           {calendarDays.map((day, index) => (
-  <CalendarDay
-    key={index}
-    day={day}
-    onDayHover={handleDayHover}
-    onDayClick={handleDayClick} 
-  />
-))}
-
+            <CalendarDay
+              key={index}
+              day={day}
+              onDayHover={handleDayHover}
+              onDayClick={handleDayClick} 
+            />
+          ))}
         </div>
       </div>
 
-      {/* <div className="px-4 pb-4 flex-shrink-0">
-        <div className="bg-gray-800/40 rounded-xl p-3 border border-gray-600/30">
-          <div className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-            Leave Types Legend
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-            {Object.entries(LEAVE_TYPE_COLORS).map(([type, colors]) => (
-              <div key={type} className="flex items-center gap-2 group">
-                <div className={`w-3 h-3 rounded-lg ${colors.bg} border ${colors.border} group-hover:scale-110 transition-transform`}></div>
-                <span className="text-xs text-gray-300 capitalize font-medium group-hover:text-white transition-colors">
-                  {type.replace('-', ' ')}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div> */}
-
       {createPortal(
-  <LeaveTooltip 
-    tooltip={tooltip} 
-    onClose={() => setTooltip(prev => ({ ...prev, show: false }))} 
-  />,
-  document.body
-)}
+        <LeaveTooltip 
+          tooltip={tooltip} 
+          onClose={() => setTooltip(prev => ({ ...prev, show: false }))} 
+        />,
+        document.body
+      )}
 
-<LeaveDetailsModal 
-  show={modal.show} 
-  date={modal.date} 
-  requests={modal.requests} 
-  onClose={() => setModal({ show: false, date: null, requests: [] })}
-/>
-
-
+      <LeaveDetailsModal 
+        show={modal.show} 
+        date={modal.date} 
+        requests={modal.requests} 
+        onClose={() => setModal({ show: false, date: null, requests: [] })}
+      />
     </div>
   );
 };
