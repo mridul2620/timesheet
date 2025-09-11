@@ -113,7 +113,7 @@ const LoginPage: React.FC = () => {
       <div className="drop drop-4"></div>
       <form onSubmit={handleSubmit}>
         <h2 className="text-white text-2xl font-bold text-center font-serif mb-2">
-          Chartsign
+          PDSL
         </h2>
         {errorMessage && <p className="error-message">{errorMessage}</p>}
         <div className="input-container">
@@ -222,8 +222,8 @@ const LoginPage: React.FC = () => {
         </div>
       </form>
       <div className="footer-text">
-        <p>Copyright © 2019-2025 Chartsign Ltd</p>
-        <p>Entry to this site is restricted to employees and affiliates of Chartsign Limited</p>
+        <p>Copyright © 2019-2025 PDSL Ltd</p>
+        <p>Entry to this site is restricted to employees and affiliates of PDSL Limited</p>
       </div>
     </div>
   );
