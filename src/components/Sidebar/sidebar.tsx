@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { CalendarClock, User, BriefcaseBusiness, PoundSterling, Users, Menu, ClipboardList, ClipboardCheck, LogOut, House, BookOpenText, ClipboardPlus, Palmtree} from "lucide-react";
 import styles from "./Sidebar.module.css";
 
-// Group menu items by section
 const menuSections = [
   {
     heading: "Timesheet",
@@ -155,7 +154,7 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
         <div className={styles.sidebarHeader}>
           {isExpanded ? (
             <div className={styles.logoWrapper}>
-              <img src="/logo.png?height=40&width=10" alt="Logo" className={styles.logo} />
+              {/* <img src="/logo.png?height=40&width=10" alt="Logo" className={styles.logo} /> */}
               <h1 className={styles.title}>PDSL</h1>
             </div>
           ) : (
