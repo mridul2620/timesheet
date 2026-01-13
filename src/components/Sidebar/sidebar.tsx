@@ -154,8 +154,8 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
         <div className={styles.sidebarHeader}>
           {isExpanded ? (
             <div className={styles.logoWrapper}>
-              {/* <img src="/logo.png?height=40&width=10" alt="Logo" className={styles.logo} /> */}
-              <h1 className={styles.title}>PDSL</h1>
+              <img src="/logo.png?height=40&width=10" alt="Logo" className={styles.logo} />
+              <h1 className={styles.title}>Chartsign</h1>
             </div>
           ) : (
             <Menu size={20} className={styles.menuIcon} />
