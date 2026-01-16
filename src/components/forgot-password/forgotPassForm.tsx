@@ -17,7 +17,7 @@ const ForgotPasswordForm = () => {
     try {
       // Send data as JSON instead of form-urlencoded
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/forgot`,
+        `${process.env.NEXT_PUBLIC_SERVER_URL}api/forgot`,
         { identifier },
         {
           headers: {
