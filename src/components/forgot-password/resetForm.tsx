@@ -20,7 +20,7 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
 
     try {
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/reset/${token}`,
+        `${process.env.NEXT_PUBLIC_SERVER_URL}api/reset/${token}`,
         data,
         {
           headers: {

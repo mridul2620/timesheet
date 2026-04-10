@@ -16,12 +16,13 @@ const ResetPasswordPage = ({ params }: { params: { token: string } }) => {
       try {
         // Make sure to use the full URL with environment variable
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/reset/${token}`
+          `${process.env.NEXT_PUBLIC_SERVER_URL}api/reset/${token}`
         );
         setMessage(res.data.message);
         setValidToken(true);
         setLoading(false);
       } catch (error: any) {
+        console.error("Full error:", error.response);
         console.error("Token verification error:", error);
         setMessage(
           error.response?.data?.message || 
