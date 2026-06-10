@@ -362,7 +362,7 @@ class TimesheetService {
 
   getFinancialYearStartDate(date: Date): string {
     const financialYear = this.getFinancialYear(date);
-    return `${financialYear}-04-01`;
+    return `${financialYear}-03-31`;
   }
 
   getFinancialYearEndDate(date: Date): string {
@@ -386,6 +386,50 @@ class TimesheetService {
     }
     
     return 0;
+  }
+
+  /**
+   * Calculate the remaining hours for a specific financial year
+   * by summing all hours logged in that financial year and subtracting from allocated hours
+   */
+  calculateRemainingHoursForFinancialYear(
+    date: Date, 
+    userData: User, 
+    timesheets: Timesheet[]
+  ): number {
+    const financialYear = this.getFinancialYear(date);
+    const allocatedHours = this.getAllocatedHoursForDate(date, userData);
+    
+    // Get the start and end dates for the financial year
+    const startDate = this.getFinancialYearStartDate(date);
+    const endDate = this.getFinancialYearEndDate(date);
+    
+    // Calculate total hours logged in this financial year
+    let totalHoursLogged = 0;
+    
+    if (timesheets && timesheets.length > 0) {
+      timesheets.forEach((timesheet: Timesheet) => {
+        if (timesheet.entries) {
+          timesheet.entries.forEach((entry: TimeEntry) => {
+            if (entry.hours) {
+              Object.keys(entry.hours).forEach((dateStr: string) => {
+                // Check if this date falls within the financial year
+                if (dateStr >= startDate && dateStr <= endDate) {
+                  const hours = parseFloat(entry.hours[dateStr]) || 0;
+                  if (hours > 0) {
+                    totalHoursLogged += hours;
+                  }
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+    
+    // Calculate remaining hours: allocated - logged
+    const remainingHours = allocatedHours - totalHoursLogged;
+    return remainingHours;
   }
 }
 

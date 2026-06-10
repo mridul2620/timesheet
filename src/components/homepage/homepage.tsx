@@ -287,20 +287,11 @@ const HomepageContent: React.FC = () => {
 
   const handleInputChange = (entryId: string, day: string, value: string) => {
     setEntries((prev) => {
-      const oldEntry = prev.find(entry => entry.id === entryId);
-      const oldHourValue = oldEntry ? Number.parseFloat(oldEntry.hours[day] || "0") : 0;
-      const newHourValue = Number.parseFloat(value || "0");
-      const hoursDifference = newHourValue - oldHourValue;
-      
       const updatedEntries = prev.map((entry) =>
         entry.id === entryId
           ? { ...entry, hours: { ...entry.hours, [day]: value }, isDraft: entry.isDraft }
           : entry
       );
-
-      if (isWeekEditable) {
-        setHoursRemaining(prevHours => prevHours - hoursDifference);
-      }
       
       return updatedEntries;
     });
@@ -341,12 +332,6 @@ const HomepageContent: React.FC = () => {
 
   const deleteRow = async (entryId: string) => {
     const entry = entries.find(e => e.id === entryId);
-    let rowTotalHours = 0;
-    if (entry) {
-      rowTotalHours = Object.values(entry.hours).reduce((total, hours) => {
-        return total + Number.parseFloat(hours || "0");
-      }, 0);
-    }
 
     if (entry?.isDraft && user?.username && weekStartDate) {
       try {
@@ -367,13 +352,6 @@ const HomepageContent: React.FC = () => {
       }
     }
     setEntries((prev) => prev.filter((entry) => entry.id !== entryId));
-    if (isWeekEditable) {
-      const updatedRemainingHours = hoursRemaining + rowTotalHours;
-      setHoursRemaining(updatedRemainingHours);
-      if (user?.username) {
-        await updateRemainingHours(updatedRemainingHours);
-      }
-    }
   };
 
   const saveRow = async (entry: TimeEntry) => {
@@ -393,7 +371,6 @@ const HomepageContent: React.FC = () => {
     setIsSaving(prev => ({ ...prev, [entry.id]: true }));
     
     try {
-      await updateRemainingHours(hoursRemaining);
       const response = await TimesheetService.saveDraftEntry(
         user.username,
         weekStartDate,
@@ -447,7 +424,6 @@ const HomepageContent: React.FC = () => {
       }
   
       setSubmitting(true);
-      await updateRemainingHours(hoursRemaining);
   
       const updatedDayStatus = { ...dayStatus };
       weekDates.forEach((date) => {
@@ -582,32 +558,57 @@ const HomepageContent: React.FC = () => {
   }, [user?.username, selectedDate, initializeDefaultDayStatus, resetToDefaultValues]);
 
   useEffect(() => {
-    try {
-      const storedData = localStorage.getItem("loginResponse");
-      if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        if (parsedData.success && parsedData.user) {
-          const financialYear = TimesheetService.getFinancialYear(selectedDate);
-          if (parsedData.user.allocatedHours) {
-            const allocatedHoursEntry = parsedData.user.allocatedHours.find(
-              (entry: { year: string; hours: string }) => entry.year === financialYear
-            );
-            
-            if (allocatedHoursEntry) {
-              const allocatedHoursValue = parseFloat(allocatedHoursEntry.hours);
-              setAllocatedHours(allocatedHoursValue);
+    const updateHoursForSelectedDate = async () => {
+      try {
+        const storedData = localStorage.getItem("loginResponse");
+        if (storedData && user?.username) {
+          const parsedData = JSON.parse(storedData);
+          if (parsedData.success && parsedData.user) {
+            // Get allocated hours for this financial year
+            const allocatedHoursValue = TimesheetService.getAllocatedHoursForDate(selectedDate, parsedData.user);
+            setAllocatedHours(allocatedHoursValue);
+
+            // Fetch all timesheets to calculate remaining hours correctly
+            try {
+              const response = await axios.get(
+                `${process.env.NEXT_PUBLIC_GET_TIMESHEET_API}/${user.username}`
+              );
+              
+              if (response.data.success && response.data.timesheets) {
+                const remainingHours = TimesheetService.calculateRemainingHoursForFinancialYear(
+                  selectedDate,
+                  parsedData.user,
+                  response.data.timesheets
+                );
+                setHoursRemaining(remainingHours);
+              } else {
+                // If no timesheets exist yet, remaining hours equals allocated hours
+                const remainingHours = TimesheetService.calculateRemainingHoursForFinancialYear(
+                  selectedDate,
+                  parsedData.user,
+                  []
+                );
+                setHoursRemaining(remainingHours);
+              }
+            } catch (error) {
+              console.error("Error fetching timesheets for hour calculation:", error);
+              // If API fails, calculate with empty timesheets array
+              const remainingHours = TimesheetService.calculateRemainingHoursForFinancialYear(
+                selectedDate,
+                parsedData.user,
+                []
+              );
+              setHoursRemaining(remainingHours);
             }
           }
-
-          if (parsedData.user.remainingHours !== undefined) {
-            setHoursRemaining(Number(parsedData.user.remainingHours));
-          }
         }
+      } catch (error) {
+        console.error("Error getting hours data from localStorage:", error);
       }
-    } catch (error) {
-      console.error("Error getting hours data from localStorage:", error);
-    }
-  }, [selectedDate]);
+    };
+
+    updateHoursForSelectedDate();
+  }, [selectedDate, user?.username]);
  
   useEffect(() => {
     const loadUserAndTimesheetData = async () => {
@@ -616,21 +617,42 @@ const HomepageContent: React.FC = () => {
         setUser(userData);
 
         const today = new Date();
-        const financialYear = TimesheetService.getFinancialYear(today);
 
-        if (userData.allocatedHours) {
-          const allocatedHoursEntry = userData.allocatedHours.find(
-            (entry: { year: string; hours: string }) => entry.year === financialYear
+        // Get allocated hours for today's financial year
+        const allocatedHoursValue = TimesheetService.getAllocatedHoursForDate(today, userData);
+        setAllocatedHours(allocatedHoursValue);
+
+        // Fetch all timesheets and calculate remaining hours correctly
+        try {
+          const response = await axios.get(
+            `${process.env.NEXT_PUBLIC_GET_TIMESHEET_API}/${userData.username}`
           );
           
-          if (allocatedHoursEntry) {
-            const allocatedHoursValue = parseFloat(allocatedHoursEntry.hours);
-            setAllocatedHours(allocatedHoursValue);
+          if (response.data.success && response.data.timesheets) {
+            const remainingHours = TimesheetService.calculateRemainingHoursForFinancialYear(
+              today,
+              userData,
+              response.data.timesheets
+            );
+            setHoursRemaining(remainingHours);
+          } else {
+            // If no timesheets exist yet, remaining hours equals allocated hours
+            const remainingHours = TimesheetService.calculateRemainingHoursForFinancialYear(
+              today,
+              userData,
+              []
+            );
+            setHoursRemaining(remainingHours);
           }
-        }
-
-        if (userData.remainingHours !== undefined) {
-          setHoursRemaining(Number(userData.remainingHours));
+        } catch (error) {
+          console.error("Error fetching timesheets for initial hour calculation:", error);
+          // If API fails, calculate with empty timesheets array
+          const remainingHours = TimesheetService.calculateRemainingHoursForFinancialYear(
+            today,
+            userData,
+            []
+          );
+          setHoursRemaining(remainingHours);
         }
 
         const weekStartStr = TimesheetService.getWeekStartDate(today);
