@@ -252,12 +252,6 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
     }));
   };
 
-  const formatDateToYYYYMMDD = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
 
   const calculatePayroll = (timesheetData: Timesheet[], user: User) => {
     let startDateObj = new Date(selectedDate);
@@ -268,8 +262,8 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
       endDateObj = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
     }
     
-    const startDateStr = formatDateToYYYYMMDD(startDateObj);
-    const endDateStr = formatDateToYYYYMMDD(endDateObj);
+    const startDateStr = startDateObj.toISOString().split('T')[0];
+    const endDateStr = endDateObj.toISOString().split('T')[0];
     
     const uniqueDays = new Set<string>();
     let totalHours = 0;
@@ -278,10 +272,16 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
       timesheet.entries.forEach(entry => {
         Object.keys(entry.hours).forEach(date => {
           if (date >= startDateStr && date <= endDateStr) {
-            uniqueDays.add(date);
             const hours = parseFloat(entry.hours[date]);
-            if (!isNaN(hours)) {
+            
+            if (!isNaN(hours) && hours > 0) {
               totalHours += hours;
+              
+              // Skip adding to working days if the day is marked as a holiday
+              const isHoliday = timesheet.dayStatus && timesheet.dayStatus[date] === 'holiday';
+              if (!isHoliday) {
+                uniqueDays.add(date);
+              }
             }
           }
         });

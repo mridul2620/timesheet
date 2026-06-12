@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import "@/src/lib/apiClient";
 
 // Updated to include dynamic reset password routes
 const publicPaths = ["/", "/forgot-password"];

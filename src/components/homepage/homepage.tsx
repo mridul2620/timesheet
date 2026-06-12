@@ -15,11 +15,12 @@ import axios from "axios";
 import StatusRow from "./timesheetStatus";
 import TimesheetRow from "./timesheetRow";
 
+const subjectColors = [
+  "#3b82f6", "#22d3ee", "#f97316", "#a855f7", "#06b6d4", 
+  "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"
+];
+
 const HomepageContent: React.FC = () => {
-  const subjectColors = [
-    "#3b82f6", "#22d3ee", "#f97316", "#a855f7", "#06b6d4", 
-    "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"
-  ];
   const getInitialEntries = (): TimeEntry[] => {
     return Array(2).fill(null).map((_, index) => ({
       id: String(index + 1),
@@ -110,7 +111,7 @@ const HomepageContent: React.FC = () => {
   const initializeDefaultDayStatus = useCallback(() => {
     const newDayStatus: { [key: string]: string } = {};
     weekDates.forEach((date) => {
-      const dayStr = date.toISOString().split("T")[0];
+      const dayStr = date.toISOString().split('T')[0];
       const dayOfWeek = date.getDay();
       newDayStatus[dayStr] = (dayOfWeek === 0 || dayOfWeek === 6) 
         ? "not-working" 
@@ -182,7 +183,7 @@ const HomepageContent: React.FC = () => {
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     const abbreviations = ["M", "T", "W", "T", "F", "S", "S"];
     const dailyData: DailyHours[] = weekDates.map((date, index) => {
-      const dayStr = date.toISOString().split("T")[0];
+      const dayStr = date.toISOString().split('T')[0];
       const dayHours = entries.reduce((total, entry) => {
         const hours = Number.parseFloat(entry.hours[dayStr] || "0");
         return total + hours;
@@ -232,7 +233,7 @@ const HomepageContent: React.FC = () => {
   }, [entries, subjectColors]);
 
   const calculateDayTotal = useCallback((date: Date) => {
-    const dayStr = date.toISOString().split("T")[0];
+    const dayStr = date.toISOString().split('T')[0];
     return entries.reduce((total, entry) => {
       const hours = Number.parseFloat(entry.hours[dayStr] || "0");
       return total + hours;
@@ -427,7 +428,7 @@ const HomepageContent: React.FC = () => {
   
       const updatedDayStatus = { ...dayStatus };
       weekDates.forEach((date) => {
-        const dayStr = date.toISOString().split("T")[0];
+        const dayStr = date.toISOString().split('T')[0];
         if (!updatedDayStatus[dayStr]) {
           const dayOfWeek = date.getDay();
           updatedDayStatus[dayStr] = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
@@ -465,7 +466,7 @@ const HomepageContent: React.FC = () => {
       } else {
         const newTimesheetData = {
           ...timesheetData,
-          weekStartDate: weekDates[0].toISOString().split("T")[0],
+          weekStartDate: weekDates[0].toISOString().split('T')[0],
           timesheetStatus: "unapproved"
         };
         
@@ -555,7 +556,7 @@ const HomepageContent: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.username, selectedDate, initializeDefaultDayStatus, resetToDefaultValues]);
+  }, [user?.username, selectedDate, resetToDefaultValues]);
 
   useEffect(() => {
     const updateHoursForSelectedDate = async () => {
@@ -673,6 +674,7 @@ const HomepageContent: React.FC = () => {
       }
     };
     loadUserAndTimesheetData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -761,7 +763,8 @@ const HomepageContent: React.FC = () => {
     } else {
       setLoading(false);
     }
-  }, [selectedDate, user?.username, fetchTimesheetForCurrentWeek]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, user?.username]);
 
   if (loading) return <Loader />;
   if (submitting) return <Loader message="Submitting timesheet..." />;

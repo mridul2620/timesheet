@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { setAccessToken } from "../../lib/apiClient";
 import {
   faEye,
   faEyeSlash,
@@ -66,7 +67,9 @@ const LoginPage: React.FC = () => {
 
       if (response.ok) {
         const result = await response.json();
+        setAccessToken(result.accessToken);
         localStorage.setItem("loginResponse", JSON.stringify(result));
+        sessionStorage.removeItem("isLoggedOut");
         //router.push('home-page');
         window.location.href = '/home-page';
       } else if (response.status === 401) {

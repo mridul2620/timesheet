@@ -250,17 +250,6 @@ class TimesheetService {
     }
   }
 
-  getWeekStartDate(date: Date): string {
-    const selectedDate = new Date(date);
-    selectedDate.setHours(0, 0, 0, 0);
-    const dayOfWeek = selectedDate.getDay();
-    const monday = new Date(selectedDate);
-    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    monday.setDate(selectedDate.getDate() - daysToSubtract);
-    monday.setHours(0, 0, 0, 0);
-    return monday.toISOString().split('T')[0];
-  }
-
   async fetchClients(): Promise<any[]> {
     try {
       const response = await axios.get(process.env.NEXT_PUBLIC_CLIENT_API as string);
@@ -293,13 +282,31 @@ class TimesheetService {
     }
   }
 
+  formatDateToYYYYMMDD(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   generateWeekDays(startDateStr: string): string[] {
     const startDate = new Date(startDateStr);
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(startDate);
       d.setDate(startDate.getDate() + i);
-      return d.toISOString().split("T")[0];
+      return this.formatDateToYYYYMMDD(d);
     });
+  }
+
+  getWeekStartDate(date: Date): string {
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+    const dayOfWeek = selectedDate.getDay();
+    const monday = new Date(selectedDate);
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    monday.setDate(selectedDate.getDate() - daysToSubtract);
+    monday.setHours(0, 0, 0, 0);
+    return monday.toISOString().split('T')[0];
   }
 
   getWeekDates(date: Date): Date[] {
@@ -342,7 +349,7 @@ class TimesheetService {
   initializeDayStatus(weekDates: Date[]): { [key: string]: string } {
     const newDayStatus: { [key: string]: string } = {};
     weekDates.forEach((date) => {
-      const dayStr = date.toISOString().split("T")[0];
+      const dayStr = this.formatDateToYYYYMMDD(date);
       const dayOfWeek = date.getDay();
       newDayStatus[dayStr] = (dayOfWeek === 0 || dayOfWeek === 6) 
         ? "not-working" 

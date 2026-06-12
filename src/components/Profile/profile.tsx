@@ -32,8 +32,21 @@ export default function ProfilePageContent() {
           }
         }, []);
 
-  const handleLogout = () => {
-    router.push("/")
+  const handleLogout = async () => {
+    try {
+      const rawBackendUrl = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001";
+      const backendUrl = rawBackendUrl.endsWith('/') ? rawBackendUrl.slice(0, -1) : rawBackendUrl;
+      await fetch(`${backendUrl}/api/logout`, {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+    
+    localStorage.removeItem("loginResponse");
+    sessionStorage.setItem("isLoggedOut", "true");
+    window.location.href = "/";
   }
 
   return (

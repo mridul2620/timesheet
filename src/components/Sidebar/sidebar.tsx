@@ -131,10 +131,22 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
       onNavigate(component);
     }, [onNavigate]);
 
-    const handleLogout = useCallback((e: React.MouseEvent) => {
+    const handleLogout = useCallback(async (e: React.MouseEvent) => {
       // Prevent default and stop propagation
       e.preventDefault();
       e.stopPropagation();
+      
+      try {
+        // Call backend logout to clear the HTTP-only refresh token cookie
+        const rawBackendUrl = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001";
+        const backendUrl = rawBackendUrl.endsWith('/') ? rawBackendUrl.slice(0, -1) : rawBackendUrl;
+        await fetch(`${backendUrl}/api/logout`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+      } catch (error) {
+        console.error("Logout error:", error);
+      }
       
       // Clear localStorage data
       localStorage.removeItem("loginResponse");

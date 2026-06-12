@@ -84,11 +84,13 @@ const WeekendToggleTimesheet: React.FC<WeekendToggleTimesheetProps> = ({
           <thead>
             <tr className={styles.statusHeaderRow}>
               <td colSpan={3} className={styles.statusLabel}>Status</td>
-              {visibleDates.map((date) => (
+              {visibleDates.map((date) => {
+                const dayStr = date.toISOString().split("T")[0];
+                return (
                 <td key={date.toISOString()} className={styles.statusCell}>
                   <select
-                    value={dayStatus[date.toISOString().split("T")[0]] || getDefaultDayStatus(date)}
-                    onChange={(e) => handleStatusChange(date.toISOString().split("T")[0], e.target.value)}
+                    value={dayStatus[dayStr] || getDefaultDayStatus(date)}
+                    onChange={(e) => handleStatusChange(dayStr, e.target.value)}
                     className={`${styles.select} ${styles.statusSelect}`}
                     disabled={!isWeekEditable}
                   >
@@ -99,7 +101,8 @@ const WeekendToggleTimesheet: React.FC<WeekendToggleTimesheetProps> = ({
                     <option value="bank-holiday">Bank Holiday</option>
                   </select>
                 </td>
-              ))}
+                );
+              })}
               <td className={styles.weekendButtonContainer}>
                 <button 
                   onClick={toggleWeekend} 
