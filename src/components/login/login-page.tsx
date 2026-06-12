@@ -70,6 +70,7 @@ const LoginPage: React.FC = () => {
         setAccessToken(result.accessToken);
         localStorage.setItem("loginResponse", JSON.stringify(result));
         sessionStorage.removeItem("isLoggedOut");
+        document.cookie = "isLoggedIn=true; path=/; max-age=604800"; // 7 days
         //router.push('home-page');
         window.location.href = '/home-page';
       } else if (response.status === 401) {

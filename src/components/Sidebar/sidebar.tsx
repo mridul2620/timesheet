@@ -150,6 +150,7 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
       
       // Clear localStorage data
       localStorage.removeItem("loginResponse");
+      document.cookie = "isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"; // clear cookie
       // Set a flag to indicate logged out state
       sessionStorage.setItem("isLoggedOut", "true");
       

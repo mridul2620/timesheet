@@ -45,6 +45,7 @@ export default function ProfilePageContent() {
     }
     
     localStorage.removeItem("loginResponse");
+    document.cookie = "isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"; // clear cookie
     sessionStorage.setItem("isLoggedOut", "true");
     window.location.href = "/";
   }

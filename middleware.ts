@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const refreshToken = request.cookies.get("refreshToken")?.value;
+  const isLoggedIn = request.cookies.get("isLoggedIn")?.value;
   const { pathname } = request.nextUrl;
 
   // Define public paths that do not require authentication
@@ -12,12 +12,12 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/reset-password/");
 
   // If the user does not have a refresh token and tries to access a protected route
-  if (!refreshToken && !isPublicRoute) {
+  if (!isLoggedIn && !isPublicRoute) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
   // If the user has a refresh token and tries to visit the login page, redirect to home
-  if (refreshToken && pathname === "/") {
+  if (isLoggedIn && pathname === "/") {
     return NextResponse.redirect(new URL("/home-page", request.url));
   }
 
