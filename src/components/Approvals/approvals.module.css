@@ -946,7 +946,7 @@
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 768px) {
   .pageContainer {
-    padding: 1rem;
+    padding: 0.8rem;
   }
 
   .title {
@@ -955,15 +955,18 @@
 
   .searchFilterContainer {
     flex-direction: column;
+    align-items: stretch;
     gap: 1rem;
   }
 
   .searchContainer {
     max-width: 100%;
+    width: 100%;
   }
 
   .filterContainer {
     min-width: 100%;
+    width: 100%;
   }
 
   .cardsGrid {
@@ -990,11 +993,26 @@
 
   .cardActions {
     flex-direction: column;
+    align-items: stretch;
     gap: 0.75rem;
   }
 
+  .detailsButton {
+    width: 100%;
+    padding: 0.75rem;
+  }
+
   .actionButtons {
-    justify-content: center;
+    display: flex;
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .approveButton,
+  .rejectButton {
+    flex: 1;
+    width: auto;
+    height: 2.5rem;
   }
 
   .dialogContent {
@@ -1012,6 +1030,7 @@
 
   .detailsGrid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .timestampContainer {
@@ -1020,6 +1039,7 @@
 
   .dialogActions {
     flex-direction: column;
+    gap: 0.75rem;
   }
 }
 

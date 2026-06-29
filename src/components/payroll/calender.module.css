@@ -153,14 +153,24 @@
 
 @media (max-width: 768px) {
   .calendar {
-    padding: 1rem;
+    padding: 0.8rem;
+    max-width: 100%;
   }
   
   .monthYear {
     font-size: 0.875rem;
   }
   
+  .days {
+    gap: 0.2rem;
+  }
+
   .day {
+    width: 100%;
+    max-width: 40px;
+    height: auto;
+    aspect-ratio: 1;
+    min-height: 32px;
     font-size: 0.75rem;
   }
 }

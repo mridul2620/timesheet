@@ -14,6 +14,7 @@ interface LeaveRequest {
   _id: string;
   username: string;
   email: string;
+  name?: string;
   leaveType: string;
   from: string;
   to: string;
@@ -56,11 +57,27 @@ const AdminLeaveRequests: React.FC = () => {
   
   const [loadingStates, setLoadingStates] = useState<LoadingState>({});
   const [isRejectionSubmitting, setIsRejectionSubmitting] = useState(false);
+  const [usersList, setUsersList] = useState<any[]>([]);
 
   useEffect(() => {
     fetchUser();
     fetchRequests();
+    fetchUsersList();
   }, []);
+
+  const getUserName = (request: LeaveRequest): string => {
+    if (request.name) return String(request.name);
+    if (!Array.isArray(usersList)) return "";
+    const reqUsername = String(request?.username || "").toLowerCase();
+    const reqEmail = String(request?.email || "").toLowerCase();
+    
+    const foundUser = usersList.find(u => {
+      const uUsername = String(u?.username || "").toLowerCase();
+      const uEmail = String(u?.email || "").toLowerCase();
+      return (reqUsername && uUsername === reqUsername) || (reqEmail && uEmail === reqEmail);
+    });
+    return foundUser?.name ? String(foundUser.name) : "";
+  };
 
   useEffect(() => {
     let filtered = requests;
@@ -70,13 +87,17 @@ const AdminLeaveRequests: React.FC = () => {
     }
 
     if (searchTerm) {
-      filtered = filtered.filter(request => 
-        request.username.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const term = String(searchTerm || "").toLowerCase();
+      filtered = filtered.filter(request => {
+        const matchUsername = String(request?.username || "").toLowerCase().includes(term);
+        const fullName = getUserName(request).toLowerCase();
+        const matchName = fullName.includes(term);
+        return matchUsername || matchName;
+      });
     }
 
     setFilteredRequests(filtered);
-  }, [requests, searchTerm, statusFilter]);
+  }, [requests, searchTerm, statusFilter, usersList]);
 
   const setButtonLoading = (requestId: string, action: string, isLoading: boolean) => {
     const key = `${requestId}_${action}`;
@@ -121,6 +142,27 @@ const AdminLeaveRequests: React.FC = () => {
       console.error("Error fetching leave requests:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchUsersList = async () => {
+    try {
+      if (process.env.NEXT_PUBLIC_API_URL) {
+        const response = await fetch(process.env.NEXT_PUBLIC_API_URL);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && Array.isArray(data.users)) {
+            setUsersList(data.users);
+          } else if (Array.isArray(data)) {
+            setUsersList(data);
+          } else {
+            setUsersList([]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching users list:", error);
+      setUsersList([]);
     }
   };
 
@@ -286,7 +328,7 @@ const AdminLeaveRequests: React.FC = () => {
             <Search className={styles.searchIcon} size={20} />
             <input
               type="text"
-              placeholder="Search by username..."
+              placeholder="Search by name or username..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={styles.searchInput}
@@ -325,7 +367,9 @@ const AdminLeaveRequests: React.FC = () => {
                   <User className={styles.userIcon} size={20} />
                 </div>
                 <div className={styles.userDetails}>
-                  <h3 className={styles.username}>{request.username}</h3>
+                  <h3 className={styles.username}>
+                    {getUserName(request) ? `${getUserName(request)} (@${request.username})` : request.username}
+                  </h3>
                   <p className={styles.userEmail}>
                     <Mail size={14} />
                     {request.email}
@@ -429,8 +473,10 @@ const AdminLeaveRequests: React.FC = () => {
             <div className={styles.dialogBody}>
               <div className={styles.detailsGrid}>
                 <div className={styles.detailItem}>
-                  <label className={styles.detailLabel}>Username</label>
-                  <p className={styles.detailValue}>{dialog.request.username}</p>
+                  <label className={styles.detailLabel}>User / Username</label>
+                  <p className={styles.detailValue}>
+                    {getUserName(dialog.request) ? `${getUserName(dialog.request)} (@${dialog.request.username})` : dialog.request.username}
+                  </p>
                 </div>
                 <div className={styles.detailItem}>
                   <label className={styles.detailLabel}>Email</label>

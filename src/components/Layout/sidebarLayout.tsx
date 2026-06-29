@@ -1,6 +1,7 @@
 "use client";
 
-import { type ReactNode, useState, useEffect } from "react";
+import { type ReactNode, useState, useEffect, useCallback } from "react";
+import { Menu } from "lucide-react";
 import styles from "./Layout.module.css";
 import Sidebar from "../Sidebar/sidebar";
 
@@ -38,12 +39,31 @@ export default function MainLayout({ children }: { children: ReactNode }) {
     fixEventPropagation();
   }, []);
 
-  const handleNavigation = (page: string) => {
+  const handleNavigation = useCallback((page: string) => {
     setCurrentPage(page);
-  };
+  }, []);
 
   return (
     <div className={styles.layout}>
+      {isSidebarExpanded && (
+        <div 
+          className={styles.backdrop} 
+          onClick={() => setIsSidebarExpanded(false)} 
+        />
+      )}
+      <div className={styles.mobileHeader}>
+        <button 
+          className={styles.mobileMenuButton}
+          onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+          aria-label="Toggle Menu"
+        >
+          <Menu size={24} />
+        </button>
+        <div className={styles.mobileLogoWrapper}>
+          <img src="/logo.png?height=32&width=32" alt="Logo" className={styles.mobileLogo} />
+          <span className={styles.mobileTitle}>Chartsign</span>
+        </div>
+      </div>
       <Sidebar 
         onNavigate={handleNavigation} 
         isExpanded={isSidebarExpanded} 

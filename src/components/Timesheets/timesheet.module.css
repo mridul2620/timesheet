@@ -822,20 +822,37 @@
 
 @media (max-width: 768px) {
   .container {
-    padding: 1rem;
+    padding: 0.8rem;
   }
 
   .gridContainer {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .calendarSection {
     width: 100%;
-    margin: 0;
+    max-width: 320px;
+    margin: 0 auto 1rem auto;
+  }
+
+  .tableContainer {
+    width: 100%;
+    max-width: 100%;
+    margin: 1rem 0;
+    padding: 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .table {
     font-size: 0.75rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem 0.4rem;
+    white-space: nowrap;
   }
 
   .tooltipText {
@@ -844,8 +861,9 @@
   }
 
   .readOnlyHourInput {
-    width: 3rem;
+    width: 2.8rem;
   }
+
   .statusActionsRow {
     flex-direction: column;
     align-items: flex-start;
@@ -855,6 +873,8 @@
   .approvalActions {
     width: 100%;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
    .rejectionDialog {
@@ -864,6 +884,7 @@
   
   .rejectionDialogActions {
     flex-direction: column;
+    gap: 0.5rem;
   }
   
   .rejectionDialogButton {
@@ -873,11 +894,13 @@
   .actionButton {
     flex: 1;
     text-align: center;
+    min-width: 120px;
   }
 
   .chartsContainer {
     flex-direction: column;
     align-items: center;
+    gap: 1rem;
   }
 
   .chartCard {

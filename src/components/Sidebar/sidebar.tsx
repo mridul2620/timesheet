@@ -115,7 +115,8 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
       if (currentItem) {
         onNavigate(currentItem.component);
       }
-    }, [pathname, onNavigate]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pathname]);
 
     // Using useCallback to memoize the navigation handler
     const handleItemClick = useCallback((path: string, component: string, e: React.MouseEvent) => {
@@ -123,13 +124,17 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
       e.preventDefault();
       e.stopPropagation();
       
+      if (typeof window !== "undefined" && window.innerWidth <= 768) {
+        setIsExpanded(false);
+      }
+
       // Directly update the window location to ensure navigation works
       // This is a more direct approach than using the router
       window.location.href = path;
       
       // Also call onNavigate for component state
       onNavigate(component);
-    }, [onNavigate]);
+    }, [onNavigate, setIsExpanded]);
 
     const handleLogout = useCallback(async (e: React.MouseEvent) => {
       // Prevent default and stop propagation
@@ -161,10 +166,26 @@ export default function Sidebar({ onNavigate, isExpanded, setIsExpanded, activeP
     return (
       <div 
         className={`${styles.sidebar} ${isExpanded ? styles.expanded : ""}`} 
-        onMouseEnter={() => setIsExpanded(true)}
-        onMouseLeave={() => setIsExpanded(false)}
+        onMouseEnter={() => {
+          if (typeof window !== "undefined" && window.innerWidth > 768) {
+            setIsExpanded(true);
+          }
+        }}
+        onMouseLeave={() => {
+          if (typeof window !== "undefined" && window.innerWidth > 768) {
+            setIsExpanded(false);
+          }
+        }}
       >
-        <div className={styles.sidebarHeader}>
+        <div 
+          className={styles.sidebarHeader}
+          onClick={() => {
+            if (typeof window !== "undefined" && window.innerWidth <= 768) {
+              setIsExpanded(!isExpanded);
+            }
+          }}
+          style={{ cursor: 'pointer' }}
+        >
           {isExpanded ? (
             <div className={styles.logoWrapper}>
               <img src="/logo.png?height=40&width=10" alt="Logo" className={styles.logo} />

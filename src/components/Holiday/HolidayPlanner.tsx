@@ -456,37 +456,37 @@ const HolidayPlannerCalendar: React.FC<{
 
   return (
     <div className="bg-gray-900 border-0 h-full flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-gray-800/50 to-gray-700/50 border-b border-gray-600/50 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-500/20 rounded-xl border border-orange-400/30">
+      <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 px-4 py-3 bg-gradient-to-r from-gray-800/50 to-gray-700/50 border-b border-gray-600/50 flex-shrink-0">
+        <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-2 bg-orange-500/20 rounded-xl border border-orange-400/30 flex-shrink-0">
               <CalendarDays className="text-orange-400" size={16} />
             </div>
-            <h3 className="text-lg font-semibold text-white">Team Holiday Overview</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-white truncate">Team Holiday Overview</h3>
           </div>
           <button
             onClick={navigateToToday}
-            className="px-3 py-1.5 text-xs bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg transition-all duration-300 font-medium shadow-lg hover:shadow-orange-500/25 hover:scale-105"
+            className="px-3 py-1.5 text-xs bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg transition-all duration-300 font-medium shadow-lg hover:shadow-orange-500/25 flex-shrink-0"
           >
             Today
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
           <button
             onClick={() => navigateMonth('prev')}
-            className="p-1.5 hover:bg-gray-700/50 rounded-xl transition-all duration-300 hover:scale-110 border border-gray-600/30 hover:border-gray-500/50"
+            className="p-1.5 hover:bg-gray-700/50 rounded-xl transition-all duration-300 border border-gray-600/30 hover:border-gray-500/50 flex-shrink-0"
           >
             <ChevronLeft className="text-gray-300 hover:text-white transition-colors" size={16} />
           </button>
           
-          <h4 className="text-lg font-semibold text-white min-w-48 text-center bg-gray-800/50 py-1.5 px-4 rounded-xl border border-gray-600/30">
+          <h4 className="text-sm sm:text-base font-semibold text-white flex-1 sm:flex-initial sm:min-w-44 text-center bg-gray-800/50 py-1.5 px-3 rounded-xl border border-gray-600/30 whitespace-nowrap">
             {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
           </h4>
           
           <button
             onClick={() => navigateMonth('next')}
-            className="p-1.5 hover:bg-gray-700/50 rounded-xl transition-all duration-300 hover:scale-110 border border-gray-600/30 hover:border-gray-500/50"
+            className="p-1.5 hover:bg-gray-700/50 rounded-xl transition-all duration-300 border border-gray-600/30 hover:border-gray-500/50 flex-shrink-0"
           >
             <ChevronRight className="text-gray-300 hover:text-white transition-colors" size={16} />
           </button>
@@ -494,23 +494,23 @@ const HolidayPlannerCalendar: React.FC<{
       </div>
 
       <div className="px-4 py-2 bg-gradient-to-r from-gray-800/30 to-gray-700/30 border-b border-gray-600/50 flex-shrink-0">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-blue-500/10 rounded-xl p-2 border border-blue-500/20">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="bg-blue-500/10 rounded-xl p-2.5 border border-blue-500/20">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp size={14} className="text-blue-400" />
-                <span className="text-xs text-gray-400 uppercase tracking-wide">Requests</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <TrendingUp size={14} className="text-blue-400 flex-shrink-0" />
+                <span className="text-xs text-gray-400 uppercase tracking-wide truncate">Requests</span>
               </div>
-              <div className="text-lg font-bold text-blue-400">{monthStats.totalRequests}</div>
+              <div className="text-base sm:text-lg font-bold text-blue-400 ml-2">{monthStats.totalRequests}</div>
             </div>
           </div>
-          <div className="bg-green-500/10 rounded-xl p-3 border border-green-500/20">
+          <div className="bg-green-500/10 rounded-xl p-2.5 border border-green-500/20">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users size={14} className="text-green-400" />
-                <span className="text-xs text-gray-400 uppercase tracking-wide">On Leave</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <Users size={14} className="text-green-400 flex-shrink-0" />
+                <span className="text-xs text-gray-400 uppercase tracking-wide truncate">On Leave</span>
               </div>
-              <div className="text-lg font-bold text-green-400">{monthStats.uniqueEmployees}</div>
+              <div className="text-base sm:text-lg font-bold text-green-400 ml-2">{monthStats.uniqueEmployees}</div>
             </div>
           </div>
         </div>
