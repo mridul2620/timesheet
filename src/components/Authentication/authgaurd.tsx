@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import "@/src/lib/apiClient";
+import { setAccessToken, getAccessToken } from "@/src/lib/apiClient";
 
 // Updated to include dynamic reset password routes
 const publicPaths = ["/", "/forgot-password"];
@@ -56,6 +57,23 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     // without proper SameSite/Secure attributes.
     if (isAuthenticated && !isLoggedOut && !hasIsLoggedInCookie()) {
       setIsLoggedInCookie();
+    }
+
+    // KEY FIX #2: Restore the in-memory access token from localStorage after a full
+    // page reload. Without this, API calls fail with 401 because the token is only
+    // stored in-memory and is lost on navigation via window.location.href.
+    if (isAuthenticated && !isLoggedOut && !getAccessToken()) {
+      try {
+        const storedData = localStorage.getItem("loginResponse");
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          if (parsedData.accessToken) {
+            setAccessToken(parsedData.accessToken);
+          }
+        }
+      } catch (e) {
+        console.error("[AuthGuard] Error restoring access token:", e);
+      }
     }
 
     // Redirect to login if not authenticated and trying to access a protected route
