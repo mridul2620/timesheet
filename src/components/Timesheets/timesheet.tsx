@@ -62,6 +62,9 @@ const EmployeeTimesheet = () => {
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [isSubmittingRejection, setIsSubmittingRejection] = useState(false);
+  const [isDraftDisplayed, setIsDraftDisplayed] = useState<boolean>(false);
+  const [hasBeenUpdated, setHasBeenUpdated] = useState<boolean>(false);
+  const [lastUpdatedByEmployeeAt, setLastUpdatedByEmployeeAt] = useState<string | null>(null);
 
   const projectColors = [
     "#3b82f6", "#22d3ee", "#f97316", "#a855f7", "#06b6d4", 
@@ -245,8 +248,40 @@ const EmployeeTimesheet = () => {
             setDayStatus(relevantTimesheet.dayStatus || {});
             setTimesheetStatus(relevantTimesheet.timesheetStatus || "unapproved");
             setRelevantTimesheetId(relevantTimesheet._id || null);
+            setIsDraftDisplayed(false);
+            setHasBeenUpdated(relevantTimesheet.hasBeenUpdated || false);
+            setLastUpdatedByEmployeeAt(relevantTimesheet.lastUpdatedByEmployeeAt || null);
           } else {
-            console.log("No timesheet found for the selected week");
+            console.log("No timesheet found for the selected week, checking drafts...");
+            try {
+              const draftRes = await axios.get(
+                `${process.env.NEXT_PUBLIC_DRAFT_GET_API || "/api/draft"}/${username}?weekStart=${weekStartStr}`
+              );
+              if (draftRes.data.success && draftRes.data.draft) {
+                const draftData = draftRes.data.draft;
+                setEntries(
+                  draftData.entries.map((entry: any) => ({
+                    ...entry,
+                    client: entry.client || "",
+                    hours: entry.hours || {},
+                  }))
+                );
+                setWorkDescription(draftData.workDescription && draftData.workDescription !== "Draft" ? draftData.workDescription : "");
+                setDayStatus(draftData.dayStatus || {});
+                setTimesheetStatus("unapproved");
+                setRelevantTimesheetId(null);
+                setIsDraftDisplayed(true);
+                setHasBeenUpdated(false);
+                setLastUpdatedByEmployeeAt(null);
+                return;
+              }
+            } catch (err) {
+              // ignore draft not found
+            }
+
+            setIsDraftDisplayed(false);
+            setHasBeenUpdated(false);
+            setLastUpdatedByEmployeeAt(null);
             setEntries([{
               client: "",
               project: "",
@@ -671,117 +706,155 @@ const EmployeeTimesheet = () => {
               />
             </div>
 
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Client</th>
-                  <th>Subject</th>
-                  <th>Projects</th>
-                  {weekDates.map((date) => (
-                    <th key={date.toISOString()}>{formatDate(date)}</th>
-                  ))}
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-              {entries.map((entry, index) => (
-                <tr key={index}>
-                  <td>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type="text"
-                        value={entry.client}
-                        className={styles.readOnlyInput}
-                        readOnly
-                        title={entry.client}
-                      />
-                      {entry.client && (
-                        <div className={styles.tooltipWrapper}>
-                          <span className={styles.tooltipText}>{entry.client}</span>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'auto' }}>
+              {(isDraftDisplayed || timesheetStatus === "unapproved") && (
+                <div style={{
+                  backgroundColor: '#fef3c7',
+                  borderLeft: '4px solid #f59e0b',
+                  padding: '12px 16px',
+                  marginBottom: '16px',
+                  borderRadius: '6px',
+                  color: '#92400e',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}>
+                  <span>⚠️</span>
+                  <span><strong>Notice:</strong> This timesheet contains {isDraftDisplayed ? "saved draft" : "unapproved"} entries. They are still editable by the employee until formally approved.</span>
+                </div>
+              )}
+              {hasBeenUpdated && (
+                <div style={{
+                  backgroundColor: '#e0f2fe',
+                  borderLeft: '4px solid #0284c7',
+                  padding: '12px 16px',
+                  marginBottom: '16px',
+                  borderRadius: '6px',
+                  color: '#075985',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}>
+                  <span>🔄</span>
+                  <span><strong>Modified:</strong> Entries in this timesheet were updated by the employee after initial submission{lastUpdatedByEmployeeAt ? ` (Last updated: ${new Date(lastUpdatedByEmployeeAt).toLocaleString()})` : ''}.</span>
+                </div>
+              )}
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Client</th>
+                    <th>Subject</th>
+                    <th>Projects</th>
+                    {weekDates.map((date) => (
+                      <th key={date.toISOString()}>{formatDate(date)}</th>
+                    ))}
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.map((entry, index) => (
+                    <tr key={index}>
+                      <td>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="text"
+                            value={entry.client}
+                            className={styles.readOnlyInput}
+                            readOnly
+                            title={entry.client}
+                          />
+                          {entry.client && (
+                            <div className={styles.tooltipWrapper}>
+                              <span className={styles.tooltipText}>{entry.client}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type="text"
-                        value={entry.subject}
-                        className={styles.readOnlyInput}
-                        readOnly
-                        title={entry.subject}
-                      />
-                      {entry.subject && (
-                        <div className={styles.tooltipWrapper}>
-                          <span className={styles.tooltipText}>{entry.subject}</span>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type="text"
-                        value={entry.project}
-                        className={styles.readOnlyInput}
-                        readOnly
-                        title={entry.project}
-                      />
-                      {entry.project && (
-                        <div className={styles.tooltipWrapper}>
-                          <span className={styles.tooltipText}>{entry.project}</span>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  {weekDates.map((date) => {
-                    const dayStr = date.toISOString().split("T")[0];
-                    return (
-                      <td key={dayStr}>
-                        <input
-                          type="text"
-                          value={entry.hours[dayStr] || ""}
-                          className={styles.readOnlyHourInput}
-                          readOnly
-                        />
                       </td>
-                    );
-                  })}
-                  <td className={styles.totalCell}>
-                    {calculateRowTotal(entry).toFixed(2)}
-                  </td>
-                </tr>
-              ))}
-
-                <tr className={styles.totalRow}>
-                  <td colSpan={3}>Total</td>
-                  {weekDates.map((date) => (
-                    <td key={date.toISOString()} className={styles.totalCell}>
-                      {calculateDayTotal(date).toFixed(2)}
-                    </td>
-                  ))}
-                  <td className={styles.totalCell}>{calculateWeekTotal().toFixed(2)}</td>
-                </tr>
-
-                <tr className={styles.statusRow}>
-                  <td colSpan={3}>Status</td>
-                  {weekDates.map((date) => {
-                    const dayStr = date.toISOString().split("T")[0];
-                    return (
-                      <td key={dayStr}>
-                        <input
-                          type="text"
-                          value={dayStatus[dayStr] || ""}
-                          className={styles.readOnlyInput}
-                          readOnly
-                        />
+                      <td>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="text"
+                            value={entry.subject}
+                            className={styles.readOnlyInput}
+                            readOnly
+                            title={entry.subject}
+                          />
+                          {entry.subject && (
+                            <div className={styles.tooltipWrapper}>
+                              <span className={styles.tooltipText}>{entry.subject}</span>
+                            </div>
+                          )}
+                        </div>
                       </td>
-                    );
-                  })}
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
+                      <td>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="text"
+                            value={entry.project}
+                            className={styles.readOnlyInput}
+                            readOnly
+                            title={entry.project}
+                          />
+                          {entry.project && (
+                            <div className={styles.tooltipWrapper}>
+                              <span className={styles.tooltipText}>{entry.project}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      {weekDates.map((date) => {
+                        const dayStr = date.toISOString().split("T")[0];
+                        return (
+                          <td key={dayStr}>
+                            <input
+                              type="number"
+                              value={entry.hours[dayStr] || ""}
+                              className={styles.readOnlyInput}
+                              readOnly
+                            />
+                          </td>
+                        );
+                      })}
+                      <td className={styles.totalCell}>
+                        {calculateRowTotal(entry).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+
+                  <tr className={styles.totalRow}>
+                    <td colSpan={3}>Total</td>
+                    {weekDates.map((date) => (
+                      <td key={date.toISOString()} className={styles.totalCell}>
+                        {calculateDayTotal(date).toFixed(2)}
+                      </td>
+                    ))}
+                    <td className={styles.totalCell}>{calculateWeekTotal().toFixed(2)}</td>
+                  </tr>
+
+                  <tr className={styles.statusRow}>
+                    <td colSpan={3}>Status</td>
+                    {weekDates.map((date) => {
+                      const dayStr = date.toISOString().split("T")[0];
+                      return (
+                        <td key={dayStr}>
+                          <input
+                            type="text"
+                            value={dayStatus[dayStr] || ""}
+                            className={styles.readOnlyInput}
+                            readOnly
+                          />
+                        </td>
+                      );
+                    })}
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
           <div className={styles.descriptionContainer}>
             <h3 className={styles.descriptionHeading}>Work Description</h3>

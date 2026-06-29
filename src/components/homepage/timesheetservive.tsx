@@ -48,8 +48,7 @@ class TimesheetService {
       const draftData = draftsResponse.success ? draftsResponse.draft : null;
 
       if (timesheet) {
-
-        if (timesheet.timesheetStatus === "rejected") {
+        if (timesheet.timesheetStatus === "rejected" || timesheet.timesheetStatus === "unapproved") {
           if (draftData) {
             return { dataSource: 'draft', data: draftData };
           }

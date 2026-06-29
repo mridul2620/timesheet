@@ -449,13 +449,13 @@ const HomepageContent: React.FC = () => {
   
       let response;
       
-      if (timesheetStatus === "rejected" && currentTimesheetId) {
+      if ((timesheetStatus === "rejected" || timesheetStatus === "unapproved") && currentTimesheetId) {
         response = await TimesheetService.updateTimesheet(currentTimesheetId, timesheetData);
         
         if (response.success) {
           showDialog("Success", response.message);
           setTimesheetStatus("unapproved");
-          setIsWeekEditable(false);
+          setIsWeekEditable(true);
           setHasDrafts(false);
           setShowDraftBanner(false);
           setShowPersistentBanner(false);
@@ -474,7 +474,7 @@ const HomepageContent: React.FC = () => {
   
         if (response.success) {
           showDialog("Success", response.message);
-          setIsWeekEditable(false);
+          setIsWeekEditable(true);
           setTimesheetStatus("unapproved");
           setHasDrafts(false);
           setShowDraftBanner(false);
@@ -508,7 +508,7 @@ const HomepageContent: React.FC = () => {
       if (priorityData.dataSource === 'timesheet' && priorityData.data) {
         const timesheet = priorityData.data as Timesheet;
         setCurrentTimesheetId(timesheet._id);
-        setIsWeekEditable(timesheet.timesheetStatus === "rejected");
+        setIsWeekEditable(timesheet.timesheetStatus !== "approved");
         setEntries(timesheet.entries.map((entry: TimeEntry) => ({
           ...entry,
           hours: entry.hours || {},
@@ -965,7 +965,7 @@ const HomepageContent: React.FC = () => {
             onClick={handleSubmit} 
             disabled={!isWeekEditable || !hasCompleteRow || !workDescription.trim()}
           >
-            {timesheetStatus === "rejected" ? "Resubmit" : "Submit"}
+            {timesheetStatus === "rejected" ? "Resubmit" : (timesheetStatus === "unapproved" && currentTimesheetId) ? "Update Timesheet" : "Submit"}
           </button>
         </div>
         

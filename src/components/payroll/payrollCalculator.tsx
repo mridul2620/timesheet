@@ -74,6 +74,8 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
   const [noDataMessage, setNoDataMessage] = useState<string | null>(null);
   const [checkingPayrollStatus, setCheckingPayrollStatus] = useState<boolean>(false);
   const [fetchTrigger, setFetchTrigger] = useState<number>(0);
+  const [hasUnapprovedHours, setHasUnapprovedHours] = useState<boolean>(false);
+  const [hasDraftHours, setHasDraftHours] = useState<boolean>(false);
   
   const isApiCallInProgress = useRef<boolean>(false);
 
@@ -177,32 +179,54 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
           }));
         }
         
-        const timesheetUrl = `${process.env.NEXT_PUBLIC_GET_TIMESHEET_API}/${selectedUser.username}`;
-        const timesheetResponse = await fetch(timesheetUrl);
-        
-        if (!timesheetResponse.ok) {
-          if (timesheetResponse.status === 404) {
-            setNoDataMessage(`No timesheet data available for ${selectedUser.name}`);
-            setBasicUserData(selectedUser);
-            return;
+        let fetchedTimesheets: any[] = [];
+        try {
+          const timesheetUrl = `${process.env.NEXT_PUBLIC_GET_TIMESHEET_API}/${selectedUser.username}`;
+          const timesheetResponse = await fetch(timesheetUrl);
+          if (timesheetResponse.ok) {
+            const timesheetData = await timesheetResponse.json();
+            if (timesheetData.success && Array.isArray(timesheetData.timesheets)) {
+              fetchedTimesheets = timesheetData.timesheets;
+            }
           }
-          throw new Error(`Timesheet API responded with status: ${timesheetResponse.status}`);
+        } catch (e) {
+          console.error("Error fetching timesheets for payroll:", e);
         }
-        
-        const timesheetData = await timesheetResponse.json();
-        
-        if (timesheetData.message && timesheetData.message.includes("No timesheets found")) {
+
+        let fetchedDrafts: any[] = [];
+        try {
+          const draftUrl = `${process.env.NEXT_PUBLIC_DRAFT_GET_API || "/api/draft"}/${selectedUser.username}`;
+          const draftResponse = await fetch(draftUrl);
+          if (draftResponse.ok) {
+            const draftData = await draftResponse.json();
+            if (draftData.success && Array.isArray(draftData.drafts)) {
+              fetchedDrafts = draftData.drafts;
+            }
+          }
+        } catch (e) {
+          console.error("Error fetching drafts for payroll:", e);
+        }
+
+        const existingWeeks = new Set(fetchedTimesheets.map(t => t.weekStartDate));
+        const simulatedDraftTimesheets = fetchedDrafts
+          .filter(d => !existingWeeks.has(d.weekStartDate))
+          .map(d => ({
+            ...d,
+            timesheetStatus: 'draft'
+          }));
+
+        const mergedTimesheets = [...fetchedTimesheets, ...simulatedDraftTimesheets];
+
+        if (mergedTimesheets.length === 0) {
           setNoDataMessage(`No timesheet data available for ${selectedUser.name}`);
           setBasicUserData(selectedUser);
+          setHasUnapprovedHours(false);
+          setHasDraftHours(false);
           return;
         }
-        
-        if (timesheetData.success) {
-          setTimesheets(timesheetData.timesheets);
-          calculatePayroll(timesheetData.timesheets, selectedUser);
-        } else {
-          throw new Error('Timesheet API returned unsuccessful response');
-        }
+
+        setTimesheets(mergedTimesheets);
+        calculatePayroll(mergedTimesheets, selectedUser);
       } catch (error) {
         if (selectedUser) {
           setBasicUserData(selectedUser);
@@ -267,6 +291,8 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
     
     const uniqueDays = new Set<string>();
     let totalHours = 0;
+    let unapprovedFound = false;
+    let draftFound = false;
     
     timesheetData.forEach(timesheet => {
       timesheet.entries.forEach(entry => {
@@ -277,6 +303,13 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
             if (!isNaN(hours) && hours > 0) {
               totalHours += hours;
               
+              if (timesheet.timesheetStatus === 'unapproved' || timesheet.timesheetStatus === 'rejected') {
+                unapprovedFound = true;
+              }
+              if (timesheet.timesheetStatus === 'draft' || (timesheet as any).isDraft) {
+                draftFound = true;
+              }
+
               // Skip adding to working days if the day is marked as a holiday
               const isHoliday = timesheet.dayStatus && timesheet.dayStatus[date] === 'holiday';
               if (!isHoliday) {
@@ -287,6 +320,9 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
         });
       });
     });
+    
+    setHasUnapprovedHours(unapprovedFound);
+    setHasDraftHours(draftFound);
     
     const workingDays = uniqueDays.size;
     
@@ -439,6 +475,24 @@ const PayrollCalculator: React.FC<PayrollCalculatorProps> = ({
         </div>
         
         <div className={styles.gridSection}>
+          {(hasUnapprovedHours || hasDraftHours) && (
+            <div style={{
+              backgroundColor: '#fef3c7',
+              borderLeft: '4px solid #f59e0b',
+              padding: '12px 16px',
+              marginBottom: '16px',
+              borderRadius: '6px',
+              color: '#92400e',
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              width: '100%'
+            }}>
+              <span>⚠️</span>
+              <span><strong>Notice:</strong> The calculated payroll includes {hasUnapprovedHours && hasDraftHours ? "unapproved and draft" : hasDraftHours ? "saved draft" : "unapproved"} hours. Ensure timesheets are fully approved before final disbursement.</span>
+            </div>
+          )}
           <div className={styles.gridContainer}>
             <div className={styles.gridItem}>
               <h3>Employee</h3>
