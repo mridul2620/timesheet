@@ -59,9 +59,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       setIsLoggedInCookie();
     }
 
-    // KEY FIX #2: Restore the in-memory access token from localStorage after a full
-    // page reload. Without this, API calls fail with 401 because the token is only
-    // stored in-memory and is lost on navigation via window.location.href.
+    // KEY FIX #2: Restore the access token after a full page reload.
+    // The in-memory token is lost on navigation via window.location.href.
+    // Restore from localStorage — if it's expired, the interceptor will
+    // automatically refresh it on the first API call (handles both 401 and 403).
     if (isAuthenticated && !isLoggedOut && !getAccessToken()) {
       try {
         const storedData = localStorage.getItem("loginResponse");

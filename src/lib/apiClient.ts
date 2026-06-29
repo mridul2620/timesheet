@@ -62,9 +62,9 @@ if (typeof window !== "undefined") {
     try {
       const response = await originalFetch(input, init);
 
-      // If the backend returns 401 and it's not a login/refresh attempt, try to refresh
+      // If the backend returns 401/403 and it's not a login/refresh attempt, try to refresh
       if (
-        response.status === 401 &&
+        (response.status === 401 || response.status === 403) &&
         isBackendRequest &&
         !url.includes("/api/refresh") &&
         !url.includes("/api/login")
@@ -159,14 +159,14 @@ if (typeof window !== "undefined") {
     const isBackendRequest = originalRequest.url?.startsWith(backendUrl) || originalRequest.url?.startsWith("/api");
 
     if (
-      error.response?.status === 401 && 
+      (error.response?.status === 401 || error.response?.status === 403) && 
       isBackendRequest && 
       !originalRequest._retry &&
       !originalRequest.url?.includes("/api/refresh") &&
       !originalRequest.url?.includes("/api/login")
     ) {
       originalRequest._retry = true;
-      console.log("[Axios Interceptor] Caught 401, attempting token refresh...");
+      console.log("[Axios Interceptor] Caught 401/403, attempting token refresh...");
 
       const retryOriginalRequest = new Promise<string>((resolve) => {
         subscribeTokenRefresh((token) => resolve(token));
