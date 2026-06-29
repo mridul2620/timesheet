@@ -92,7 +92,10 @@ if (typeof window !== "undefined") {
               isRefreshing = false;
               // Clear local state and redirect to login if refresh token expired/invalid
               localStorage.removeItem("loginResponse");
-              window.location.href = "/login";
+              document.cookie = "isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+              if (window.location.pathname !== "/") {
+                window.location.href = "/";
+              }
               return response;
             }
           } catch (err) {
@@ -187,7 +190,10 @@ if (typeof window !== "undefined") {
             console.warn("[Axios Interceptor] Refresh failed with status", refreshResponse.status);
             isRefreshing = false;
             localStorage.removeItem("loginResponse");
-            window.location.href = "/login";
+            document.cookie = "isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+            if (window.location.pathname !== "/") {
+              window.location.href = "/";
+            }
             return Promise.reject(error);
           }
         } catch (err) {

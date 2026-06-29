@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   const isLoggedIn = request.cookies.get("isLoggedIn")?.value;
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
 
   // Define public paths that do not require authentication
   const isPublicRoute =
@@ -11,9 +11,20 @@ export function middleware(request: NextRequest) {
     pathname === "/forgot-password" ||
     pathname.startsWith("/reset-password/");
 
+  // Redirect loop protection: if we've already redirected once via middleware,
+  // don't redirect again. The client-side AuthGuard will handle it from here.
+  const middlewareRedirected = searchParams.get("_mr");
+
   // If the user does not have a refresh token and tries to access a protected route
   if (!isLoggedIn && !isPublicRoute) {
-    return NextResponse.redirect(new URL("/", request.url));
+    // If we already redirected once, let the request through to avoid an infinite loop.
+    // The client-side AuthGuard will handle re-setting the cookie or redirecting.
+    if (middlewareRedirected === "1") {
+      return NextResponse.next();
+    }
+    const url = new URL("/", request.url);
+    url.searchParams.set("_mr", "1");
+    return NextResponse.redirect(url);
   }
 
   // If the user has a refresh token and tries to visit the login page, redirect to home
@@ -35,3 +46,4 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|.*\\..*$).*)",
   ],
 };
+
