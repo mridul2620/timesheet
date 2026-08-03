@@ -7,6 +7,7 @@ import Loader from "../Loader/loader";
 import Calendar from "../Calender";
 import { useRouter } from 'next/navigation';
 import { Printer } from "lucide-react";
+import TimesheetService from "../homepage/timesheetservive";
 
 interface TimeEntry {
   project: string;
@@ -93,13 +94,11 @@ const ReportsPage = () => {
       );
 
       if (response.data.success) {
+        const weekDaysArray = getWeekDates(selectedDate).map(d => TimesheetService.getDatabaseDateStr(d));
         const relevantTimesheet = response.data.timesheets.find((timesheet: any) => {
           return timesheet.entries.some((entry: any) => {
             return Object.keys(entry.hours).some((date) => {
-              const entryDate = new Date(date);
-              const weekStart = getWeekDates(selectedDate)[0];
-              const weekEnd = getWeekDates(selectedDate)[6];
-              return entryDate >= weekStart && entryDate <= weekEnd;
+              return weekDaysArray.includes(date);
             });
           });
         });
@@ -125,7 +124,7 @@ const ReportsPage = () => {
           
           const newDayStatus: { [key: string]: string } = {};
           weekDates.forEach((date) => {
-            const dayStr = date.toISOString().split("T")[0];
+            const dayStr = TimesheetService.getDatabaseDateStr(date);
             const dayOfWeek = date.getDay();
             newDayStatus[dayStr] = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
           });
@@ -174,11 +173,11 @@ const ReportsPage = () => {
         weekDates.push(date);
       }
 
+      const weekDaysArray = weekDates.map(d => TimesheetService.getDatabaseDateStr(d));
       const weekTimesheet = timesheets.find((timesheet: any) => {
         return timesheet.entries.some((entry: any) => {
           return Object.keys(entry.hours || {}).some((date) => {
-            const entryDate = new Date(date);
-            return entryDate >= weekStart && entryDate <= weekEnd;
+            return weekDaysArray.includes(date);
           });
         });
       });
@@ -201,7 +200,7 @@ const ReportsPage = () => {
       } else {
         const defaultDayStatus: { [key: string]: string } = {};
         weekDates.forEach((date: Date) => {
-          const dayStr = date.toISOString().split("T")[0];
+          const dayStr = TimesheetService.getDatabaseDateStr(date);
           const dayOfWeek = date.getDay();
           defaultDayStatus[dayStr] = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
         });
@@ -230,7 +229,7 @@ const ReportsPage = () => {
   };
 
   const calculateDayTotal = (date: Date) => {
-    const dayStr = date.toISOString().split("T")[0];
+    const dayStr = TimesheetService.getDatabaseDateStr(date);
     return entries.reduce((total, entry) => {
       const hours = Number.parseFloat(entry.hours[dayStr] || "0");
       return total + hours;
@@ -404,11 +403,11 @@ const handlePrint = () => {
     }
     
     // Find timesheet for this week
-    const weekStart = weekDays[0].toISOString().split('T')[0];
-    const weekEnd = weekDays[6].toISOString().split('T')[0];
+    const weekStart = TimesheetService.getDatabaseDateStr(weekDays[0]);
+    const weekEnd = TimesheetService.getDatabaseDateStr(weekDays[6]);
     
     const relevantTimesheet = monthTimesheets.find(week => {
-      const weekStartDate = week.weekStart.toISOString().split('T')[0];
+      const weekStartDate = TimesheetService.getDatabaseDateStr(week.weekStart);
       return weekStartDate === weekStart;
     });
     
@@ -472,7 +471,7 @@ const handlePrint = () => {
           <td>${entry.project || ""}</td>
           <td>${entry.subject || ""}</td>
           ${weekDays.map((date: Date) => {
-            const dayStr = date.toISOString().split('T')[0];
+            const dayStr = TimesheetService.getDatabaseDateStr(date);
             const hours = entry.hours?.[dayStr] || "";
             return `
               <td>
@@ -490,7 +489,7 @@ const handlePrint = () => {
       <tr class="${styles.totalRow}">
         <td colspan="2">Total</td>
         ${weekDays.map((date: Date) => {
-          const dayStr = date.toISOString().split('T')[0];
+          const dayStr = TimesheetService.getDatabaseDateStr(date);
           const dayTotal = weekEntries.reduce((total: number, entry: TimeEntry) => {
             const hours = Number.parseFloat(entry.hours?.[dayStr] || "0");
             return total + hours;
@@ -508,7 +507,7 @@ const handlePrint = () => {
       <tr class="${styles.statusRow}">
         <td colspan="2">Status</td>
         ${weekDays.map((date: Date) => {
-          const dayStr = date.toISOString().split('T')[0];
+          const dayStr = TimesheetService.getDatabaseDateStr(date);
           const status = weekDayStatus?.[dayStr] || 
             (date.getDay() === 0 || date.getDay() === 6 ? "holiday" : "working");
           
@@ -634,7 +633,7 @@ const handlePrint = () => {
                     />
                   </td>
                   {weekDates.map((date) => {
-                    const dayStr = date.toISOString().split("T")[0];
+                    const dayStr = TimesheetService.getDatabaseDateStr(date);
                     return (
                       <td key={dayStr}>
                         <input
@@ -665,7 +664,7 @@ const handlePrint = () => {
               <tr className={styles.statusRow}>
                 <td colSpan={2}>Status</td>
                 {weekDates.map((date) => {
-                  const dayStr = date.toISOString().split("T")[0];
+                  const dayStr = TimesheetService.getDatabaseDateStr(date);
                   return (
                     <td key={dayStr}>
                       <input

@@ -4,6 +4,7 @@ import styles from "./homepage.module.css";
 import { TimeEntry, User, Project, Subject, DailyHours, ProjectHours, DialogData, Client, DraftTimesheet, Timesheet } from "./timesheetTypes";
 import StatusRow from "./timesheetStatus";
 import TimesheetRow from "./timesheetRow";
+import TimesheetService from "./timesheetservive";
 
 interface WeekendToggleTimesheetProps {
   weekDates: Date[];
@@ -85,7 +86,7 @@ const WeekendToggleTimesheet: React.FC<WeekendToggleTimesheetProps> = ({
             <tr className={styles.statusHeaderRow}>
               <td colSpan={3} className={styles.statusLabel}>Status</td>
               {visibleDates.map((date) => {
-                const dayStr = date.toISOString().split("T")[0];
+                const dayStr = TimesheetService.getDatabaseDateStr(date);
                 return (
                 <td key={date.toISOString()} className={styles.statusCell}>
                   <select

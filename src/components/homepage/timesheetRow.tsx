@@ -2,6 +2,7 @@ import React from "react";
 import { Trash2, Save } from "lucide-react";
 import styles from "./homepage.module.css";
 import { TimeEntry } from "./timesheetTypes";
+import TimesheetService from "./timesheetservive";
 
 type TimesheetRowProps = {
   entry: TimeEntry;
@@ -86,7 +87,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
         </select>
       </td>
       {weekDates.map((date) => {
-        const dayStr = date.toISOString().split("T")[0];
+        const dayStr = TimesheetService.getDatabaseDateStr(date);
         return (
           <td key={dayStr}>
             <input

@@ -7,6 +7,7 @@ import Header from "../Header/header";
 import Loader from "../Loader/loader";
 import Calendar from "../Calender";
 import { useParams } from 'next/navigation';
+import TimesheetService from "../homepage/timesheetservive";
 
 interface TimeEntry {
   client: string;
@@ -162,7 +163,7 @@ const EmployeeTimesheet = () => {
     const abbreviations = ["M", "T", "W", "T", "F", "S", "S"];
     
     const dailyData: DailyHours[] = weekDates.map((date, index) => {
-      const dayStr = date.toISOString().split("T")[0];
+      const dayStr = TimesheetService.getDatabaseDateStr(date);
       const dayHours = entries.reduce((total, entry) => {
         const hours = Number.parseFloat(entry.hours[dayStr] || "0");
         return total + hours;
@@ -221,8 +222,8 @@ const EmployeeTimesheet = () => {
 
         if (response.data.success) {
           const currentWeekDates = getWeekDates(selectedDate);
-          const weekStartStr = currentWeekDates[0].toISOString().split("T")[0];
-          const weekEndStr = currentWeekDates[6].toISOString().split("T")[0];
+          const weekStartStr = TimesheetService.getDatabaseDateStr(currentWeekDates[0]);
+          const weekEndStr = TimesheetService.getDatabaseDateStr(currentWeekDates[6]);
 
           console.log(`Looking for timesheet data between ${weekStartStr} and ${weekEndStr}`);
 
@@ -295,7 +296,7 @@ const EmployeeTimesheet = () => {
             // Initialize day status for the week (Monday to Sunday)
             const newDayStatus: { [key: string]: string } = {};
             currentWeekDates.forEach((date, index) => {
-              const dayStr = date.toISOString().split("T")[0];
+              const dayStr = TimesheetService.getDatabaseDateStr(date);
               // Monday = 0, Tuesday = 1, ..., Saturday = 5, Sunday = 6
               const isWeekend = index === 5 || index === 6; // Saturday or Sunday
               newDayStatus[dayStr] = isWeekend ? "holiday" : "working";
@@ -314,7 +315,7 @@ const EmployeeTimesheet = () => {
   }, [selectedDate, username]);
 
   const calculateDayTotal = (date: Date) => {
-    const dayStr = date.toISOString().split("T")[0];
+    const dayStr = TimesheetService.getDatabaseDateStr(date);
     return entries.reduce((total, entry) => {
       const hours = Number.parseFloat(entry.hours[dayStr] || "0");
       return total + hours;
@@ -807,7 +808,7 @@ const EmployeeTimesheet = () => {
                         </div>
                       </td>
                       {weekDates.map((date) => {
-                        const dayStr = date.toISOString().split("T")[0];
+                        const dayStr = TimesheetService.getDatabaseDateStr(date);
                         return (
                           <td key={dayStr}>
                             <input
@@ -838,7 +839,7 @@ const EmployeeTimesheet = () => {
                   <tr className={styles.statusRow}>
                     <td colSpan={3}>Status</td>
                     {weekDates.map((date) => {
-                      const dayStr = date.toISOString().split("T")[0];
+                      const dayStr = TimesheetService.getDatabaseDateStr(date);
                       return (
                         <td key={dayStr}>
                           <input

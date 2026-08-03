@@ -1,5 +1,6 @@
 import React from "react";
 import styles from "./homepage.module.css";
+import TimesheetService from "./timesheetservive";
 
 type StatusRowProps = {
   weekDates: Date[];
@@ -24,7 +25,7 @@ const StatusRow: React.FC<StatusRowProps> = ({
     <tr className={styles.statusRow}>
       <td colSpan={3} className={styles.statusLabel}>Status</td>
       {weekDates.map((date) => {
-        const dayStr = date.toISOString().split("T")[0];
+        const dayStr = TimesheetService.getDatabaseDateStr(date);
         const currentStatus = dayStatus[dayStr] || getDefaultDayStatus(date);
 
         return (

@@ -289,12 +289,19 @@ class TimesheetService {
   }
 
   generateWeekDays(startDateStr: string): string[] {
-    const startDate = new Date(startDateStr);
+    const [year, month, day] = startDateStr.split('-').map(Number);
+    const startDate = new Date(year, month - 1, day);
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(startDate);
       d.setDate(startDate.getDate() + i);
       return this.formatDateToYYYYMMDD(d);
     });
+  }
+
+  getDatabaseDateStr(date: Date): string {
+    const d = new Date(date);
+    d.setDate(d.getDate() - 1);
+    return this.formatDateToYYYYMMDD(d);
   }
 
   getWeekStartDate(date: Date): string {
@@ -305,7 +312,7 @@ class TimesheetService {
     const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     monday.setDate(selectedDate.getDate() - daysToSubtract);
     monday.setHours(0, 0, 0, 0);
-    return monday.toISOString().split('T')[0];
+    return this.getDatabaseDateStr(monday);
   }
 
   getWeekDates(date: Date): Date[] {
@@ -348,7 +355,7 @@ class TimesheetService {
   initializeDayStatus(weekDates: Date[]): { [key: string]: string } {
     const newDayStatus: { [key: string]: string } = {};
     weekDates.forEach((date) => {
-      const dayStr = this.formatDateToYYYYMMDD(date);
+      const dayStr = this.getDatabaseDateStr(date);
       const dayOfWeek = date.getDay();
       newDayStatus[dayStr] = (dayOfWeek === 0 || dayOfWeek === 6) 
         ? "not-working" 

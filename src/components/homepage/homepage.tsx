@@ -111,7 +111,7 @@ const HomepageContent: React.FC = () => {
   const initializeDefaultDayStatus = useCallback(() => {
     const newDayStatus: { [key: string]: string } = {};
     weekDates.forEach((date) => {
-      const dayStr = date.toISOString().split('T')[0];
+      const dayStr = TimesheetService.getDatabaseDateStr(date);
       const dayOfWeek = date.getDay();
       newDayStatus[dayStr] = (dayOfWeek === 0 || dayOfWeek === 6) 
         ? "not-working" 
@@ -183,7 +183,7 @@ const HomepageContent: React.FC = () => {
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     const abbreviations = ["M", "T", "W", "T", "F", "S", "S"];
     const dailyData: DailyHours[] = weekDates.map((date, index) => {
-      const dayStr = date.toISOString().split('T')[0];
+      const dayStr = TimesheetService.getDatabaseDateStr(date);
       const dayHours = entries.reduce((total, entry) => {
         const hours = Number.parseFloat(entry.hours[dayStr] || "0");
         return total + hours;
@@ -233,7 +233,7 @@ const HomepageContent: React.FC = () => {
   }, [entries, subjectColors]);
 
   const calculateDayTotal = useCallback((date: Date) => {
-    const dayStr = date.toISOString().split('T')[0];
+    const dayStr = TimesheetService.getDatabaseDateStr(date);
     return entries.reduce((total, entry) => {
       const hours = Number.parseFloat(entry.hours[dayStr] || "0");
       return total + hours;
@@ -428,7 +428,7 @@ const HomepageContent: React.FC = () => {
   
       const updatedDayStatus = { ...dayStatus };
       weekDates.forEach((date) => {
-        const dayStr = date.toISOString().split('T')[0];
+        const dayStr = TimesheetService.getDatabaseDateStr(date);
         if (!updatedDayStatus[dayStr]) {
           const dayOfWeek = date.getDay();
           updatedDayStatus[dayStr] = dayOfWeek === 0 || dayOfWeek === 6 ? "holiday" : "working";
@@ -466,7 +466,7 @@ const HomepageContent: React.FC = () => {
       } else {
         const newTimesheetData = {
           ...timesheetData,
-          weekStartDate: weekDates[0].toISOString().split('T')[0],
+          weekStartDate: TimesheetService.getDatabaseDateStr(weekDates[0]),
           timesheetStatus: "unapproved"
         };
         
