@@ -476,36 +476,7 @@ export default function HolidayApproval() {
       });
 
       if (response.ok) {
-        try {
-          const emailData = {
-            userEmail: Array.isArray(user.email) ? user.email[0] : user.email,
-            userName: user.name,
-            leaveType,
-            fromDate: formatDateForAPI(selectedDate), 
-            toDate: formatDateForAPI(endDate || selectedDate),
-            workingDays,
-            reason,
-            status: 'pending'
-          };
-
-          const emailAPI = process.env.NEXT_PUBLIC_HOLIDAY_MAIL_API;
-          const emailResponse = await fetch(`${emailAPI}`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(emailData),
-          });
-
-          if (emailResponse.ok) {
-            console.log("Admin notification email sent successfully");
-          } else {
-            console.error("Failed to send admin notification email");
-          }
-        } catch (emailError) {
-          console.error("Error sending admin notification email:", emailError);
-        }
-
+        // The backend emails the admin automatically when the request is saved.
         setLeaveType("");
         setReason("");
         setSelectedDate(new Date());
